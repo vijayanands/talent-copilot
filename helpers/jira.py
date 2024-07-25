@@ -57,7 +57,7 @@ def fetch_jira_issues(base_url: str, username: str, project_key: str) -> List[Di
 if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net"
     username = "vijayanands@gmail.com"
-    api_token = os.getenv("JIRA_API_KEY")
+    api_token = os.getenv("ATLASSIAN_API_TOKEN")
 
     try:
         projects = fetch_jira_projects(base_url, username, api_token)

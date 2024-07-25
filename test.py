@@ -7,7 +7,7 @@ base_url = "https://cwiki.apache.org/confluence"
 space_key = "KAFKA"
 page_title = "Introduction"
 username = "vijayanands@gmail.com"
-api_token = os.getenv("CONFLUENCE_API_KEY")
+api_token = os.getenv("ATLASSIAN_API_TOKEN")
 
 
 # Function to find the page ID by title

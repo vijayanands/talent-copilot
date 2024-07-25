@@ -45,5 +45,5 @@ if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net/wiki"
     page_id = "2686977"
     username = "vijayanands@gmail.com"
-    api_token = os.getenv("CONFLUENCE_API_KEY")
+    api_token = os.getenv("ATLASSIAN_API_KEY")
     get_page_content(base_url, page_id, username, api_token)
