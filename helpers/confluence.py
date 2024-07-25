@@ -1,17 +1,34 @@
 import requests
+import os
+from tools.headers import get_headers
+from dotenv import load_dotenv
 
-from auth.credentials import get_password
+load_dotenv()
 
+
+def get_page_id(base_url, space_key, page_title):
+    url = f"{base_url}/rest/api/content"
+    params = {"type": "page", "spaceKey": space_key, "title": page_title}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data["results"]:
+            return data["results"][0]["id"]
+    return None
 
 # url = "https://cwiki.apache.org/confluence/display/KAFKA/Clients"
-def get_page(base_url: str, page_id: str, username: str):
+def get_page_content(base_url: str, page_id: str, username: str, api_token: str):
 
-    password = get_password("confluence", username)
     # API endpoint to get the page content
     url = f"{base_url}/rest/api/content/{page_id}?expand=body.storage"
 
     # Make the API request
-    response = requests.get(url, auth=(username, password))
+    headers = get_headers(username, api_token)
+    response = requests.request(
+        "GET",
+        url,
+        headers=headers,
+    )
 
     # Check if the request was successful
     if response.status_code == 200:
@@ -28,4 +45,5 @@ if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net/wiki"
     page_id = "2686977"
     username = "vijayanands@gmail.com"
-    get_page(base_url, page_id, username)
+    api_token = os.getenv("CONFLUENCE_API_KEY")
+    get_page_content(base_url, page_id, username, api_token)

@@ -11,15 +11,13 @@ python-dotenv = "^1.0.1"
 requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
 sumy = "^0.11.0"
-llama-index-readers-jira = "^0.1.4"
-llama-index-readers-confluence = "^0.1.6"
-llama-index-readers-github = "^0.1.9"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
 mypy = "^1.11.0"
 types-requests = "^2.32.0.20240712"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]

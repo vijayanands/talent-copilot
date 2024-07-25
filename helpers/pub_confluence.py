@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-from sumy.parsers.html import HtmlParser
 from sumy.nlp.tokenizers import Tokenizer
+from sumy.parsers.html import HtmlParser
 from sumy.summarizers.lsa import LsaSummarizer
 
 # Configuration

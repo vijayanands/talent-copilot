@@ -1,7 +1,7 @@
+import time
 from typing import Any, Dict
 
 import requests
-import time
 
 
 def fetch_PR_data(owner: str, repo: str, token: str) -> Any:
@@ -65,7 +65,7 @@ def fetch_PR_comments(owner: str, repo: str, token: str) -> Any:
 
 
 def get_pull_requests_by_author(owner: str, repo: str, token: str, author: str) -> Any:
-    prs = fetch_PR_data(owner, repo, token)
+    prs:Any = fetch_PR_data(owner, repo, token)
 
     prs_by_author = [pr for pr in prs if pr["user"]["login"].lower() == author.lower()]
 

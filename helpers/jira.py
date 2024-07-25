@@ -1,45 +1,68 @@
 import json
+import os
+from typing import Any, Dict, List
 
 import requests
-from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
 
-from auth.credentials import get_password
+from tools.headers import get_headers
+
+load_dotenv()
 
 
-def get_projects(base_url, username) -> None:
-    password = get_password("jira", username)
-    auth = HTTPBasicAuth(username=username, password=password)
+def fetch_jira_projects(
+    base_url: str, username: str, api_token: str
+) -> List[Dict[str, Any]]:
+    """
+    Fetch a list of projects from Jira using basic authentication.
+    :return: A list of dictionaries containing project information
+    """
+    api_endpoint = f"{base_url}/rest/api/3/project"
 
-    headers = {"Accept": "application/json"}
-
-    response = requests.request("GET", url, headers=headers, auth=auth)
-
-    print(
-        json.dumps(
-            json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")
-        )
+    response = requests.get(
+        api_endpoint,
+        headers=get_headers(username, api_token),
     )
 
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
 
-def get_issues(base_url, username) -> None:
-    password = get_password("jira", username)
-    auth = HTTPBasicAuth(username=username, password=password)
 
-    headers = {"Accept": "application/json"}
+def fetch_jira_issues(base_url: str, username: str, project_key: str) -> List[Dict[str, Any]]:
+    url  = f"{base_url}/rest/api/3/search"
 
-    query = {"jql": "project = SSP"}
+    project_str = f"project = {project_key}"
+    query = {
+        'jql': project_str,
+        'maxResults': 100,
+    }
 
-    response = requests.request("GET", url, headers=headers, params=query, auth=auth)
-
-    print(
-        json.dumps(
-            json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")
-        )
+    # url = "https://vijayanands.atlassian.net/rest/api/3/search?query={'jql': 'project = SSP', 'maxResults': 100}"
+    response = requests.request(
+        "GET",
+        url,
+        headers=get_headers(username, api_token),
+        params=query,  # query parameters
     )
 
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
 
+
+# Usage example
 if __name__ == "__main__":
-    url = "https://vijayanands.atlassian.net/rest/api/3/project"
-    get_projects(url, "email2vijay@gmail.com")
-    url = "https://vijayanands.atlassian.net/rest/api/3/search"
-    get_issues(url, "email2vijay@gmail.com")
+    base_url = "https://vijayanands.atlassian.net"
+    username = "vijayanands@gmail.com"
+    api_token = os.getenv("JIRA_API_KEY")
+
+    try:
+        projects = fetch_jira_projects(base_url, username, api_token)
+        print(json.dumps(projects, indent=2))
+        # issues = fetch_jira_issues(base_url, username,"SSP")
+        # print(json.dumps(issues, indent=2))
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")

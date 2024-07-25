@@ -1,6 +1,6 @@
+import csv
 import sqlite3
 from enum import Enum
-import csv
 
 
 # Define the enumerated type for the tools

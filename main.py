@@ -1,12 +1,14 @@
+import os
+
+from dotenv import load_dotenv
+
 from helpers.github import (
-    fetch_PR_data,
     fetch_issues_data,
+    fetch_PR_data,
+    get_pull_requests_by_author,
     list_repo_activity,
     list_repo_contributors,
-    get_pull_requests_by_author,
 )
-import os
-from dotenv import load_dotenv
 
 load_dotenv()
 

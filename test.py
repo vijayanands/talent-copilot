@@ -1,5 +1,6 @@
-import requests
 import os
+
+import requests
 
 # Configuration
 base_url = "https://cwiki.apache.org/confluence"
