@@ -1,73 +1,163 @@
+from typing import Any, Dict
+
 import requests
+import time
 
 
-def get_pull_request_by_author(username: str, repo_owner: str, repo_name: str) -> None:
-    # URL for searching pull requests
-    url = f"https://api.github.com/search/issues"
-
-    # Query to filter pull requests by user and repository
-    query = f"repo:{repo_owner}/{repo_name} type:pr author:{username}"
-
-    # Parameters for the search query
-    params = {
-        "q": query,
-        "per_page": 100,  # Number of results per page
+def fetch_PR_data(owner: str, repo: str, token: str) -> Any:
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
     }
+    state = "all"
+    url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+    params: Dict[str, Any] = {"state": state, "per_page": 100}
+    all_prs = []
 
-    all_pull_requests = []
-    page = 1
-
-    while True:
-        params["page"] = page
-        response = requests.get(url, params=params)
+    while url:
+        response = requests.get(url, headers=headers, params=params)
         if response.status_code != 200:
-            raise Exception(f"Error: {response.status_code} - {response.json()}")
+            raise Exception(
+                f"Failed to fetch PRs: {response.status_code}, {response.text}"
+            )
 
-        pull_requests = response.json().get("items", [])
-        if not pull_requests:
-            break
+        prs = response.json()
+        all_prs.extend(prs)
 
-        all_pull_requests.extend(pull_requests)
-        page += 1
+        # Check for pagination
+        url = response.links.get("next", {}).get("url")
 
-    print(f"Total Pull Requests by {username}: {len(all_pull_requests)}")
-    for pr in all_pull_requests:
-        print(f"Title: {pr['title']}, URL: {pr['html_url']}")
+        # Respect rate limits
+        time.sleep(1)
+
+    print(f"Fetched {len(all_prs)} pull requests")
+    return all_prs
 
 
-def get_pull_request_info(username: str, repo_owner: str, repo_name: str) -> None:
-    # URL for listing pull requests
-    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/pulls"
-
-    # Parameters to filter pull requests by author
-    params = {
-        "state": "open",  # Can be 'open', 'closed', or 'all'
-        "author": username,
-        "per_page": 100,  # Number of results per page
+def fetch_PR_comments(owner: str, repo: str, token: str) -> Any:
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
     }
+    base_url = f"https://api.github.com/repos/{owner}/{repo}"
+    url = f"{base_url}/pulls/comments"
+    params: Dict[str, Any] = {"per_page": 100}
+    all_comments = []
 
-    all_pull_requests = []
-    page = 1
-
-    while True:
-        params["page"] = page
-        response = requests.get(url, params=params)
+    while url:
+        response = requests.get(url, headers=headers, params=params)
         if response.status_code != 200:
-            raise Exception(f"Error: {response.status_code} - {response.json()}")
+            raise Exception(
+                f"Failed to fetch Comments: {response.status_code}, {response.text}"
+            )
 
-        pull_requests = response.json()
-        if not pull_requests:
-            break
+        comments = response.json()
+        all_comments.extend(comments)
 
-        print(f"Pull requests: {len(pull_requests)}")
+        # Check for pagination
+        url = response.links.get("next", {}).get("url")
 
-        # Filter pull requests by the specified username
-        user_pull_requests = [
-            pr for pr in pull_requests if pr["user"]["login"] == username
-        ]
-        all_pull_requests.extend(user_pull_requests)
-        page += 1
+        # Respect rate limits
+        time.sleep(1)
 
-    print(f"Total Pull Requests by {username}: {len(all_pull_requests)}")
-    for pr in all_pull_requests:
-        print(f"Title: {pr['title']}, URL: {pr['html_url']}")
+    print(f"Fetched {len(all_comments)} comments")
+    return all_comments
+
+
+def get_pull_requests_by_author(owner: str, repo: str, token: str, author: str) -> Any:
+    prs = fetch_PR_data(owner, repo, token)
+
+    prs_by_author = [pr for pr in prs if pr["user"]["login"].lower() == author.lower()]
+
+    print(f"Found {len(prs_by_author)} pull requests by {author}")
+    return prs_by_author
+
+
+def list_repo_activity(owner: str, repo: str, token: str) -> Any:
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    base_url = f"https://api.github.com/repos/{owner}/{repo}"
+    url = f"{base_url}/activity"
+    params: Dict[str, Any] = {"per_page": 100}
+    all_activity = []
+
+    while url:
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to fetch Activities: {response.status_code}, {response.text}"
+            )
+
+        activities = response.json()
+        all_activity.extend(activities)
+
+        # Check for pagination
+        url = response.links.get("next", {}).get("url")
+
+        # Respect rate limits
+        time.sleep(1)
+
+    print(f"Fetched {len(all_activity)} repository activities")
+    return all_activity
+
+
+def list_repo_contributors(owner: str, repo: str, token: str) -> Any:
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    base_url = f"https://api.github.com/repos/{owner}/{repo}"
+    url = f"{base_url}/contributors"
+    params: Dict[str, Any] = {"per_page": 100}
+    all_contributors = []
+
+    while url:
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to fetch Contributors: {response.status_code}, {response.text}"
+            )
+
+        contributors = response.json()
+        all_contributors.extend(contributors)
+
+        # Check for pagination
+        url = response.links.get("next", {}).get("url")
+
+        # Respect rate limits
+        time.sleep(1)
+
+    print(f"Fetched {len(all_contributors)} contributors")
+    return all_contributors
+
+
+def fetch_issues_data(owner: str, repo: str, token: str) -> Any:
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    base_url = f"https://api.github.com/repos/{owner}/{repo}"
+    url = f"{base_url}/issues"
+    params: Dict[str, Any] = {"state": "all", "per_page": 100}
+    all_issues = []
+
+    while url:
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to fetch PRs: {response.status_code}, {response.text}"
+            )
+
+        issues = response.json()
+        all_issues.extend(issues)
+
+        # Check for pagination
+        url = response.links.get("next", {}).get("url")
+
+        # Respect rate limits
+        time.sleep(1)
+
+    print(f"Fetched {len(all_issues)} issues")
+    return all_issues
