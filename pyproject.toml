@@ -9,6 +9,10 @@ readme = "README.md"
 python = "^3.12"
 python-dotenv = "^1.0.1"
 requests = "^2.32.3"
+sumy = "^0.11.0"
+beautifulsoup4 = "^4.12.3"
+lxml = {extras = ["html-clean"], version = "^5.2.2"}
+setuptools = "^71.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
