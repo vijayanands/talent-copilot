@@ -13,6 +13,8 @@ sumy = "^0.11.0"
 beautifulsoup4 = "^4.12.3"
 lxml = {extras = ["html-clean"], version = "^5.2.2"}
 setuptools = "^71.1.0"
+flask = "^3.0.3"
+flask-cors = "^4.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
