@@ -924,6 +924,16 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pysqlite3"
+version = "0.5.3"
+description = "DB-API 2.0 interface for Sqlite 3.x"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pysqlite3-0.5.3.tar.gz", hash = "sha256:54a98e05b087c2c064c8d5b58e9b8f403082eadf830d7d30ede4ecf6a5a5f143"},
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -1331,4 +1341,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "faec4ec62bbf25e066435b3f0ad54d81771ab8e30672c5410c4d8010f3790bf4"
+content-hash = "bc395ece309336493efd821441d5af2efcc76467c4409dc16494861984ca5ee9"
