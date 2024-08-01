@@ -166,4 +166,5 @@ tools.db
 
 #generated json files
 *.json
+tools/credentials.txt
 
