@@ -1,12 +1,9 @@
 from typing import List
-from llama_index.tools import BaseTool, FunctionTool
-from llama_index.llms import (
-    OpenAI,
-    Anthropic,
-    LlamaCPP
-)
-from llama_index.agent import ReActAgent
-from llama_index.prompts import PromptTemplate
+from llama_index.core.tools import BaseTool, FunctionTool
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import ReActAgent
+from llama_index.core.prompts import PromptTemplate
+from llama_index.llms.anthropic import Anthropic
 
 # Mock functions for the tools (replace these with actual implementations)
 def get_jira_contributions_by_author(author: str) -> str:
@@ -33,16 +30,6 @@ def get_llm(vendor: str, **kwargs):
         return OpenAI(temperature=kwargs.get("temperature", 0.7), model=kwargs.get("model", "gpt-3.5-turbo"))
     elif vendor.lower() == "anthropic":
         return Anthropic(temperature=kwargs.get("temperature", 0.7), model=kwargs.get("model", "claude-2"))
-    elif vendor.lower() == "llama":
-        return LlamaCPP(
-            model_path=kwargs.get("model_path", "path/to/llama/model"),
-            temperature=kwargs.get("temperature", 0.7),
-            max_new_tokens=kwargs.get("max_new_tokens", 256),
-            context_window=kwargs.get("context_window", 3900),
-            generate_kwargs=kwargs.get("generate_kwargs", {}),
-            model_kwargs=kwargs.get("model_kwargs", {}),
-            verbose=kwargs.get("verbose", False),
-        )
     else:
         raise ValueError(f"Unsupported LLM vendor: {vendor}")
 
@@ -148,14 +135,10 @@ def main():
     # Anthropic
     appraisal_anthropic = generate_self_appraisal(author, "anthropic", model="claude-2")
     
-    # Llama
-    appraisal_llama = generate_self_appraisal(author, "llama", model_path="path/to/llama/model")
-    
     # Create and save HTML documents for each appraisal
     for vendor, appraisal in [
         ("openai", appraisal_openai),
-        ("anthropic", appraisal_anthropic),
-        ("llama", appraisal_llama)
+        ("anthropic", appraisal_anthropic)
     ]:
         html_document = create_html_document(appraisal)
         with open(f"self_appraisal_{vendor}.html", "w") as f:
