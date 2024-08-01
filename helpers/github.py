@@ -1,14 +1,19 @@
+import os
 import time
 from typing import Any, Dict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import requests
 
+headers = {
+    "Authorization": f"token {os.getenv("GITHUB_TOKEN")}",
+    "Accept": "application/vnd.github.v3+json",
+}
 
-def fetch_PR_data(owner: str, repo: str, token: str) -> Any:
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+
+def fetch_PR_data(owner: str, repo: str) -> Any:
     state = "all"
     url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
     params: Dict[str, Any] = {"state": state, "per_page": 100}
@@ -34,11 +39,7 @@ def fetch_PR_data(owner: str, repo: str, token: str) -> Any:
     return all_prs
 
 
-def fetch_PR_comments(owner: str, repo: str, token: str) -> Any:
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+def fetch_PR_comments(owner: str, repo: str) -> Any:
     base_url = f"https://api.github.com/repos/{owner}/{repo}"
     url = f"{base_url}/pulls/comments"
     params: Dict[str, Any] = {"per_page": 100}
@@ -64,8 +65,8 @@ def fetch_PR_comments(owner: str, repo: str, token: str) -> Any:
     return all_comments
 
 
-def get_pull_requests_by_author(owner: str, repo: str, token: str, author: str) -> Any:
-    prs:Any = fetch_PR_data(owner, repo, token)
+def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
+    prs:Any = fetch_PR_data(owner, repo)
 
     prs_by_author = [pr for pr in prs if pr["user"]["login"].lower() == author.lower()]
 
@@ -73,11 +74,7 @@ def get_pull_requests_by_author(owner: str, repo: str, token: str, author: str) 
     return prs_by_author
 
 
-def list_repo_activity(owner: str, repo: str, token: str) -> Any:
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+def list_repo_activity(owner: str, repo: str) -> Any:
     base_url = f"https://api.github.com/repos/{owner}/{repo}"
     url = f"{base_url}/activity"
     params: Dict[str, Any] = {"per_page": 100}
@@ -103,11 +100,7 @@ def list_repo_activity(owner: str, repo: str, token: str) -> Any:
     return all_activity
 
 
-def list_repo_contributors(owner: str, repo: str, token: str) -> Any:
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+def list_repo_contributors(owner: str, repo: str) -> Any:
     base_url = f"https://api.github.com/repos/{owner}/{repo}"
     url = f"{base_url}/contributors"
     params: Dict[str, Any] = {"per_page": 100}
@@ -133,11 +126,7 @@ def list_repo_contributors(owner: str, repo: str, token: str) -> Any:
     return all_contributors
 
 
-def fetch_issues_data(owner: str, repo: str, token: str) -> Any:
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-    }
+def fetch_issues_data(owner: str, repo: str) -> Any:
     base_url = f"https://api.github.com/repos/{owner}/{repo}"
     url = f"{base_url}/issues"
     params: Dict[str, Any] = {"state": "all", "per_page": 100}

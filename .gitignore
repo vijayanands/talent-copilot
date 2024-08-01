@@ -163,3 +163,7 @@ cython_debug/
 
 #sqlite db
 tools.db
+
+#generated json files
+*.json
+
