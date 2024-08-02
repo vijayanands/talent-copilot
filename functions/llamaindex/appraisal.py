@@ -8,8 +8,7 @@ from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
 
-from helpers.confluence import (clean_confluence_content,
-                                get_confluence_contributions)
+from helpers.confluence import clean_confluence_content, get_confluence_contributions
 from helpers.github import get_commits_per_user_in_repo
 from helpers.jira import count_resolved_issues
 from helpers.user_mapping_helper import map_user_data

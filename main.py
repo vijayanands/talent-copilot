@@ -2,12 +2,15 @@ import os
 
 from dotenv import load_dotenv
 
-from functions.llamaindex.appraisal import (create_html_document,
-                                            generate_self_appraisal)
-from helpers.github import (fetch_issues_data, fetch_PR_data,
-                            get_commits_per_user_in_repo,
-                            get_pull_requests_by_author, list_repo_activity,
-                            list_repo_contributors)
+from functions.llamaindex.appraisal import create_html_document, generate_self_appraisal
+from helpers.github import (
+    fetch_issues_data,
+    fetch_PR_data,
+    get_commits_per_user_in_repo,
+    get_pull_requests_by_author,
+    list_repo_activity,
+    list_repo_contributors,
+)
 
 load_dotenv()
 
@@ -25,10 +28,14 @@ def main():
 
     author = input("Enter the username for which you want to generate apprailsals: ")
     # OpenAI
-    appraisal_openai = generate_self_appraisal(author, "openai", model="gpt-3.5-turbo")
+    appraisal_openai = generate_self_appraisal(
+        author, "openai", model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY")
+    )
 
     # Anthropic
-    appraisal_anthropic = generate_self_appraisal(author, "anthropic", model="claude-2")
+    appraisal_anthropic = generate_self_appraisal(
+        author, "anthropic", model="claude-2", api_key=os.getenv("ANTHROPIC_API_KEY")
+    )
 
     # Create and save HTML documents for each appraisal
     for vendor, appraisal in [
