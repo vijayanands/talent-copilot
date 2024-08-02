@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any, Dict, List
+from collections import defaultdict
 
 import requests
 from dotenv import load_dotenv
@@ -30,13 +31,15 @@ def fetch_jira_projects(
         response.raise_for_status()
 
 
-def fetch_jira_issues(base_url: str, username: str, project_key: str) -> List[Dict[str, Any]]:
-    url  = f"{base_url}/rest/api/3/search"
+def fetch_jira_issues(
+    base_url: str, username: str, project_key: str
+) -> List[Dict[str, Any]]:
+    url = f"{base_url}/rest/api/3/search"
 
     project_str = f"project = {project_key}"
     query = {
-        'jql': project_str,
-        'maxResults': 100,
+        "jql": project_str,
+        "maxResults": 100,
     }
 
     # url = "https://vijayanands.atlassian.net/rest/api/3/search?query={'jql': 'project = SSP', 'maxResults': 100}"
@@ -53,6 +56,92 @@ def fetch_jira_issues(base_url: str, username: str, project_key: str) -> List[Di
         response.raise_for_status()
 
 
+def count_resolved_issues(base_url, username, api_token, author, projects):
+    # Initialize the count
+    total_resolved = 0
+
+    # Construct the JQL query
+    jql_query = f'project in ({",".join(projects)}) AND resolution = Done AND assignee = "{author}"'
+
+    # Set up the API endpoint
+    api_endpoint = f"{base_url}/rest/api/3/search"
+
+    # Set up the parameters for the request
+    params = {
+        "jql": jql_query,
+        "maxResults": 0,  # We only need the total, not the actual issues
+    }
+
+    try:
+        # Make the API request
+        response = requests.get(
+            api_endpoint, headers=get_headers(username, api_token), params=params
+        )
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Get the total number of issues
+        total_resolved = data["total"]
+
+        return total_resolved
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def count_resolved_issues_by_assignee(base_url, username, api_token, projects):
+    # Initialize the count dictionary
+    resolved_counts = defaultdict(int)
+
+    # Construct the JQL query
+    jql_query = f'project in ({",".join(projects)}) AND resolution = Done'
+
+    # Set up the API endpoint
+    api_endpoint = f"{base_url}/rest/api/3/search"
+
+    # Set up the parameters for the request
+    params = {
+        "jql": jql_query,
+        "maxResults": 100,  # Adjust this value based on your needs
+        "fields": "assignee",
+    }
+
+    try:
+        while True:
+            # Make the API request
+            response = requests.get(
+                api_endpoint, headers=get_headers(username, api_token), params=params
+            )
+            response.raise_for_status()  # Raise an exception for bad status codes
+
+            # Parse the JSON response
+            data = response.json()
+
+            # Process each issue
+            for issue in data["issues"]:
+                assignee = issue["fields"]["assignee"]
+                if assignee:
+                    resolved_counts[assignee["displayName"]] += 1
+                else:
+                    resolved_counts["Unassigned"] += 1
+
+            # Check if there are more issues to fetch
+            if data["startAt"] + len(data["issues"]) >= data["total"]:
+                break
+
+            # Update startAt for the next page
+            params["startAt"] = data["startAt"] + len(data["issues"])
+
+        return resolved_counts
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
 # Usage example
 if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net"
@@ -62,7 +151,28 @@ if __name__ == "__main__":
     try:
         projects = fetch_jira_projects(base_url, username, api_token)
         print(json.dumps(projects, indent=2))
-        # issues = fetch_jira_issues(base_url, username,"SSP")
-        # print(json.dumps(issues, indent=2))
+        list_of_projects = [project["key"] for project in projects]
+        issues = fetch_jira_issues(base_url, username, "SSP")
+        print(json.dumps(issues, indent=2))
+        author = "vijayanands@gmail.com"
+        resolved_count = count_resolved_issues(
+            base_url, username, api_token, author, list_of_projects
+        )
+
+        if resolved_count is not None:
+            print(f"Number of resolved issues by {author}: {resolved_count}")
+
+        resolved_counts = count_resolved_issues_by_assignee(
+            base_url, username, api_token, list_of_projects
+        )
+
+        if resolved_counts is not None:
+            print("Number of resolved issues by assignee:")
+            for assignee, count in sorted(
+                resolved_counts.items(), key=lambda x: x[1], reverse=True
+            ):
+                print(f"{assignee}: {count}")
+            print(f"Total resolved issues: {sum(resolved_counts.values())}")
+
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")

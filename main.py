@@ -9,21 +9,21 @@ from helpers.github import (
     list_repo_activity,
     list_repo_contributors,
 )
-from helpers.github_commits import get_commits_per_user_in_repo
+from helpers.github import get_commits_per_user_in_repo
 
 load_dotenv()
 
 # Press the green button in the gutter to run the script.
 if __name__ == "__main__":
- # Example Repos and Owners:
- #    username = 'octocat'
- #    repo_name = "Hello-World"
- #    repo_owner = "octocat"
- #    username = "michael-s-molina"
- #
- #    repo_owner = "apache"
- #    repo_name = "superset"
- #    username = "betodealmeida"
+    # Example Repos and Owners:
+    #    username = 'octocat'
+    #    repo_name = "Hello-World"
+    #    repo_owner = "octocat"
+    #    username = "michael-s-molina"
+    #
+    #    repo_owner = "apache"
+    #    repo_name = "superset"
+    #    username = "betodealmeida"
 
     owner = input("Enter the repository owner: ")
     repo = input("Enter the repository name: ")
