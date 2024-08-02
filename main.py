@@ -30,18 +30,6 @@ def main():
     owner = input("Enter the repository owner: ")
     repo = input("Enter the repository name: ")
     author = input("Enter the username for which you want to generate apprailsals: ")
-    # fetch_PR_data(repo_owner, repo_name)
-    # fetch_issues_data(repo_owner, repo_name)
-    # list_repo_activity(repo_owner, repo_name)
-    # list_repo_contributors(repo_owner, repo_name)
-    # get_pull_request_info(username, repo_owner, repo_name)
-    # get_pull_requests_by_author(repo_owner, repo_name)
-    # get_pull_request_by_author(username, repo_owner, repo_name)
-    # get_commits_per_user_in_repo(owner, repo)
-
-    # author = "John Doe"  # Replace with the actual author name
-
-    # Example usage for different LLMs
     # OpenAI
     appraisal_openai = generate_self_appraisal(author, "openai", model="gpt-3.5-turbo")
 

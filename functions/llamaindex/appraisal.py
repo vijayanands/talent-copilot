@@ -6,7 +6,8 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.llms.anthropic import Anthropic
 
 from helpers.jira import count_resolved_issues_by_assignee
-from helpers.github import analyze_commits_per_user
+from helpers.github import get_commits_per_user_in_repo
+from helpers.confluence import get_confluence_contributions
 
 
 # Mock functions for the tools (replace these with actual implementations)
@@ -18,13 +19,12 @@ def get_jira_contributions_by_author(
     )
 
 
-def get_github_contributions_by_author(author: str):
-    return analyze_commits_per_user()
+def get_github_contributions_by_author(owner: str, repo: str):
+    return get_commits_per_user_in_repo(owner, repo)
 
 
-def get_confluence_contributions_by_author(author: str):
-    return f"Confluence contributions for {author}: ..."
-
+def get_confluence_contributions_by_author(base_url:str, username: str, api_token: str, space_key: str, author: str):
+    return get_confluence_contributions(base_url, username, api_token, space_key, author)
 
 # Create FunctionTool instances
 tools: List[BaseTool] = [
