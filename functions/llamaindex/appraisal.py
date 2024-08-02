@@ -145,30 +145,3 @@ def create_html_document(appraisal: str) -> str:
     </html>
     """
     return html
-
-
-def main():
-    author = "John Doe"  # Replace with the actual author name
-
-    # Example usage for different LLMs
-    # OpenAI
-    appraisal_openai = generate_self_appraisal(author, "openai", model="gpt-3.5-turbo")
-
-    # Anthropic
-    appraisal_anthropic = generate_self_appraisal(author, "anthropic", model="claude-2")
-
-    # Create and save HTML documents for each appraisal
-    for vendor, appraisal in [
-        ("openai", appraisal_openai),
-        ("anthropic", appraisal_anthropic),
-    ]:
-        html_document = create_html_document(appraisal)
-        with open(f"self_appraisal_{vendor}.html", "w") as f:
-            f.write(html_document)
-        print(
-            f"Self-appraisal generated using {vendor.capitalize()} and saved as 'self_appraisal_{vendor}.html'"
-        )
-
-
-if __name__ == "__main__":
-    main()
