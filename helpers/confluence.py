@@ -1,7 +1,11 @@
+import re
 from typing import List, Dict, Any
 
 import requests
 import os
+
+from bs4 import BeautifulSoup, Comment
+
 from tools.headers import get_headers
 from dotenv import load_dotenv
 
@@ -149,3 +153,33 @@ if __name__ == "__main__":
     # page_id = "2686977"
     # get_page_content(base_url, page_id, username, api_token)
     get_page_content_v2(base_url, page_id, username, api_token)
+
+
+def clean_confluence_content(html_content):
+    # Parse the HTML content
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Remove script and style elements
+    for script in soup(["script", "style"]):
+        script.decompose()
+
+    # Remove comments
+    for comment in soup.find_all(string=lambda string: isinstance(string, Comment)):
+        comment.extract()
+
+    # Extract text from remaining tags
+    text = soup.get_text()
+
+    # Break into lines and remove leading and trailing space on each
+    lines = (line.strip() for line in text.splitlines())
+
+    # Break multi-headlines into a line each
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+
+    # Drop blank lines
+    text = "\n".join(chunk for chunk in chunks if chunk)
+
+    # Remove excessive newlines
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text

@@ -7,24 +7,38 @@ from llama_index.llms.anthropic import Anthropic
 
 from helpers.jira import count_resolved_issues_by_assignee
 from helpers.github import get_commits_per_user_in_repo
-from helpers.confluence import get_confluence_contributions
+from helpers.confluence import get_confluence_contributions, clean_confluence_content
+from helpers.user_mapping_helper import map_user_data
 
 
 # Mock functions for the tools (replace these with actual implementations)
 def get_jira_contributions_by_author(
     base_url: str, username: str, api_token: str, list_of_projects: List[str]
 ):
-    return count_resolved_issues_by_assignee(
+    jira_data = count_resolved_issues_by_assignee(
         base_url, username, api_token, list_of_projects
     )
+    mapped_jira_data = map_user_data(jira_data)
+    return mapped_jira_data
 
 
 def get_github_contributions_by_author(owner: str, repo: str):
-    return get_commits_per_user_in_repo(owner, repo)
+    github_data = get_commits_per_user_in_repo(owner, repo)
+    mapped_github_data = map_user_data(github_data)
+    return mapped_github_data
 
 
-def get_confluence_contributions_by_author(base_url:str, username: str, api_token: str, space_key: str, author: str):
-    return get_confluence_contributions(base_url, username, api_token, space_key, author)
+def get_confluence_contributions_by_author(
+    base_url: str, username: str, api_token: str, space_key: str, author: str
+):
+    confluence_data = get_confluence_contributions(
+        base_url, username, api_token, space_key, author
+    )
+    if confluence_data:
+        clean_confluence_data = clean_confluence_content(confluence_data)
+    mapped_confluence_data = map_user_data(clean_confluence_data)
+    return mapped_confluence_data
+
 
 # Create FunctionTool instances
 tools: List[BaseTool] = [
