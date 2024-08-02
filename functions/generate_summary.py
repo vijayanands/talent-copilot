@@ -1,5 +1,6 @@
-from flask import jsonify
 import json
+
+from flask import jsonify
 
 
 def generate_summary(data):

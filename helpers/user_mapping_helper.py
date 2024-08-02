@@ -1,8 +1,9 @@
 import sqlite3
-from typing import Dict, Any
-from jira import count_resolved_issues_by_assignee
-from github import get_commits_per_user_in_repo
+from typing import Any, Dict
+
 from confluence import get_confluence_contributions
+from github import get_commits_per_user_in_repo
+from jira import count_resolved_issues_by_assignee
 
 
 def get_mapped_user_info(external_username: str) -> Dict[str, Any]:

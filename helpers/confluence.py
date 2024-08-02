@@ -1,13 +1,12 @@
+import os
 import re
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import requests
-import os
-
 from bs4 import BeautifulSoup, Comment
+from dotenv import load_dotenv
 
 from tools.headers import get_headers
-from dotenv import load_dotenv
 
 load_dotenv()
 

@@ -1,5 +1,6 @@
-import streamlit as st
 from datetime import datetime, timedelta
+
+import streamlit as st
 
 
 def generate_summary(data):

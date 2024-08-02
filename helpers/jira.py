@@ -1,7 +1,7 @@
 import json
 import os
-from typing import Any, Dict, List
 from collections import defaultdict
+from typing import Any, Dict, List
 
 import requests
 from dotenv import load_dotenv
@@ -56,7 +56,11 @@ def fetch_jira_issues(
         response.raise_for_status()
 
 
-def count_resolved_issues(base_url, username, api_token, author, projects):
+def count_resolved_issues(base_url, username, api_token, author):
+    projects = fetch_jira_projects(base_url, username, api_token)
+    print(json.dumps(projects, indent=2))
+    projects = [project["key"] for project in projects]
+
     # Initialize the count
     total_resolved = 0
 
@@ -92,7 +96,11 @@ def count_resolved_issues(base_url, username, api_token, author, projects):
         return None
 
 
-def count_resolved_issues_by_assignee(base_url, username, api_token, projects):
+def count_resolved_issues_by_assignee(base_url, username, api_token):
+    projects = fetch_jira_projects(base_url, username, api_token)
+    print(json.dumps(projects, indent=2))
+    projects = [project["key"] for project in projects]
+
     # Initialize the count dictionary
     resolved_counts = defaultdict(int)
 
@@ -149,21 +157,16 @@ if __name__ == "__main__":
     api_token = os.getenv("ATLASSIAN_API_TOKEN")
 
     try:
-        projects = fetch_jira_projects(base_url, username, api_token)
-        print(json.dumps(projects, indent=2))
-        list_of_projects = [project["key"] for project in projects]
         issues = fetch_jira_issues(base_url, username, "SSP")
         print(json.dumps(issues, indent=2))
         author = "vijayanands@gmail.com"
-        resolved_count = count_resolved_issues(
-            base_url, username, api_token, author, list_of_projects
-        )
+        resolved_count = count_resolved_issues(base_url, username, api_token, author)
 
         if resolved_count is not None:
             print(f"Number of resolved issues by {author}: {resolved_count}")
 
         resolved_counts = count_resolved_issues_by_assignee(
-            base_url, username, api_token, list_of_projects
+            base_url, username, api_token
         )
 
         if resolved_counts is not None:

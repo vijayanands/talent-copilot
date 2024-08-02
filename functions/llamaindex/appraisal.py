@@ -1,41 +1,55 @@
+import os
 from typing import List
-from llama_index.core.tools import BaseTool, FunctionTool
-from llama_index.llms.openai import OpenAI
+
+from dotenv import load_dotenv
 from llama_index.core.agent import ReActAgent
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.openai import OpenAI
 
-from helpers.jira import count_resolved_issues_by_assignee
+from helpers.confluence import (clean_confluence_content,
+                                get_confluence_contributions)
 from helpers.github import get_commits_per_user_in_repo
-from helpers.confluence import get_confluence_contributions, clean_confluence_content
+from helpers.jira import count_resolved_issues
 from helpers.user_mapping_helper import map_user_data
+
+load_dotenv()
+
+atlassian_base_url = "https://vijayanands.atlassian.net"
+atlassian_username = "vijayanands@gmail.com"
+atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN")
+github_repo = "Hello-World"
+github_owner = "octocat"
+confluence_space_key = "SD"
 
 
 # Mock functions for the tools (replace these with actual implementations)
-def get_jira_contributions_by_author(
-    base_url: str, username: str, api_token: str, list_of_projects: List[str]
-):
-    jira_data = count_resolved_issues_by_assignee(
-        base_url, username, api_token, list_of_projects
+def get_jira_contributions_by_author(author: str):
+    jira_data = count_resolved_issues(
+        atlassian_base_url, atlassian_username, atlassian_api_token, author
     )
     mapped_jira_data = map_user_data(jira_data)
     return mapped_jira_data
 
 
-def get_github_contributions_by_author(owner: str, repo: str):
-    github_data = get_commits_per_user_in_repo(owner, repo)
+def get_github_contributions_by_author(author):
+    github_data = get_commits_per_user_in_repo(github_owner, github_repo)
     mapped_github_data = map_user_data(github_data)
     return mapped_github_data
 
 
-def get_confluence_contributions_by_author(
-    base_url: str, username: str, api_token: str, space_key: str, author: str
-):
+def get_confluence_contributions_by_author(author: str):
     confluence_data = get_confluence_contributions(
-        base_url, username, api_token, space_key, author
+        atlassian_base_url,
+        atlassian_username,
+        atlassian_api_token,
+        confluence_space_key,
+        author,
     )
-    if confluence_data:
-        clean_confluence_data = clean_confluence_content(confluence_data)
+    if not confluence_data:
+        return None
+    clean_confluence_data = clean_confluence_content(confluence_data)
     mapped_confluence_data = map_user_data(clean_confluence_data)
     return mapped_confluence_data
 

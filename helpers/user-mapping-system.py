@@ -1,6 +1,6 @@
-import sqlite3
-import random
 import hashlib
+import random
+import sqlite3
 
 # Connect to SQLite database (or create if it doesn't exist)
 conn = sqlite3.connect("user_mapping.db")
