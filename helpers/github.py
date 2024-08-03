@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import sys
@@ -7,7 +6,7 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from .user_mapping import get_mapped_user, get_external_usernames
+from user_mapping import get_mapped_user, get_external_usernames
 
 load_dotenv()
 
@@ -79,7 +78,7 @@ def analyze_commits_per_user(client, owner, repo):
     commits_per_user = defaultdict(int)
 
     for commit in commits:
-        author = commit["commit"]["author"]["name"]
+        author = commit["author"]["login"]
         commits_per_user[author] += 1
 
     return dict(commits_per_user)
@@ -92,13 +91,6 @@ def get_commits_per_user_in_repo(owner, repo):
     try:
         commits_per_user = analyze_commits_per_user(client, owner, repo)
 
-        output_file = "commits_per_user.json"
-        logging.info(f"Saving analysis results to {output_file}")
-        with open(output_file, "w") as f:
-            json.dump(commits_per_user, f, indent=2)
-
-        print(f"Analysis complete. Results saved to '{output_file}'.")
-
         # Print the results to the console as well
         print("\nCommits per user:")
         for user, count in sorted(
@@ -106,10 +98,14 @@ def get_commits_per_user_in_repo(owner, repo):
         ):
             print(f"{user}: {count}")
 
+        # Return the commits_per_user dictionary
+        return commits_per_user
+
     except Exception as e:
         logging.exception("An error occurred during analysis")
         print(f"An error occurred during analysis: {str(e)}")
         print("Please check your token, owner, and repo name, and try again.")
+        return None  # Return None in case of an error
 
 
 def fetch_PR_data(owner: str, repo: str) -> Any:
@@ -297,5 +293,4 @@ def get_github_contributions_by_author(author):
     return {
         "author": author,
         "total_commits": total_commits,
-        "external_usernames": external_usernames
     }

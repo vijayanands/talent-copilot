@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import requests
 from dotenv import load_dotenv
 from tools.headers import get_headers
-from .user_mapping import get_mapped_user
+from user_mapping import get_mapped_user
 
 load_dotenv()
 

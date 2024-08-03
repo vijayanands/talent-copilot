@@ -51,7 +51,7 @@ APPRAISAL_PROMPT = PromptTemplate(
     2. Focus on facts and provide links to associated documents when possible.
     3. Highlight key achievements and contributions.
     4. Suggest potential learning opportunities based on the employee's work.
-    5. Format the appraisal in a clear and organized manner.
+    5. Save the output of the llm in json format with the keys being section headings, and regular text content being saved as content and bullets being saved as items
 
     Self-Appraisal:
     """

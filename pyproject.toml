@@ -17,6 +17,7 @@ llama-index = "^0.10.59"
 openai = "^1.37.1"
 anthropic = "^0.32.0"
 llama-cpp-python = "^0.2.85"
+pdfkit = "^1.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

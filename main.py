@@ -4,16 +4,13 @@ import sys
 from dotenv import load_dotenv
 
 from functions.llamaindex.appraisal import create_html_document, generate_self_appraisal
-from helpers.confluence import get_confluence_contributions_by_author
 from helpers.github import (
-    fetch_issues_data,
-    fetch_PR_data,
-    get_commits_per_user_in_repo,
-    get_pull_requests_by_author,
-    list_repo_activity,
     list_repo_contributors,
 )
-from helpers.jira import get_jira_contributions_by_author
+from user_mapping import (
+    map_user,
+    create_or_get_unique_users,
+)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
@@ -31,20 +28,28 @@ def main():
     #    username = "betodealmeida"
 
     author = input("Enter the username for which you want to generate appraisals: ")
+    contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
+    print(contributors)
+
+    unique_user_emails = create_or_get_unique_users()
+    external_usernames = {contributor["login"] for contributor in contributors}
+    for username in external_usernames:
+        map_user(username, unique_user_emails)
+
     # OpenAI
     appraisal_openai = generate_self_appraisal(
         author, "openai", model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY")
     )
 
     # Anthropic
-    appraisal_anthropic = generate_self_appraisal(
-        author, "anthropic", model="claude-2", api_key=os.getenv("ANTHROPIC_API_KEY")
-    )
+    # appraisal_anthropic = generate_self_appraisal(
+    #     author, "anthropic", model="claude-2.1", api_key=os.getenv("ANTHROPIC_API_KEY")
+    # )
 
     # Create and save HTML documents for each appraisal
     for vendor, appraisal in [
         ("openai", appraisal_openai),
-        ("anthropic", appraisal_anthropic),
+        # ("anthropic", appraisal_anthropic),
     ]:
         html_document = create_html_document(appraisal)
         with open(f"self_appraisal_{vendor}.html", "w") as f:
@@ -56,5 +61,7 @@ def main():
 
 if __name__ == "__main__":
     # get_jira_contributions_by_author('vijayanands@gmail.com')
-    get_confluence_contributions_by_author("vijayanands@gmail.com")
-    # main()
+    # get_confluence_contributions_by_author("vijayanands@gmail.com")
+    # contributions = get_github_contributions_by_author("vijayanands@gmail.com")
+    # print(contributions)
+    main()

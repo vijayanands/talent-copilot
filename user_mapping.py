@@ -4,7 +4,7 @@ import hashlib
 from typing import Dict, List, Any, Optional
 
 # Connect to SQLite database (or create if it doesn't exist)
-conn = sqlite3.connect("user_mapping.db")
+conn = sqlite3.connect("helpers/user_mapping.db")
 cursor = conn.cursor()
 
 # Create tables if they don't exist
