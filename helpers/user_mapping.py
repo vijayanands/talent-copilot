@@ -1,7 +1,7 @@
-import hashlib
-import random
 import sqlite3
-from typing import Any, Dict, Optional
+import random
+import hashlib
+from typing import Dict, List, Any, Optional
 
 # Connect to SQLite database (or create if it doesn't exist)
 conn = sqlite3.connect("user_mapping.db")
@@ -33,13 +33,19 @@ cursor.execute(
 conn.commit()
 
 
-# Function to generate random profile info
 def generate_random_profile():
-    firstnames = ["John", "Jane", "Michael", "Emily"]
-    lastnames = ["Smith", "Johnson", "Williams", "Brown"]
-    streets = ["Main St", "Oak Ave", "Pine Rd", "Maple Ln"]
-    cities = ["New York", "Los Angeles", "Chicago", "Houston"]
-    states = ["NY", "CA", "IL", "TX"]
+    firstnames = ["John", "Jane", "Michael", "Emily", "David", "Sarah"]
+    lastnames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia"]
+    streets = ["Main St", "Oak Ave", "Pine Rd", "Maple Ln", "Cedar Blvd", "Elm St"]
+    cities = [
+        "New York",
+        "Los Angeles",
+        "Chicago",
+        "Houston",
+        "Phoenix",
+        "Philadelphia",
+    ]
+    states = ["NY", "CA", "IL", "TX", "AZ", "PA"]
 
     return {
         "firstname": random.choice(firstnames),
@@ -49,8 +55,7 @@ def generate_random_profile():
     }
 
 
-# Function to create or get unique users
-def create_or_get_unique_users():
+def create_or_get_unique_users() -> List[str]:
     emails = [
         "vijayanands@gmail.com",
         "vijayanands@yahoo.com",
@@ -81,8 +86,7 @@ def create_or_get_unique_users():
     return [row[0] for row in cursor.fetchall()]
 
 
-# Function to map external username to unique user
-def map_user(external_username, unique_user_emails):
+def map_user(external_username: str, unique_user_emails: List[str]):
     hash_value = int(hashlib.md5(external_username.encode()).hexdigest(), 16)
     mapped_user_email = unique_user_emails[hash_value % len(unique_user_emails)]
 
@@ -96,8 +100,7 @@ def map_user(external_username, unique_user_emails):
     conn.commit()
 
 
-# API function to get mapped user info
-def get_mapped_user_info(external_username):
+def get_mapped_user_info(external_username: str) -> Optional[Dict[str, Any]]:
     cursor.execute(
         """
         SELECT u.email, u.firstname, u.lastname, u.address, u.phone_number
@@ -117,16 +120,43 @@ def get_mapped_user_info(external_username):
             "address": result[3],
             "phone_number": result[4],
         }
-    else:
-        return None
+    return None
+
+
+def create_internal_to_external_mapping() -> Dict[str, List[str]]:
+    cursor.execute(
+        """
+        SELECT u.email, m.external_username
+        FROM user_mapping m
+        JOIN unique_users u ON m.unique_user_email = u.email
+    """
+    )
+
+    results = cursor.fetchall()
+
+    internal_to_external = {}
+    for email, external_username in results:
+        if email not in internal_to_external:
+            internal_to_external[email] = []
+        internal_to_external[email].append(external_username)
+
+    return internal_to_external
+
+
+def get_external_usernames(unique_username: str) -> List[str]:
+    cursor.execute(
+        """
+        SELECT external_username
+        FROM user_mapping
+        WHERE unique_user_email = ?
+    """,
+        (unique_username,),
+    )
+    results = cursor.fetchall()
+    return [row[0] for row in results]
 
 
 def get_mapped_user(external_username: str) -> Optional[Dict[str, Any]]:
-    conn = sqlite3.connect("user_mapping.db")
-    cursor = conn.cursor()
-
-    hash_value = hashlib.md5(external_username.encode()).hexdigest()
-
     cursor.execute(
         """
         SELECT u.email, u.firstname, u.lastname, u.address, u.phone_number
@@ -134,12 +164,10 @@ def get_mapped_user(external_username: str) -> Optional[Dict[str, Any]]:
         JOIN unique_users u ON m.unique_user_email = u.email
         WHERE m.external_username = ?
     """,
-        (hash_value,),
+        (external_username,),
     )
 
     result = cursor.fetchone()
-    conn.close()
-
     if result:
         return {
             "email": result[0],
@@ -161,9 +189,37 @@ if __name__ == "__main__":
         map_user(username, unique_user_emails)
 
     # Example of getting mapped user info
+    print("Mapped User Info:")
     for username in external_usernames:
         info = get_mapped_user_info(username)
         print(f"Mapped info for {username}: {info}")
+
+    # Create and print the internal to external mapping
+    internal_to_external = create_internal_to_external_mapping()
+    print("\nInternal to External Mapping:")
+    for internal_email, external_usernames in internal_to_external.items():
+        print(f"Internal email: {internal_email}")
+        print(f"External usernames: {', '.join(external_usernames)}")
+        print("---")
+
+    # Example of getting external usernames for a specific unique username
+    print("\nExternal Usernames for Specific Unique Username:")
+    for unique_email in unique_user_emails:
+        external_names = get_external_usernames(unique_email)
+        print(f"Unique email: {unique_email}")
+        print(f"External usernames: {', '.join(external_names)}")
+        print("---")
+
+    # Example of using get_mapped_user
+    print("\nUsing get_mapped_user function:")
+    for username in external_usernames:
+        mapped_user = get_mapped_user(username)
+        if mapped_user:
+            print(
+                f"Mapped user for {username}: {mapped_user['firstname']} {mapped_user['lastname']} ({mapped_user['email']})"
+            )
+        else:
+            print(f"No mapping found for {username}")
 
 # Don't forget to close the database connection when you're done
 # conn.close()

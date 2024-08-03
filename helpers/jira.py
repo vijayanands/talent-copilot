@@ -170,6 +170,13 @@ def map_jira_users(jira_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
     return mapped_jira_activities
 
 
+def get_jira_contributions_by_author(author: str):
+    jira_data = count_resolved_issues(
+        atlassian_base_url, atlassian_username, atlassian_api_token, author
+    )
+    return {author: jira_data} if jira_data is not None else None
+
+
 # Usage example
 if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net"
@@ -199,13 +206,3 @@ if __name__ == "__main__":
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
-
-
-def get_jira_contributions_by_author(author: str):
-    jira_data = count_resolved_issues(
-        atlassian_base_url, atlassian_username, atlassian_api_token, author
-    )
-    if jira_data is not None:
-        mapped_jira_data = {author: jira_data}
-        return map_jira_users(mapped_jira_data)
-    return None

@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from .user_mapping import get_mapped_user
+from .user_mapping import get_mapped_user, get_external_usernames
 
 load_dotenv()
 
@@ -267,10 +267,35 @@ def map_github_users(github_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
     return mapped_github_activities
 
 
+# def get_github_contributions_by_author(author):
+#     github_data = get_commits_per_user_in_repo(github_owner, github_repo)
+#     if github_data:
+#         # Filter the data for the specific author
+#         author_data = {author: github_data.get(author, 0)}
+#         return map_github_users(author_data)
+#     return None
+
+
 def get_github_contributions_by_author(author):
+    # Get a list of external user ids mapped to the author
+    external_usernames = get_external_usernames(author)
+
+    if not external_usernames:
+        logging.warning(f"No external usernames found for author: {author}")
+        return None
+
+    # Get commits per user in the repository
     github_data = get_commits_per_user_in_repo(github_owner, github_repo)
-    if github_data:
-        # Filter the data for the specific author
-        author_data = {author: github_data.get(author, 0)}
-        return map_github_users(author_data)
-    return None
+
+    if not github_data:
+        logging.warning("No GitHub data retrieved")
+        return None
+
+    # Sum up the total commits for all external usernames
+    total_commits = sum(github_data.get(username, 0) for username in external_usernames)
+
+    return {
+        "author": author,
+        "total_commits": total_commits,
+        "external_usernames": external_usernames
+    }

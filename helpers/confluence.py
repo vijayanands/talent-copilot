@@ -165,10 +165,7 @@ def get_confluence_contributions_by_author(author: str):
         confluence_space_key,
         author,
     )
-    if not confluence_data:
-        return None
-    mapped_confluence_data = map_confluence_users(confluence_data)
-    return mapped_confluence_data
+    return confluence_data
 
 
 # if __name__ == "__main__":
