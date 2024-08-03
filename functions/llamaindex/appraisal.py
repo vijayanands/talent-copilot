@@ -1,4 +1,3 @@
-import os
 from typing import List
 
 from dotenv import load_dotenv
@@ -8,50 +7,11 @@ from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
 
-from helpers.confluence import clean_confluence_content, get_confluence_contributions
-from helpers.github import get_commits_per_user_in_repo
-from helpers.jira import count_resolved_issues
-from helpers.user_mapping_helper import map_user_data
+from helpers.confluence import get_confluence_contributions_by_author
+from helpers.github import get_github_contributions_by_author
+from helpers.jira import get_jira_contributions_by_author
 
 load_dotenv()
-
-atlassian_base_url = "https://vijayanands.atlassian.net"
-atlassian_username = "vijayanands@gmail.com"
-atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN")
-github_repo = "Hello-World"
-github_owner = "octocat"
-confluence_space_key = "SD"
-
-
-# Mock functions for the tools (replace these with actual implementations)
-def get_jira_contributions_by_author(author: str):
-    jira_data = count_resolved_issues(
-        atlassian_base_url, atlassian_username, atlassian_api_token, author
-    )
-    mapped_jira_data = map_user_data(jira_data)
-    return mapped_jira_data
-
-
-def get_github_contributions_by_author(author):
-    github_data = get_commits_per_user_in_repo(github_owner, github_repo)
-    mapped_github_data = map_user_data(github_data)
-    return mapped_github_data
-
-
-def get_confluence_contributions_by_author(author: str):
-    confluence_data = get_confluence_contributions(
-        atlassian_base_url,
-        atlassian_username,
-        atlassian_api_token,
-        confluence_space_key,
-        author,
-    )
-    if not confluence_data:
-        return None
-    clean_confluence_data = clean_confluence_content(confluence_data)
-    mapped_confluence_data = map_user_data(clean_confluence_data)
-    return mapped_confluence_data
-
 
 # Create FunctionTool instances
 tools: List[BaseTool] = [

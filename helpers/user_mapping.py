@@ -1,6 +1,7 @@
 import hashlib
 import random
 import sqlite3
+from typing import Any, Dict, Optional
 
 # Connect to SQLite database (or create if it doesn't exist)
 conn = sqlite3.connect("user_mapping.db")
@@ -118,6 +119,36 @@ def get_mapped_user_info(external_username):
         }
     else:
         return None
+
+
+def get_mapped_user(external_username: str) -> Optional[Dict[str, Any]]:
+    conn = sqlite3.connect("user_mapping.db")
+    cursor = conn.cursor()
+
+    hash_value = hashlib.md5(external_username.encode()).hexdigest()
+
+    cursor.execute(
+        """
+        SELECT u.email, u.firstname, u.lastname, u.address, u.phone_number
+        FROM user_mapping m
+        JOIN unique_users u ON m.unique_user_email = u.email
+        WHERE m.external_username = ?
+    """,
+        (hash_value,),
+    )
+
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return {
+            "email": result[0],
+            "firstname": result[1],
+            "lastname": result[2],
+            "address": result[3],
+            "phone_number": result[4],
+        }
+    return None
 
 
 # Example usage

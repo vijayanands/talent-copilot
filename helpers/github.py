@@ -7,6 +7,9 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from dotenv import load_dotenv
+from user_mapping import get_mapped_user
+
+from tmp_inputs import github_owner, github_repo
 
 load_dotenv()
 
@@ -247,3 +250,23 @@ def fetch_issues_data(owner: str, repo: str) -> Any:
 
     print(f"Fetched {len(all_issues)} issues")
     return all_issues
+
+
+def map_github_users(github_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
+    mapped_github_activities = {}
+
+    for username, count in github_data.items():
+        mapped_user = get_mapped_user(username)
+        if mapped_user:
+            mapped_github_activities[mapped_user["email"]] = {
+                "github_commits": count,
+                "user_info": mapped_user,
+            }
+
+    return mapped_github_activities
+
+
+def get_github_contributions_by_author(author):
+    github_data = get_commits_per_user_in_repo(github_owner, github_repo)
+    mapped_github_data = map_github_users(github_data)
+    return mapped_github_data

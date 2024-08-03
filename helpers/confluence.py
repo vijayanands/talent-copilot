@@ -6,6 +6,9 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
+from helpers.user_mapping import get_mapped_user
+from tmp_inputs import (atlassian_api_token, atlassian_base_url,
+                        atlassian_username, confluence_space_key)
 from tools.headers import get_headers
 
 load_dotenv()
@@ -141,19 +144,6 @@ def get_confluence_contributions(
     return content
 
 
-if __name__ == "__main__":
-    base_url = "https://vijayanands.atlassian.net/wiki"
-    username = "vijayanands@gmail.com"
-    api_token = os.getenv("ATLASSIAN_API_TOKEN")
-    space_key = "SD"
-    page_title = "Conversational AI For Customer Service"
-    spaces = get_spaces(base_url, username, api_token)
-    page_id = get_page_id(base_url, space_key, page_title, username, api_token)
-    # page_id = "2686977"
-    # get_page_content(base_url, page_id, username, api_token)
-    get_page_content_v2(base_url, page_id, username, api_token)
-
-
 def clean_confluence_content(html_content):
     # Parse the HTML content
     soup = BeautifulSoup(html_content, "html.parser")
@@ -182,3 +172,45 @@ def clean_confluence_content(html_content):
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text
+
+
+def map_confluence_users(confluence_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    mapped_confluence_activities = {}
+
+    for username, content in confluence_data.items():
+        mapped_user = get_mapped_user(username)
+        if mapped_user:
+            mapped_confluence_activities[mapped_user["email"]] = {
+                "confluence_contributions": content,
+                "user_info": mapped_user,
+            }
+
+    return mapped_confluence_activities
+
+
+if __name__ == "__main__":
+    base_url = "https://vijayanands.atlassian.net/wiki"
+    username = "vijayanands@gmail.com"
+    api_token = os.getenv("ATLASSIAN_API_TOKEN")
+    space_key = "SD"
+    page_title = "Conversational AI For Customer Service"
+    spaces = get_spaces(base_url, username, api_token)
+    page_id = get_page_id(base_url, space_key, page_title, username, api_token)
+    # page_id = "2686977"
+    # get_page_content(base_url, page_id, username, api_token)
+    get_page_content_v2(base_url, page_id, username, api_token)
+
+
+def get_confluence_contributions_by_author(author: str):
+    confluence_data = get_confluence_contributions(
+        atlassian_base_url,
+        atlassian_username,
+        atlassian_api_token,
+        confluence_space_key,
+        author,
+    )
+    if not confluence_data:
+        return None
+    clean_confluence_data = clean_confluence_content(confluence_data)
+    mapped_confluence_data = map_confluence_users(clean_confluence_data)
+    return mapped_confluence_data

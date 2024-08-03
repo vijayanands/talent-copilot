@@ -5,7 +5,10 @@ from typing import Any, Dict, List
 
 import requests
 from dotenv import load_dotenv
+from user_mapping import get_mapped_user
 
+from tmp_inputs import (atlassian_api_token, atlassian_base_url,
+                        atlassian_username)
 from tools.headers import get_headers
 
 load_dotenv()
@@ -150,6 +153,20 @@ def count_resolved_issues_by_assignee(base_url, username, api_token):
         return None
 
 
+def map_jira_users(jira_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
+    mapped_jira_activities = {}
+
+    for username, count in jira_data.items():
+        mapped_user = get_mapped_user(username)
+        if mapped_user:
+            mapped_jira_activities[mapped_user["email"]] = {
+                "jira_resolved_issues": count,
+                "user_info": mapped_user,
+            }
+
+    return mapped_jira_activities
+
+
 # Usage example
 if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net"
@@ -179,3 +196,13 @@ if __name__ == "__main__":
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
+
+
+def get_jira_contributions_by_author(author: str):
+    jira_data = count_resolved_issues(
+        atlassian_base_url, atlassian_username, atlassian_api_token, author
+    )
+    if jira_data is not None:
+        mapped_jira_data = {author: jira_data}
+        return map_jira_users(mapped_jira_data)
+    return None
