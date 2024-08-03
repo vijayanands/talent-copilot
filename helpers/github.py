@@ -7,11 +7,12 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from user_mapping import get_mapped_user
-
-from tmp_inputs import github_owner, github_repo
+from .user_mapping import get_mapped_user
 
 load_dotenv()
+
+github_repo = "Hello-World"
+github_owner = "octocat"
 
 # Set up logging
 logging.basicConfig(
@@ -268,5 +269,8 @@ def map_github_users(github_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
 
 def get_github_contributions_by_author(author):
     github_data = get_commits_per_user_in_repo(github_owner, github_repo)
-    mapped_github_data = map_github_users(github_data)
-    return mapped_github_data
+    if github_data:
+        # Filter the data for the specific author
+        author_data = {author: github_data.get(author, 0)}
+        return map_github_users(author_data)
+    return None

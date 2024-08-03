@@ -8,8 +8,8 @@ from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
 
 from helpers.confluence import get_confluence_contributions_by_author
-from helpers.github import get_github_contributions_by_author
 from helpers.jira import get_jira_contributions_by_author
+from helpers.github import get_github_contributions_by_author
 
 load_dotenv()
 

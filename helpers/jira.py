@@ -5,13 +5,15 @@ from typing import Any, Dict, List
 
 import requests
 from dotenv import load_dotenv
-from user_mapping import get_mapped_user
-
-from tmp_inputs import (atlassian_api_token, atlassian_base_url,
-                        atlassian_username)
 from tools.headers import get_headers
+from .user_mapping import get_mapped_user
 
 load_dotenv()
+
+atlassian_base_url = "https://vijayanands.atlassian.net"
+atlassian_username = "vijayanands@gmail.com"
+atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN")
+confluence_space_key = "SD"
 
 
 def fetch_jira_projects(
@@ -23,9 +25,10 @@ def fetch_jira_projects(
     """
     api_endpoint = f"{base_url}/rest/api/3/project"
 
+    headers = get_headers(username, api_token)
     response = requests.get(
         api_endpoint,
-        headers=get_headers(username, api_token),
+        headers=headers,
     )
 
     if response.status_code == 200:
