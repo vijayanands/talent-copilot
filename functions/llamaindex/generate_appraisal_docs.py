@@ -126,21 +126,21 @@ def process_json_to_html_and_pdf(json_file, html_file, pdf_file):
         print("HTML file was generated, but there was an issue with PDF creation.")
 
 
-def generate_appraisal_docs():
+def generate_appraisal_docs(input_json_file:str):
     # Use the current working directory
     current_dir = os.getcwd()
 
     # Define input and output file paths
-    json_file = os.path.join(current_dir, "data.json")
     html_file = os.path.join(current_dir, "appraisal.html")
     pdf_file = os.path.join(current_dir, "appraisal.pdf")
 
-    process_json_to_html_and_pdf(json_file, html_file, pdf_file)
+    process_json_to_html_and_pdf(input_json_file, html_file, pdf_file)
 
     print(f"Current working directory: {current_dir}")
-    print(f"JSON file path: {json_file}")
+    print(f"JSON file path: {input_json_file}")
     print(f"HTML file path: {html_file}")
     print(f"PDF file path: {pdf_file}")
+
 
 # Example usage
 if __name__ == "__main__":

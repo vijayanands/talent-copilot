@@ -1,4 +1,5 @@
-from typing import List
+import json
+from typing import List, Dict, Any
 
 from dotenv import load_dotenv
 from llama_index.core.agent import ReActAgent
@@ -42,16 +43,22 @@ def get_llm(vendor: str, **kwargs):
 # Define a custom prompt for generating the self-appraisal
 APPRAISAL_PROMPT = PromptTemplate(
     """
-    You are tasked with generating a professional self-appraisal based only on the following information about an employee's contributions:
+    ... (previous instructions)
 
-    {context}
+    5. Format the output as a valid JSON object with the following structure:
+       {{
+         "Summary": {{"content": "Overall summary..."}},
+         "Key Achievements": {{"items": ["Achievement 1", "Achievement 2", ...]}},
+         "Contributions": {{
+           "Project A": {{"content": "Details about contributions to Project A..."}},
+           "Project B": {{"content": "Details about contributions to Project B..."}}
+         }},
+         "Learning Opportunities": {{"items": ["Opportunity 1", "Opportunity 2", ...]}}
+       }}
 
-    Please create a self-appraisal with the following guidelines:
-    1. Use an official and professional tone.
-    2. Focus on facts and provide links to associated documents when possible.
-    3. Highlight key achievements and contributions.
-    4. Suggest potential learning opportunities based on the employee's work.
-    5. Save the output of the llm in json format with the keys being section headings, and regular text content being saved as content and bullets being saved as items
+    Ensure that the Key Achievements section contains information about all three function outputs, namely, Jira, GitHub, and Confluence contributions.
+    Ensure that the Contributions section contains detailed information about each project, including project name, description, and any relevant links or screenshots.
+    Ensure that the response is a valid JSON object and nothing else.
 
     Self-Appraisal:
     """
@@ -89,46 +96,19 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
     # Generate the self-appraisal using the LLM
     appraisal_response = llm.complete(APPRAISAL_PROMPT.format(context=context))
 
-    return appraisal_response.text
+    # Parse the JSON response
+    try:
+        appraisal_json = json.loads(appraisal_response.text)
+    except json.JSONDecodeError:
+        print("Error: LLM output is not valid JSON. Falling back to raw text.")
+        appraisal_json = {"Raw Appraisal": {"content": appraisal_response.text}}
+
+    return appraisal_json
 
 
-def create_html_document(appraisal: str) -> str:
-    html = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Self-Appraisal</title>
-        <style>
-            body {{
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-            }}
-            h1 {{
-                color: #2c3e50;
-                border-bottom: 2px solid #3498db;
-                padding-bottom: 10px;
-            }}
-            .appraisal {{
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                padding: 20px;
-                margin-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>Employee Self-Appraisal</h1>
-        <div class="appraisal">
-            {appraisal}
-        </div>
-    </body>
-    </html>
-    """
-    return html
+def save_appraisal_to_json(
+    appraisal: Any, filename: str
+) -> None:
+    with open(filename, "w") as f:
+        json.dump(appraisal, f, indent=2)
+    print(f"Appraisal saved to {filename}")

@@ -171,4 +171,5 @@ user_mapping.db
 functions/llamaindex/appraisal.html
 functions/llamaindex/appraisal.pdf
 functions/llamaindex/data.json
-
+self_appraisal*.json
+appraisal*

@@ -1,9 +1,14 @@
 import os
 import sys
+import argparse
 
 from dotenv import load_dotenv
 
-from functions.llamaindex.appraisal import create_html_document, generate_self_appraisal
+from functions.llamaindex.appraisal import (
+    generate_self_appraisal,
+    save_appraisal_to_json
+)
+from functions.llamaindex.generate_appraisal_docs import generate_appraisal_docs
 from helpers.github import (
     list_repo_contributors,
 )
@@ -15,53 +20,76 @@ from user_mapping import (
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
+def get_unique_user_emails():
+    return create_or_get_unique_users()
+
+def prompt_for_author(unique_user_emails):
+    choices = ", ".join(unique_user_emails)
+    while True:
+        author = input(f"Enter the unique user email for generating appraisals ({choices}): ")
+        if author in unique_user_emails:
+            return author
+        print("Invalid email. Please try again.")
+
+def prompt_for_vendor():
+    while True:
+        vendor = input("Choose the AI model vendor to use (openai, anthropic): ").lower()
+        if vendor in ["openai", "anthropic"]:
+            return vendor
+        print("Invalid vendor. Please choose either 'openai' or 'anthropic'.")
 
 def main():
-    # Example Repos and Owners:
-    #    username = 'octocat'
-    #    repo_name = "Hello-World"
-    #    repo_owner = "octocat"
-    #    username = "michael-s-molina"ATATT3xFfGF02OUGmoPBmRXvFW_J_Pwvv0FRHscctc8Z_EBqE07xxM6FAVYxZ_558ziQt7MxEOpily2mgbAHWa9wc1lN5ZPV2-Pzoa3WCgAVQKG62OHjBjy3iKBQMkju7YzDzgltwiOIY2Ea79bzPC729bso04vhY0WDC_V1rdxpSx4gDJGIo3s=33787158
-    #
-    #    repo_owner = "apache"
-    #    repo_name = "superset"
-    #    username = "betodealmeida"
+    unique_user_emails = get_unique_user_emails()
 
-    author = input("Enter the username for which you want to generate appraisals: ")
+    parser = argparse.ArgumentParser(description="Generate self-appraisals using AI models.")
+    parser.add_argument(
+        "author",
+        type=str,
+        nargs='?',
+        help="The unique user email for generating appraisals. Choose from: " + ", ".join(unique_user_emails)
+    )
+    parser.add_argument(
+        "vendor",
+        type=str,
+        nargs='?',
+        choices=["openai", "anthropic"],
+        help="The AI model vendor to use (openai or anthropic)"
+    )
+
+    args = parser.parse_args()
+
+    if args.author is None:
+        args.author = prompt_for_author(unique_user_emails)
+    elif args.author not in unique_user_emails:
+        parser.error(f"Invalid author email. Please choose from: {', '.join(unique_user_emails)}")
+
+    if args.vendor is None:
+        args.vendor = prompt_for_vendor()
+
     contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
     print(contributors)
 
-    unique_user_emails = create_or_get_unique_users()
     external_usernames = {contributor["login"] for contributor in contributors}
     for username in external_usernames:
         map_user(username, unique_user_emails)
 
-    # OpenAI
-    appraisal_openai = generate_self_appraisal(
-        author, "openai", model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY")
-    )
-
-    # Anthropic
-    # appraisal_anthropic = generate_self_appraisal(
-    #     author, "anthropic", model="claude-2.1", api_key=os.getenv("ANTHROPIC_API_KEY")
-    # )
-
-    # Create and save HTML documents for each appraisal
-    for vendor, appraisal in [
-        ("openai", appraisal_openai),
-        # ("anthropic", appraisal_anthropic),
-    ]:
-        html_document = create_html_document(appraisal)
-        with open(f"self_appraisal_{vendor}.html", "w") as f:
-            f.write(html_document)
-        print(
-            f"Self-appraisal generated using {vendor.capitalize()} and saved as 'self_appraisal_{vendor}.html'"
+    # Generate appraisal based on the chosen vendor
+    if args.vendor == 'openai':
+        appraisal = generate_self_appraisal(
+            args.author, "openai", model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY")
+        )
+    else:  # anthropic
+        appraisal = generate_self_appraisal(
+            args.author, "anthropic", model="claude-2.1", api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
+    # Save appraisal to JSON
+    json_file_name = f"/tmp/self_appraisal_{args.author}_{args.vendor}.json"
+    save_appraisal_to_json(appraisal, json_file_name)
+    print(f"Appraisal saved as JSON: {json_file_name}")
+
+    # Generate HTML and PDF documents
+    generate_appraisal_docs(json_file_name)
 
 if __name__ == "__main__":
-    # get_jira_contributions_by_author('vijayanands@gmail.com')
-    # get_confluence_contributions_by_author("vijayanands@gmail.com")
-    # contributions = get_github_contributions_by_author("vijayanands@gmail.com")
-    # print(contributions)
     main()
