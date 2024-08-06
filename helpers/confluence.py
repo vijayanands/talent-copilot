@@ -140,6 +140,7 @@ def get_confluence_contributions(
             print(f"Title: {page['title']}")
             print(f"ID: {page_id}")
             print(f"Created: {page['createdAt']}")
+            print(f"{atlassian_base_url}/wiki{page['_links']['webui']}")
             print("Page Content:")
             print(cleaned_content)
             pages_dict[page_id] = {
@@ -148,6 +149,7 @@ def get_confluence_contributions(
                 "space_key": space_key,
                 "author": target_username,
                 "content": cleaned_content,
+                "page_link": f"{atlassian_base_url}/wiki{page['_links']['webui']}",
             }
 
         return pages_dict

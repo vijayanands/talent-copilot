@@ -1,6 +1,7 @@
 import json
 from html import escape
 import os
+import re
 
 # Add error handling for pdfkit import
 try:
@@ -12,19 +13,51 @@ except ImportError:
     print("pdfkit is not installed. PDF generation will be unavailable.")
 
 
-def json_to_html(json_file_path, html_file_path):
-    # Read the JSON file
-    with open(json_file_path, 'r') as file:
-        data = json.load(file)
+def parse_markdown_links(text):
+    def replace_link(match):
+        text = match.group(1)
+        url = match.group(2)
+        return f'<a href="{url}" target="_blank">{text}</a>'
 
-    # Create the HTML content
-    html_content = f"""
+    pattern = r'\[(.*?)\]\((.*?)\)'
+    return re.sub(pattern, replace_link, text)
+
+
+def json_to_html(data, level=1):
+    if isinstance(data, dict):
+        html = '<dl>\n'
+        for key, value in data.items():
+            html += f'<dt><h{level}>{escape(str(key))}</h{level}></dt>\n'
+            html += f'<dd>{json_to_html(value, level + 1)}</dd>\n'
+        html += '</dl>\n'
+    elif isinstance(data, list):
+        html = '<ul>\n'
+        for item in data:
+            html += f'<li>{json_to_html(item, level + 1)}</li>\n'
+        html += '</ul>\n'
+    else:
+        if isinstance(data, str):
+            if data.startswith('http'):
+                html = f'<a href="{escape(data)}" target="_blank">{escape(data)}</a>'
+            else:
+                html = f'<p>{parse_markdown_links(escape(data))}</p>'
+        else:
+            html = f'<p>{escape(str(data))}</p>'
+    return html
+
+
+def generate_html(input_file, output_file, title="JSON to HTML"):
+    # Read JSON data from file
+    with open(input_file, 'r') as file:
+        json_data = json.load(file)
+
+    html_content = f'''
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Review</title>
+    <title>{escape(title)}</title>
     <style>
         body {{
             font-family: Arial, sans-serif;
@@ -34,57 +67,42 @@ def json_to_html(json_file_path, html_file_path):
             margin: 0 auto;
             padding: 20px;
         }}
-        h1, h2 {{
+        h1, h2, h3, h4, h5, h6 {{
             color: #2c3e50;
+        }}
+        dl {{
+            margin-left: 20px;
+        }}
+        dt {{
+            font-weight: bold;
+        }}
+        dd {{
+            margin-bottom: 10px;
         }}
         ul {{
             padding-left: 20px;
         }}
-        .section {{
-            margin-bottom: 20px;
+        a {{
+            color: #3498db;
+            text-decoration: none;
+        }}
+        a:hover {{
+            text-decoration: underline;
         }}
     </style>
 </head>
 <body>
-    <h1>Performance Review</h1>
-
-    <div class="section">
-        <h2>Summary</h2>
-        <p>{escape(data['Summary'])}</p>
-    </div>
-
-    <div class="section">
-        <h2>Key Achievements</h2>
-        <ul>
-            {''.join(f'<li>{escape(achievement)}</li>' for achievement in data['Key Achievements'])}
-        </ul>
-    </div>
-
-    <div class="section">
-        <h2>Contributions</h2>
-
-        {''.join(f'''
-        <h3>{escape(platform)}</h3>
-        <p>{escape(details['Description'])}</p>
-        {'<ul>' + ''.join(f'<li><strong>{escape(name)}:</strong> <a href="#">{escape(link)}</a></li>' for name, link in details.get('Links', {}).items()) + '</ul>' if 'Links' in details else ''}
-        ''' for platform, details in data['Contributions'].items())}
-    </div>
-
-    <div class="section">
-        <h2>Learning Opportunities</h2>
-        <ul>
-            {''.join(f'<li>{escape(opportunity)}</li>' for opportunity in data['Learning Opportunities'])}
-        </ul>
-    </div>
+    <h1>{escape(title)}</h1>
+    {json_to_html(json_data)}
 </body>
 </html>
-    """
+    '''
 
-    # Write the HTML content to a file
-    with open(html_file_path, 'w') as file:
+    # Write HTML content to file
+    with open(output_file, 'w') as file:
         file.write(html_content)
-    return html_content
 
+    return html_content
 
 def create_pdf(html_content, output_file):
     """
@@ -112,7 +130,7 @@ def create_pdf(html_content, output_file):
         return False
 
 
-def process_json_to_html_and_pdf(json_file, html_file, pdf_file):
+def process_json_to_html_and_pdf(json_file, html_file, pdf_file, author):
     """
     Process JSON file to HTML and PDF.
 
@@ -122,7 +140,7 @@ def process_json_to_html_and_pdf(json_file, html_file, pdf_file):
     """
 
     # Generate HTML
-    html_output = json_to_html(json_file, html_file)
+    html_output = generate_html(json_file, html_file, f"Self Appraisal for {author}")
 
     # Create PDF
     pdf_created = create_pdf(html_output, pdf_file)
@@ -133,7 +151,7 @@ def process_json_to_html_and_pdf(json_file, html_file, pdf_file):
         print("HTML file was generated, but there was an issue with PDF creation.")
 
 
-def generate_appraisal_docs(input_json_file:str):
+def generate_appraisal_docs(input_json_file:str, author):
     # Use the current working directory
     current_dir = os.getcwd()
 
@@ -141,7 +159,7 @@ def generate_appraisal_docs(input_json_file:str):
     html_file = os.path.join(current_dir, "appraisal.html")
     pdf_file = os.path.join(current_dir, "appraisal.pdf")
 
-    process_json_to_html_and_pdf(input_json_file, html_file, pdf_file)
+    process_json_to_html_and_pdf(input_json_file, html_file, pdf_file, author)
 
     print(f"Current working directory: {current_dir}")
     print(f"JSON file path: {input_json_file}")

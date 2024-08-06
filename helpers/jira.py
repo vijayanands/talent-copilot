@@ -79,7 +79,7 @@ def count_resolved_issues(base_url, username, api_token, author):
     # Set up the parameters for the request
     params = {
         "jql": jql_query,
-        "maxResults": 0,  # We only need the total, not the actual issues
+        # "maxResults": 0,  # We only need the total, not the actual issues
     }
 
     try:
@@ -92,10 +92,21 @@ def count_resolved_issues(base_url, username, api_token, author):
         # Parse the JSON response
         data = response.json()
 
-        # Get the total number of issues
-        total_resolved = data["total"]
+        jira_list = []
+        jira_data = defaultdict()
+        for issue in data["issues"]:
+            jira_data["link"] = issue["self"]
+            jira_data["description"] = issue["fields"]["issuetype"]["description"]
+            jira_data["timespent"] = issue["fields"]["timespent"]
+            jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
+            jira_data["priority"] = issue["fields"]["priority"]["name"]
+            jira_list.append(jira_data)
 
-        return total_resolved
+        # Get the total number of issues
+        jira_response = defaultdict()
+        jira_response["total_resolved"] = len(jira_list)
+        jira_response["jiras_resolved"] = jira_list
+        return jira_response
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
@@ -171,10 +182,20 @@ def map_jira_users(jira_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
 
 
 def get_jira_contributions_by_author(author: str):
-    jira_data = count_resolved_issues(
+    response = count_resolved_issues(
         atlassian_base_url, atlassian_username, atlassian_api_token, author
     )
-    return {author: jira_data} if jira_data is not None else None
+    jira_data = response.get("jiras_resolved", [])
+    jira_url_list = [jira["link"] for jira in jira_data]
+    if  response is not None:
+        return {
+            "author": author,
+            "total_resolved_issues": response.get("total_resolved_issues"),
+            "jiras_data": jira_data,
+            "jira_list": jira_url_list,
+        }
+    else:
+        return None
 
 
 # Usage example

@@ -1,8 +1,16 @@
 import os
 import sys
 import argparse
+import json
 
 from dotenv import load_dotenv
+from helpers.jira import get_jira_contributions_by_author
+from helpers.confluence import get_confluence_contributions_by_author
+from helpers.github import get_github_contributions_by_author
+
+debug_jira = False
+debug_confluence = False
+debug_github = False
 
 from functions.llamaindex.appraisal import (
     generate_self_appraisal,
@@ -38,6 +46,13 @@ def prompt_for_vendor():
             return vendor
         print("Invalid vendor. Please choose either 'openai' or 'anthropic'.")
 
+def initialize_jira_hack(unique_user_emails):
+    contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
+    print(contributors)
+
+    external_usernames = {contributor["login"] for contributor in contributors}
+    for username in external_usernames:
+        map_user(username, unique_user_emails)
 
 def main():
     unique_user_emails = get_unique_user_emails()
@@ -67,12 +82,7 @@ def main():
     if args.vendor is None:
         args.vendor = prompt_for_vendor()
 
-    contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
-    print(contributors)
-
-    external_usernames = {contributor["login"] for contributor in contributors}
-    for username in external_usernames:
-        map_user(username, unique_user_emails)
+    initialize_jira_hack(unique_user_emails)
 
     # Generate appraisal based on the chosen vendor
     if args.vendor == 'openai':
@@ -91,7 +101,17 @@ def main():
     print(f"Appraisal saved as JSON: {json_file_name}")
 
     # Generate HTML and PDF documents
-    generate_appraisal_docs(json_file_name)
+    generate_appraisal_docs(json_file_name, args.author)
 
 if __name__ == "__main__":
-    main()
+    if debug_jira:
+        response = get_jira_contributions_by_author("vijayanands@gmail.com")
+        print(json.dumps(response, indent=4))
+    elif debug_confluence:
+        response = get_confluence_contributions_by_author("vijayanands@gmail.com")
+        print(json.dumps(response, indent=4))
+    elif debug_github:
+        response = get_github_contributions_by_author("vijayanands@gmail.com")
+        print(json.dumps(response, indent=4))
+    else:
+        main()

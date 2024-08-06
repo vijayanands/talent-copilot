@@ -52,6 +52,10 @@ APPRAISAL_PROMPT = PromptTemplate(
     2. Focus on facts and provide links to associated documents when possible.
     3. Highlight key achievements and contributions.
     4. Suggest potential learning opportunities based on the employee's work.
+    5. Create an appendix that lists all of the following
+        - links to all JIRAs resolved
+        - links to confluence contributed
+        - links to github commits made
     5. Format the output as a valid JSON object with the following structure:
        {{
          "Summary": "Overall summary...",
@@ -61,8 +65,13 @@ APPRAISAL_PROMPT = PromptTemplate(
            "Project B": "Details about contributions to Project B..."
          }},
          "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...]
+         "Appendix": {{
+            "JIRAs Resolved": ["Link 1", "Link 2",...],
+            "confluence Contributed": ["Link 1", "Link 2",...],
+            "github commits": ["Link 1", "Link 2",...]
+         }}
        }}
-
+    
     Ensure that the Key Achievements section contains information about all three function outputs, namely, Jira, GitHub, and Confluence contributions.
     Ensure that the Contributions section contains detailed information about each project, including project name, description, and any relevant links or screenshots.
     Ensure that the response is a valid JSON object and nothing else. Do not include any markdown formatting or code blocks.
