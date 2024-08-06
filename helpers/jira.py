@@ -95,7 +95,7 @@ def count_resolved_issues(base_url, username, api_token, author):
         jira_list = []
         for issue in data["issues"]:
             jira_data = defaultdict()
-            jira_data["link"] = issue["self"]
+            jira_data["link"] = f"{base_url}/browse/{issue['key']}"
             jira_data["description"] = issue["fields"]["issuetype"]["description"]
             jira_data["timespent"] = issue["fields"]["timespent"]
             jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
