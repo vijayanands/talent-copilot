@@ -38,6 +38,7 @@ def prompt_for_vendor():
             return vendor
         print("Invalid vendor. Please choose either 'openai' or 'anthropic'.")
 
+
 def main():
     unique_user_emails = get_unique_user_emails()
 
@@ -84,6 +85,7 @@ def main():
         )
 
     # Save appraisal to JSON
+    print(appraisal)
     json_file_name = f"/tmp/self_appraisal_{args.author}_{args.vendor}.json"
     save_appraisal_to_json(appraisal, json_file_name)
     print(f"Appraisal saved as JSON: {json_file_name}")

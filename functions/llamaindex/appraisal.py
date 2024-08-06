@@ -43,22 +43,29 @@ def get_llm(vendor: str, **kwargs):
 # Define a custom prompt for generating the self-appraisal
 APPRAISAL_PROMPT = PromptTemplate(
     """
-    ... (previous instructions)
+    You are tasked with generating a professional self-appraisal based only on the following information about an employee's contributions:
 
+    {context}
+
+    Please create a self-appraisal with the following guidelines:
+    1. Use an official and professional tone.
+    2. Focus on facts and provide links to associated documents when possible.
+    3. Highlight key achievements and contributions.
+    4. Suggest potential learning opportunities based on the employee's work.
     5. Format the output as a valid JSON object with the following structure:
        {{
-         "Summary": {{"content": "Overall summary..."}},
-         "Key Achievements": {{"items": ["Achievement 1", "Achievement 2", ...]}},
+         "Summary": "Overall summary...",
+         "Key Achievements": ["Achievement 1", "Achievement 2", ...],
          "Contributions": {{
-           "Project A": {{"content": "Details about contributions to Project A..."}},
-           "Project B": {{"content": "Details about contributions to Project B..."}}
+           "Project A": "Details about contributions to Project A...",
+           "Project B": "Details about contributions to Project B..."
          }},
-         "Learning Opportunities": {{"items": ["Opportunity 1", "Opportunity 2", ...]}}
+         "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...]
        }}
 
     Ensure that the Key Achievements section contains information about all three function outputs, namely, Jira, GitHub, and Confluence contributions.
     Ensure that the Contributions section contains detailed information about each project, including project name, description, and any relevant links or screenshots.
-    Ensure that the response is a valid JSON object and nothing else.
+    Ensure that the response is a valid JSON object and nothing else. Do not include any markdown formatting or code blocks.
 
     Self-Appraisal:
     """
@@ -94,21 +101,32 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
     """
 
     # Generate the self-appraisal using the LLM
+    # Generate the self-appraisal using the LLM
     appraisal_response = llm.complete(APPRAISAL_PROMPT.format(context=context))
 
     # Parse the JSON response
     try:
+        # Try to parse the response as JSON
         appraisal_json = json.loads(appraisal_response.text)
     except json.JSONDecodeError:
-        print("Error: LLM output is not valid JSON. Falling back to raw text.")
-        appraisal_json = {"Raw Appraisal": {"content": appraisal_response.text}}
+        print("Error: LLM output is not valid JSON. Attempting to clean the output.")
 
-    return appraisal_json
+        # Remove any potential markdown formatting
+        cleaned_text = appraisal_response.text.strip('`').strip()
+        if cleaned_text.startswith('json'):
+            cleaned_text = cleaned_text[4:].strip()
+
+        try:
+            # Try parsing the cleaned text
+            appraisal_json = json.loads(cleaned_text)
+        except json.JSONDecodeError:
+            print("Error: Cleaned output is still not valid JSON. Falling back to raw text.")
+            appraisal_json = {"Raw Appraisal": appraisal_response.text}
+
+    return json.dumps(appraisal_json, indent=2)
 
 
-def save_appraisal_to_json(
-    appraisal: Any, filename: str
-) -> None:
+def save_appraisal_to_json(appraisal: str, filename: str) -> None:
     with open(filename, "w") as f:
-        json.dump(appraisal, f, indent=2)
+        f.write(appraisal)
     print(f"Appraisal saved to {filename}")

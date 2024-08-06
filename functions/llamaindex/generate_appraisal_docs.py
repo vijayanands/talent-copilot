@@ -12,52 +12,78 @@ except ImportError:
     print("pdfkit is not installed. PDF generation will be unavailable.")
 
 
-def json_to_html(json_data):
-    def parse_section(data, level=2):
-        html = ""
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if key == "content":
-                    html += f"<p>{escape(value)}</p>\n"
-                elif key == "items":
-                    html += "<ul>\n"
-                    for item in value:
-                        html += f"<li>{escape(item)}</li>\n"
-                    html += "</ul>\n"
-                else:
-                    html += f"<h{level}>{escape(key)}</h{level}>\n"
-                    html += parse_section(value, level + 1)
-        return html
+def json_to_html(json_file_path, html_file_path):
+    # Read the JSON file
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
 
-    html = """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>JSON Visualization</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-            h2 { color: #2980b9; }
-            h3 { color: #27ae60; }
-            ul { margin-bottom: 20px; }
-            li { margin-bottom: 5px; }
-        </style>
-    </head>
-    <body>
+    # Create the HTML content
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Review</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        h1, h2 {{
+            color: #2c3e50;
+        }}
+        ul {{
+            padding-left: 20px;
+        }}
+        .section {{
+            margin-bottom: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Performance Review</h1>
+
+    <div class="section">
+        <h2>Summary</h2>
+        <p>{escape(data['Summary'])}</p>
+    </div>
+
+    <div class="section">
+        <h2>Key Achievements</h2>
+        <ul>
+            {''.join(f'<li>{escape(achievement)}</li>' for achievement in data['Key Achievements'])}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Contributions</h2>
+
+        {''.join(f'''
+        <h3>{escape(platform)}</h3>
+        <p>{escape(details['Description'])}</p>
+        {'<ul>' + ''.join(f'<li><strong>{escape(name)}:</strong> <a href="#">{escape(link)}</a></li>' for name, link in details.get('Links', {}).items()) + '</ul>' if 'Links' in details else ''}
+        ''' for platform, details in data['Contributions'].items())}
+    </div>
+
+    <div class="section">
+        <h2>Learning Opportunities</h2>
+        <ul>
+            {''.join(f'<li>{escape(opportunity)}</li>' for opportunity in data['Learning Opportunities'])}
+        </ul>
+    </div>
+</body>
+</html>
     """
 
-    for key, value in json_data.items():
-        html += f"<h1>{escape(key)}</h1>\n"
-        html += parse_section(value)
-
-    html += """
-    </body>
-    </html>
-    """
-
-    return html
+    # Write the HTML content to a file
+    with open(html_file_path, 'w') as file:
+        file.write(html_content)
+    return html_content
 
 
 def create_pdf(html_content, output_file):
@@ -94,28 +120,9 @@ def process_json_to_html_and_pdf(json_file, html_file, pdf_file):
     :param html_file: Path to the output HTML file
     :param pdf_file: Path to the output PDF file
     """
-    # Load JSON data
-    try:
-        with open(json_file, "r") as f:
-            json_data = json.load(f)
-    except FileNotFoundError:
-        print(f"JSON file not found: {json_file}")
-        return
-    except json.JSONDecodeError:
-        print(f"Invalid JSON in file: {json_file}")
-        return
 
     # Generate HTML
-    html_output = json_to_html(json_data)
-
-    # Save HTML file
-    try:
-        with open(html_file, "w") as f:
-            f.write(html_output)
-        print(f"HTML file generated successfully: {html_file}")
-    except IOError as e:
-        print(f"Error writing HTML file: {str(e)}")
-        return
+    html_output = json_to_html(json_file, html_file)
 
     # Create PDF
     pdf_created = create_pdf(html_output, pdf_file)
