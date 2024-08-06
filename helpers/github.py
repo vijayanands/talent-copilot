@@ -27,6 +27,7 @@ headers = {
     "Accept": "application/vnd.github.v3+json",
 }
 
+
 def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
     prs: Any = fetch_PR_data(owner, repo)
 
@@ -127,6 +128,7 @@ def map_github_users(github_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
 
     return mapped_github_activities
 
+
 def fetch_PR_data(owner: str, repo: str) -> Any:
     logging.info(f"Fetching pull requests for {owner}/{repo}")
 
@@ -179,6 +181,7 @@ def fetch_PR_comments(owner: str, repo: str) -> Any:
 
     print(f"Fetched {len(all_comments)} comments")
     return all_comments
+
 
 class GitHubAPIClient:
     def __init__(self):
@@ -233,8 +236,12 @@ def analyze_commits_per_user(client, owner, repo):
     for commit in commits:
         author = commit["author"]["login"]
         commits_per_user[author]["login"] = author
-        commits_per_user[author].setdefault("commits", []).append(f"https://github.com/{author}/{repo}/commits/{commit['sha']}")
-        commits_per_user[author]["total_commits"] = commits_per_user[author].setdefault("total_commits", 0) + 1
+        commits_per_user[author].setdefault("commits", []).append(
+            f"https://github.com/{author}/{repo}/commits/{commit['sha']}"
+        )
+        commits_per_user[author]["total_commits"] = (
+            commits_per_user[author].setdefault("total_commits", 0) + 1
+        )
         commits_per_user[author]["comment_count"] = commit["commit"]["comment_count"]
         commits_per_user[author]["message"] = commit["commit"]["message"]
 

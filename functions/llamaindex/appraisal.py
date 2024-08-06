@@ -1,4 +1,7 @@
 import json
+import re
+import hjson
+import logging
 from typing import List, Dict, Any
 
 from dotenv import load_dotenv
@@ -13,6 +16,9 @@ from helpers.jira import get_jira_contributions_by_author
 from helpers.github import get_github_contributions_by_author
 
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Create FunctionTool instances
 tools: List[BaseTool] = [
@@ -47,16 +53,12 @@ APPRAISAL_PROMPT = PromptTemplate(
 
     {context}
 
-    Please create a self-appraisal with the following guidelines:
+    Please create a self-appraisal following these guidelines:
     1. Use an official and professional tone.
     2. Focus on facts and provide links to associated documents when possible.
     3. Highlight key achievements and contributions.
     4. Suggest potential learning opportunities based on the employee's work.
-    5. Create an appendix that lists all of the following
-        - links to all JIRAs resolved
-        - links to confluence contributed
-        - links to github commits made
-    5. Format the output as a valid JSON object with the following structure:
+    6. Format the output as a valid JSON object with the following structure:
        {{
          "Summary": "Overall summary...",
          "Key Achievements": ["Achievement 1", "Achievement 2", ...],
@@ -64,14 +66,9 @@ APPRAISAL_PROMPT = PromptTemplate(
            "Project A": "Details about contributions to Project A...",
            "Project B": "Details about contributions to Project B..."
          }},
-         "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...]
-         "Appendix": {{
-            "JIRAs Resolved": ["Link 1", "Link 2",...],
-            "confluence Contributed": ["Link 1", "Link 2",...],
-            "github commits": ["Link 1", "Link 2",...]
-         }}
+         "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...],
        }}
-    
+
     Ensure that the Key Achievements section contains information about all three function outputs, namely, Jira, GitHub, and Confluence contributions.
     Ensure that the Contributions section contains detailed information about each project, including project name, description, and any relevant links or screenshots.
     Ensure that the response is a valid JSON object and nothing else. Do not include any markdown formatting or code blocks.
@@ -110,7 +107,7 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
     """
 
     # Generate the self-appraisal using the LLM
-    # Generate the self-appraisal using the LLM
+
     appraisal_response = llm.complete(APPRAISAL_PROMPT.format(context=context))
 
     # Parse the JSON response
@@ -139,3 +136,4 @@ def save_appraisal_to_json(appraisal: str, filename: str) -> None:
     with open(filename, "w") as f:
         f.write(appraisal)
     print(f"Appraisal saved to {filename}")
+    logging.info(f"Appraisal saved to {filename}")

@@ -19,39 +19,39 @@ def parse_markdown_links(text):
         url = match.group(2)
         return f'<a href="{url}" target="_blank">{text}</a>'
 
-    pattern = r'\[(.*?)\]\((.*?)\)'
+    pattern = r"\[(.*?)\]\((.*?)\)"
     return re.sub(pattern, replace_link, text)
 
 
 def json_to_html(data, level=1):
     if isinstance(data, dict):
-        html = '<dl>\n'
+        html = "<dl>\n"
         for key, value in data.items():
-            html += f'<dt><h{level}>{escape(str(key))}</h{level}></dt>\n'
-            html += f'<dd>{json_to_html(value, level + 1)}</dd>\n'
-        html += '</dl>\n'
+            html += f"<dt><h{level}>{escape(str(key))}</h{level}></dt>\n"
+            html += f"<dd>{json_to_html(value, level + 1)}</dd>\n"
+        html += "</dl>\n"
     elif isinstance(data, list):
-        html = '<ul>\n'
+        html = "<ul>\n"
         for item in data:
-            html += f'<li>{json_to_html(item, level + 1)}</li>\n'
-        html += '</ul>\n'
+            html += f"<li>{json_to_html(item, level + 1)}</li>\n"
+        html += "</ul>\n"
     else:
         if isinstance(data, str):
-            if data.startswith('http'):
+            if data.startswith("http"):
                 html = f'<a href="{escape(data)}" target="_blank">{escape(data)}</a>'
             else:
-                html = f'<p>{parse_markdown_links(escape(data))}</p>'
+                html = f"<p>{parse_markdown_links(escape(data))}</p>"
         else:
-            html = f'<p>{escape(str(data))}</p>'
+            html = f"<p>{escape(str(data))}</p>"
     return html
 
 
 def generate_html(input_file, output_file, title="JSON to HTML"):
     # Read JSON data from file
-    with open(input_file, 'r') as file:
+    with open(input_file, "r") as file:
         json_data = json.load(file)
 
-    html_content = f'''
+    html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,13 +96,14 @@ def generate_html(input_file, output_file, title="JSON to HTML"):
     {json_to_html(json_data)}
 </body>
 </html>
-    '''
+    """
 
     # Write HTML content to file
-    with open(output_file, 'w') as file:
+    with open(output_file, "w") as file:
         file.write(html_content)
 
     return html_content
+
 
 def create_pdf(html_content, output_file):
     """
@@ -151,7 +152,7 @@ def process_json_to_html_and_pdf(json_file, html_file, pdf_file, author):
         print("HTML file was generated, but there was an issue with PDF creation.")
 
 
-def generate_appraisal_docs(input_json_file:str, author):
+def generate_appraisal_docs(input_json_file: str, author):
     # Use the current working directory
     current_dir = os.getcwd()
 

@@ -93,13 +93,14 @@ def count_resolved_issues(base_url, username, api_token, author):
         data = response.json()
 
         jira_list = []
-        jira_data = defaultdict()
         for issue in data["issues"]:
+            jira_data = defaultdict()
             jira_data["link"] = issue["self"]
             jira_data["description"] = issue["fields"]["issuetype"]["description"]
             jira_data["timespent"] = issue["fields"]["timespent"]
             jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
             jira_data["priority"] = issue["fields"]["priority"]["name"]
+            print (json.dumps(jira_data, indent=5))
             jira_list.append(jira_data)
 
         # Get the total number of issues
@@ -187,7 +188,7 @@ def get_jira_contributions_by_author(author: str):
     )
     jira_data = response.get("jiras_resolved", [])
     jira_url_list = [jira["link"] for jira in jira_data]
-    if  response is not None:
+    if response is not None:
         return {
             "author": author,
             "total_resolved_issues": response.get("total_resolved_issues"),
