@@ -56,7 +56,8 @@ APPRAISAL_PROMPT = PromptTemplate(
     Please create a self-appraisal following these guidelines:
     1. Use an official and professional tone.
     2. Focus on facts and provide links to associated documents when possible.
-    3. Highlight key achievements and contributions.
+    3. Highlight key achievements in jira, github and confluence.
+    4. Highlight contributions in jira, github and confluence. Give details about the project and any relevant links or screenshots.
     4. Suggest potential learning opportunities based on the employee's work.
     6. Format the output as a valid JSON object with the following structure:
        {{
@@ -69,8 +70,6 @@ APPRAISAL_PROMPT = PromptTemplate(
          "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...],
        }}
 
-    Ensure that the Key Achievements section contains information about all three function outputs, namely, Jira, GitHub, and Confluence contributions.
-    Ensure that the Contributions section contains detailed information about each project, including project name, description, and any relevant links or screenshots.
     Ensure that the response is a valid JSON object and nothing else. Do not include any markdown formatting or code blocks.
 
     Self-Appraisal:
@@ -117,20 +116,21 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
     except json.JSONDecodeError:
         print("Error: LLM output is not valid JSON. Attempting to clean the output.")
 
-        # Remove any potential markdown formatting
+        # Remove any potential markdown formatting and find JSON-like content
         cleaned_text = appraisal_response.text.strip('`').strip()
-        if cleaned_text.startswith('json'):
-            cleaned_text = cleaned_text[4:].strip()
+        json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
 
-        try:
-            # Try parsing the cleaned text
-            appraisal_json = json.loads(cleaned_text)
-        except json.JSONDecodeError:
-            print("Error: Cleaned output is still not valid JSON. Falling back to raw text.")
+        if json_match:
+            try:
+                appraisal_json = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                print("Error: Cleaned output is still not valid JSON. Falling back to raw text.")
+                appraisal_json = {"Raw Appraisal": appraisal_response.text}
+        else:
+            print("Error: No JSON-like content found. Falling back to raw text.")
             appraisal_json = {"Raw Appraisal": appraisal_response.text}
 
     return json.dumps(appraisal_json, indent=2)
-
 
 def save_appraisal_to_json(appraisal: str, filename: str) -> None:
     with open(filename, "w") as f:

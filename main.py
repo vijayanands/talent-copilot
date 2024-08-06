@@ -109,7 +109,7 @@ def main():
         appraisal = generate_self_appraisal(
             args.author,
             "anthropic",
-            model="claude-2.1",
+            model="claude-3-opus-20240229",
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
 
