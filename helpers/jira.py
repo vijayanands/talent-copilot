@@ -100,7 +100,7 @@ def count_resolved_issues(base_url, username, api_token, author):
             jira_data["timespent"] = issue["fields"]["timespent"]
             jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
             jira_data["priority"] = issue["fields"]["priority"]["name"]
-            print (json.dumps(jira_data, indent=5))
+            print(json.dumps(jira_data, indent=5))
             jira_list.append(jira_data)
 
         # Get the total number of issues

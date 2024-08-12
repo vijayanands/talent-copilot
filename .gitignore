@@ -172,4 +172,5 @@ functions/llamaindex/appraisal.html
 functions/llamaindex/appraisal.pdf
 functions/llamaindex/data.json
 self_appraisal*.json
-appraisal*
+appraisal.html
+appraisal.pdf

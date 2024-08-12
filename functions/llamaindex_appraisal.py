@@ -1,12 +1,12 @@
 import json
 import re
-import hjson
+import os
+import sys
 import logging
-from typing import List, Dict, Any
+from typing import List
 
 from dotenv import load_dotenv
 from llama_index.core.agent import ReActAgent
-from llama_index.core.prompts import PromptTemplate
 from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
@@ -15,10 +15,15 @@ from helpers.confluence import get_confluence_contributions_by_author
 from helpers.jira import get_jira_contributions_by_author
 from helpers.github import get_github_contributions_by_author
 
+from tools.generate_appraisal_docs import generate_appraisal_docs
+from functions.prompts import APPRAISAL_PROMPT
+
 load_dotenv()
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # Create FunctionTool instances
 tools: List[BaseTool] = [
@@ -44,37 +49,6 @@ def get_llm(vendor: str, **kwargs):
         )
     else:
         raise ValueError(f"Unsupported LLM vendor: {vendor}")
-
-
-# Define a custom prompt for generating the self-appraisal
-APPRAISAL_PROMPT = PromptTemplate(
-    """
-    You are tasked with generating a professional self-appraisal based only on the following information about an employee's contributions:
-
-    {context}
-
-    Please create a self-appraisal following these guidelines:
-    1. Use an official and professional tone.
-    2. Focus on facts and provide links to associated documents when possible.
-    3. Highlight key achievements in jira, github and confluence.
-    4. Highlight contributions in jira, github and confluence. Give details about the project and any relevant links or screenshots.
-    4. Suggest potential learning opportunities based on the employee's work.
-    6. Format the output as a valid JSON object with the following structure:
-       {{
-         "Summary": "Overall summary...",
-         "Key Achievements": ["Achievement 1", "Achievement 2", ...],
-         "Contributions": {{
-           "Project A": "Details about contributions to Project A...",
-           "Project B": "Details about contributions to Project B..."
-         }},
-         "Learning Opportunities": ["Opportunity 1", "Opportunity 2", ...],
-       }}
-
-    Ensure that the response is a valid JSON object and nothing else. Do not include any markdown formatting or code blocks.
-
-    Self-Appraisal:
-    """
-)
 
 
 def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
@@ -117,14 +91,16 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
         print("Error: LLM output is not valid JSON. Attempting to clean the output.")
 
         # Remove any potential markdown formatting and find JSON-like content
-        cleaned_text = appraisal_response.text.strip('`').strip()
-        json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+        cleaned_text = appraisal_response.text.strip("`").strip()
+        json_match = re.search(r"\{.*\}", cleaned_text, re.DOTALL)
 
         if json_match:
             try:
                 appraisal_json = json.loads(json_match.group())
             except json.JSONDecodeError:
-                print("Error: Cleaned output is still not valid JSON. Falling back to raw text.")
+                print(
+                    "Error: Cleaned output is still not valid JSON. Falling back to raw text."
+                )
                 appraisal_json = {"Raw Appraisal": appraisal_response.text}
         else:
             print("Error: No JSON-like content found. Falling back to raw text.")
@@ -132,8 +108,36 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
 
     return json.dumps(appraisal_json, indent=2)
 
+
 def save_appraisal_to_json(appraisal: str, filename: str) -> None:
     with open(filename, "w") as f:
         f.write(appraisal)
     print(f"Appraisal saved to {filename}")
     logging.info(f"Appraisal saved to {filename}")
+
+
+def self_appraisal_tool(author: str, llm_vendor: str):
+    # Generate appraisal based on the chosen vendor
+    if llm_vendor == "openai":
+        appraisal = generate_self_appraisal(
+            author,
+            "openai",
+            model="gpt-4o-mini",
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
+    else:  # anthropic
+        appraisal = generate_self_appraisal(
+            author,
+            "anthropic",
+            model="claude-3-opus-20240229",
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+        )
+
+    # Save appraisal to JSON
+    print(appraisal)
+    json_file_name = f"/tmp/self_appraisal_{author}_{llm_vendor}.json"
+    save_appraisal_to_json(appraisal, json_file_name)
+    print(f"Appraisal saved as JSON: {json_file_name}")
+
+    # Generate HTML and PDF documents
+    generate_appraisal_docs(json_file_name, author)

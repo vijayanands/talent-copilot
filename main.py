@@ -12,11 +12,9 @@ debug_jira = False
 debug_confluence = False
 debug_github = False
 
-from functions.llamaindex.appraisal import (
-    generate_self_appraisal,
-    save_appraisal_to_json,
+from functions.llamaindex_appraisal import (
+    self_appraisal_tool,
 )
-from functions.llamaindex.generate_appraisal_docs import generate_appraisal_docs
 from helpers.github import (
     list_repo_contributors,
 )
@@ -63,7 +61,7 @@ def initialize_jira_hack(unique_user_emails):
         map_user(username, unique_user_emails)
 
 
-def main():
+def initialize_hacks_and_get_user_inputs():
     unique_user_emails = get_unique_user_emails()
 
     parser = argparse.ArgumentParser(
@@ -97,30 +95,12 @@ def main():
 
     initialize_jira_hack(unique_user_emails)
 
-    # Generate appraisal based on the chosen vendor
-    if args.vendor == "openai":
-        appraisal = generate_self_appraisal(
-            args.author,
-            "openai",
-            model="gpt-4o-mini",
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
-    else:  # anthropic
-        appraisal = generate_self_appraisal(
-            args.author,
-            "anthropic",
-            model="claude-3-opus-20240229",
-            api_key=os.getenv("ANTHROPIC_API_KEY"),
-        )
+    return args.vendor, args.author
 
-    # Save appraisal to JSON
-    print(appraisal)
-    json_file_name = f"/tmp/self_appraisal_{args.author}_{args.vendor}.json"
-    save_appraisal_to_json(appraisal, json_file_name)
-    print(f"Appraisal saved as JSON: {json_file_name}")
 
-    # Generate HTML and PDF documents
-    generate_appraisal_docs(json_file_name, args.author)
+def main():
+    vendor, author = initialize_hacks_and_get_user_inputs()
+    self_appraisal_tool(author, vendor)
 
 
 if __name__ == "__main__":

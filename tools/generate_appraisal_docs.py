@@ -169,5 +169,5 @@ def generate_appraisal_docs(input_json_file: str, author):
 
 
 # Example usage
-if __name__ == "__main__":
-    generate_appraisal_docs()
+# if __name__ == "__main__":
+#     generate_appraisal_docs()
