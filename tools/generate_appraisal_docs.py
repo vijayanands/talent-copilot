@@ -1,7 +1,7 @@
 import json
-from html import escape
 import os
 import re
+from html import escape
 
 # Add error handling for pdfkit import
 try:
@@ -132,14 +132,6 @@ def create_pdf(html_content, output_file):
 
 
 def process_json_to_html_and_pdf(json_file, html_file, pdf_file, author):
-    """
-    Process JSON file to HTML and PDF.
-
-    :param json_file: Path to the input JSON file
-    :param html_file: Path to the output HTML file
-    :param pdf_file: Path to the output PDF file
-    """
-
     # Generate HTML
     html_output = generate_html(json_file, html_file, f"Self Appraisal for {author}")
 

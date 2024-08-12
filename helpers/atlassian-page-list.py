@@ -1,7 +1,8 @@
 import os
+from base64 import b64encode
+
 import requests
 from dotenv import load_dotenv
-from base64 import b64encode
 
 # Load environment variables at the start
 load_dotenv()

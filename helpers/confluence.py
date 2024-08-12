@@ -6,8 +6,8 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
-from user_mapping import get_mapped_user
 from tools.headers import get_headers
+from user_mapping import get_mapped_user
 
 load_dotenv()
 

@@ -7,7 +7,8 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from user_mapping import get_mapped_user, get_external_usernames
+
+from user_mapping import get_external_usernames, get_mapped_user
 
 load_dotenv()
 

@@ -1,8 +1,8 @@
 import json
-import re
-import os
-import sys
 import logging
+import os
+import re
+import sys
 from typing import List
 
 from dotenv import load_dotenv
@@ -11,12 +11,11 @@ from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
 
-from helpers.confluence import get_confluence_contributions_by_author
-from helpers.jira import get_jira_contributions_by_author
-from helpers.github import get_github_contributions_by_author
-
-from tools.generate_appraisal_docs import generate_appraisal_docs
 from functions.prompts import APPRAISAL_PROMPT
+from helpers.confluence import get_confluence_contributions_by_author
+from helpers.github import get_github_contributions_by_author
+from helpers.jira import get_jira_contributions_by_author
+from tools.generate_appraisal_docs import generate_appraisal_docs
 
 load_dotenv()
 
@@ -90,7 +89,7 @@ def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
     except json.JSONDecodeError:
         print("Error: LLM output is not valid JSON. Attempting to clean the output.")
 
-        # Remove any potential markdown formatting and find JSON-like content
+        # Remove any potential Markdown formatting and find JSON-like content
         cleaned_text = appraisal_response.text.strip("`").strip()
         json_match = re.search(r"\{.*\}", cleaned_text, re.DOTALL)
 

@@ -1,29 +1,20 @@
-import os
-import sys
 import argparse
 import json
 
 from dotenv import load_dotenv
-from helpers.jira import get_jira_contributions_by_author
+
 from helpers.confluence import get_confluence_contributions_by_author
 from helpers.github import get_github_contributions_by_author
+from helpers.jira import get_jira_contributions_by_author
 
 debug_jira = False
 debug_confluence = False
 debug_github = False
 
-from functions.llamaindex_appraisal import (
-    self_appraisal_tool,
-)
-from helpers.github import (
-    list_repo_contributors,
-)
-from user_mapping import (
-    map_user,
-    create_or_get_unique_users,
-)
+from functions.llamaindex_appraisal import self_appraisal_tool
+from helpers.github import list_repo_contributors
+from user_mapping import create_or_get_unique_users, map_user
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
 

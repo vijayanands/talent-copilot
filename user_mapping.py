@@ -1,7 +1,7 @@
-import sqlite3
-import random
 import hashlib
-from typing import Dict, List, Any, Optional
+import random
+import sqlite3
+from typing import Any, Dict, List, Optional
 
 # Connect to SQLite database (or create if it doesn't exist)
 conn = sqlite3.connect("helpers/user_mapping.db")
