@@ -13,12 +13,15 @@ requests = "^2.32.3"
 streamlit = "^1.37.0"
 pysqlite3 = "^0.5.3"
 python-dotenv = "^1.0.1"
-llama-index = "^0.10.59"
+llama-index = {extras = ["pinecone"], version = "^0.10.65"}
 openai = "^1.37.1"
 anthropic = "^0.32.0"
 llama-cpp-python = "^0.2.85"
 pdfkit = "^1.0.0"
 hjson = "^3.1.0"
+pinecone-client = "^5.0.1"
+chromadb = "^0.5.5"
+pinecone = "^5.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
