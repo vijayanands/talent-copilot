@@ -6,7 +6,8 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
-from tools.headers import get_headers
+from tools.auth import get_headers
+
 load_dotenv()
 
 atlassian_base_url = "https://vijayanands.atlassian.net"

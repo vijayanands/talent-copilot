@@ -1,19 +1,5 @@
 import base64
-
-from requests.auth import HTTPBasicAuth
-
-from tools.credentials import get_password, init_db, load_credentials
-
-
-def initialize():
-    init_db()
-    CREDENTIALS_FILE_ROOT: str = "/home/vijay/workspace/talent-copilot-1"
-    load_credentials(f"{CREDENTIALS_FILE_ROOT}/credentials.txt")
-
-
-def get_auth_header(username: str, tool: str) -> HTTPBasicAuth:
-    password = get_password(tool, username)
-    return HTTPBasicAuth(username, password)
+from typing import Dict
 
 
 def base64_encode_string(input_string: str) -> str:
@@ -38,3 +24,11 @@ def base64_encode_string(input_string: str) -> str:
 def get_basic_auth_header(username: str, password: str):
     auth_string = f"{username}:{password}"
     return f"Basic {base64_encode_string(auth_string)}"
+
+
+def get_headers(username: str, api_token: str) -> Dict[str, str]:
+    headers = {
+        "Accept": "application/json",
+        "Authorization": get_basic_auth_header(username, api_token),
+    }
+    return headers

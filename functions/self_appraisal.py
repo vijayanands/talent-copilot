@@ -64,4 +64,3 @@ if __name__ == "__main__":
         print(json.dumps(response, indent=4))
     else:
         print("Use: streamlit run main.py")
-

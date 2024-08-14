@@ -9,8 +9,8 @@ unique_user_emails = [
     "email2vijay@gmail.com",
 ]
 
-user_to_external_users:Dict[str, List[str]] = defaultdict(list)
-external_user_to_user:Dict[str, str] = defaultdict()
+user_to_external_users: Dict[str, List[str]] = defaultdict(list)
+external_user_to_user: Dict[str, str] = defaultdict()
 
 
 def map_user(external_username: str):
