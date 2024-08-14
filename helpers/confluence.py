@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
 from tools.auth import get_headers
+from functions.llamaindex_summarization import summarize_data
 
 load_dotenv()
 
@@ -149,6 +150,11 @@ def get_confluence_contributions_by_author(author: str):
         confluence_space_key,
         author,
     )
+    for key, doc in confluence_data.items():
+        if not isinstance(doc, dict):
+            raise ValueError(f"Each value in the dictionary must be a dictionary, found {type(doc)} for key {key}")
+        summary = summarize_data(doc, id=key)
+        doc["summary"] = summary
     return confluence_data
 
 
@@ -177,3 +183,7 @@ def get_confluence_pages_space(base_url, username, api_token, space_id):
 #     page_title = "Conversational AI For Customer Service"
 #     # spaces = get_spaces(base_url, username, api_token)
 #     # get_page_content_v2(base_url, page_id, username, api_token)
+#
+# if __name__ == "__main__":
+#     confluence_data = get_confluence_contributions_by_author(author="vijayanands@gmail.com")
+#     print(json.dumps(confluence_data, indent=2))

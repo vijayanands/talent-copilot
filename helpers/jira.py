@@ -16,6 +16,85 @@ atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN")
 confluence_space_key = "SD"
 
 
+def extract_description_content(description):
+    extracted_content = []
+    indent_level = 0
+    in_bullet_list = False
+
+    def process_content(content):
+        nonlocal indent_level, in_bullet_list
+        for item in content:
+            if item["type"] == "text":
+                text = item["text"]
+                marks = item.get("marks", [])
+                is_bold = any(mark["type"] == "strong" for mark in marks)
+                is_italic = any(mark["type"] == "em" for mark in marks)
+
+                if is_bold and is_italic:
+                    text = text.upper()
+                elif is_bold:
+                    text = text.upper()
+                elif is_italic:
+                    text = text.capitalize()
+
+                if in_bullet_list:
+                    extracted_content[-1] += text
+                else:
+                    extracted_content.append("    " * indent_level + text)
+
+            elif item["type"] == "paragraph":
+                if extracted_content and not in_bullet_list:
+                    extracted_content.append("")
+                process_content(item["content"])
+                if not in_bullet_list:
+                    extracted_content.append("")
+
+            elif item["type"] == "bulletList":
+                in_bullet_list = True
+                indent_level += 1
+                for list_item in item["content"]:
+                    extracted_content.append("    " * (indent_level - 1) + "- ")
+                    process_content(list_item["content"])
+                indent_level -= 1
+                in_bullet_list = False
+                extracted_content.append("")
+
+            elif item["type"] == "listItem":
+                process_content(item["content"])
+
+            elif item["type"] == "inlineCard":
+                url = item['attrs']['url']
+                extracted_content.append(f"    " * indent_level + f"Link: {url}")
+
+    for item in description:
+        process_content([item])
+
+    return "\n".join(extracted_content).strip()
+
+def extract_jira_response(base_url, response):
+    # Parse the JSON response
+    data = response.json()
+    jira_list = []
+    for issue in data["issues"]:
+        jira_data = defaultdict()
+        jira_data["summary"] = issue["fields"]["summary"]
+        jira_data["reporter"] = issue["fields"]["reporter"]["emailAddress"]
+        jira_data["assignee"] = issue["fields"]["assignee"]["emailAddress"] if issue["fields"][
+            "assignee"] else "Unassigned"
+        jira_data["link"] = f"{base_url}/browse/{issue['key']}"
+        content = issue["fields"]["description"]["content"] if issue["fields"]["description"] else None
+        jira_data["description"] = extract_description_content(content) if content else None
+        jira_data["timespent"] = issue["fields"]["timespent"]
+        jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
+        jira_data["priority"] = issue["fields"]["priority"]["name"]
+        print(json.dumps(jira_data, indent=5))
+        jira_list.append(jira_data)
+    # Get the total number of issues
+    jira_response = defaultdict()
+    jira_response["total_resolved"] = len(jira_list)
+    jira_response["jiras_resolved"] = jira_list
+    return jira_response
+
 def fetch_jira_projects(
     base_url: str, username: str, api_token: str
 ) -> List[Dict[str, Any]]:
@@ -57,7 +136,7 @@ def fetch_jira_issues(
     )
 
     if response.status_code == 200:
-        return response.json()
+        return extract_jira_response(base_url, response)
     else:
         response.raise_for_status()
 
@@ -79,6 +158,8 @@ def count_resolved_issues(base_url, username, api_token, author):
     # Set up the parameters for the request
     params = {
         "jql": jql_query,
+        "fields": ["issuetype", "timespent", "resolutiondate", "priority", "summary", "description", "comments", "reporter", "assignee"],
+        # "maxResults": 0,  # We only need the total, not the actual issues
         # "maxResults": 0,  # We only need the total, not the actual issues
     }
 
@@ -89,29 +170,13 @@ def count_resolved_issues(base_url, username, api_token, author):
         )
         response.raise_for_status()  # Raise an exception for bad status codes
 
-        # Parse the JSON response
-        data = response.json()
-
-        jira_list = []
-        for issue in data["issues"]:
-            jira_data = defaultdict()
-            jira_data["link"] = f"{base_url}/browse/{issue['key']}"
-            jira_data["description"] = issue["fields"]["issuetype"]["description"]
-            jira_data["timespent"] = issue["fields"]["timespent"]
-            jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
-            jira_data["priority"] = issue["fields"]["priority"]["name"]
-            print(json.dumps(jira_data, indent=5))
-            jira_list.append(jira_data)
-
-        # Get the total number of issues
-        jira_response = defaultdict()
-        jira_response["total_resolved"] = len(jira_list)
-        jira_response["jiras_resolved"] = jira_list
+        jira_response = extract_jira_response(base_url, response)
         return jira_response
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
+
 
 
 def count_resolved_issues_by_assignee(base_url, username, api_token):
@@ -190,20 +255,21 @@ if __name__ == "__main__":
     base_url = "https://vijayanands.atlassian.net"
     username = "vijayanands@gmail.com"
     api_token = os.getenv("ATLASSIAN_API_TOKEN")
+    author = "vijayanands@gmail.com"
 
     try:
+        contributions = get_jira_contributions_by_author(author)
+        print(f"Jira contributions by {author}:")
+        print(json.dumps(contributions, indent=2))
+
         issues = fetch_jira_issues(base_url, username, "SSP")
         print(json.dumps(issues, indent=2))
-        author = "vijayanands@gmail.com"
         resolved_count = count_resolved_issues(base_url, username, api_token, author)
-
         if resolved_count is not None:
             print(f"Number of resolved issues by {author}: {resolved_count}")
-
         resolved_counts = count_resolved_issues_by_assignee(
             base_url, username, api_token
         )
-
         if resolved_counts is not None:
             print("Number of resolved issues by assignee:")
             for assignee, count in sorted(
@@ -211,6 +277,5 @@ if __name__ == "__main__":
             ):
                 print(f"{assignee}: {count}")
             print(f"Total resolved issues: {sum(resolved_counts.values())}")
-
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")

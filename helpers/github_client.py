@@ -130,8 +130,8 @@ class GitHubAPIClient:
         print(f"Fetched {len(all_prs)} pull requests")
         return all_prs
 
-    def fetch_PR_comments(self, owner: str, repo: str) -> Any:
-        url = f"{self.base_url}/repos/{owner}/{repo}/pulls/comments"
+    def fetch_PR_comments(self, owner: str, repo: str, pr_number: int) -> Any:
+        url = f"{self.base_url}/repos/{owner}/{repo}/pulls/{pr_number}/comments"
         params: Dict[str, Any] = {"per_page": 100}
         all_comments = []
         while url:
@@ -145,5 +145,5 @@ class GitHubAPIClient:
             # Check for pagination
             url = response.links.get("next", {}).get("url")
 
-        print(f"Fetched {len(all_comments)} comments")
+        print(f"Fetched {len(all_comments)} comments for PR #{pr_number}")
         return all_comments
