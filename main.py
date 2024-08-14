@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import os
 from llama_index.core import VectorStoreIndex, download_loader
@@ -65,6 +66,46 @@ def ingest_data():
     )
     return index
 
+
+def pretty_print_appraisal(appraisal_data):
+    # Convert string to dictionary if needed
+    if isinstance(appraisal_data, str):
+        try:
+            appraisal_data = json.loads(appraisal_data)
+        except json.JSONDecodeError:
+            st.error("Invalid JSON string provided. Please check the input.")
+            return
+
+    if not isinstance(appraisal_data, dict):
+        st.error("Input must be a dictionary or a valid JSON string.")
+        return
+
+    st.header("Self-Appraisal")
+
+    # Summary
+    if "Summary" in appraisal_data:
+        st.subheader("Summary")
+        st.write(appraisal_data["Summary"])
+
+    # Key Achievements
+    if "Key Achievements" in appraisal_data:
+        st.subheader("Key Achievements")
+        for achievement in appraisal_data["Key Achievements"]:
+            st.markdown(f"• {achievement}")
+
+    # Contributions
+    if "Contributions" in appraisal_data:
+        st.subheader("Contributions")
+        for platform, contribution in appraisal_data["Contributions"].items():
+            st.markdown(f"**{platform}**")
+            st.write(contribution)
+            st.markdown("---")
+
+    # Learning Opportunities
+    if "Learning Opportunities" in appraisal_data:
+        st.subheader("Learning Opportunities")
+        for opportunity in appraisal_data["Learning Opportunities"]:
+            st.markdown(f"• {opportunity}")
 
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
@@ -134,8 +175,7 @@ def setup_streamlit_ui():
             with st.spinner("Generating self-appraisal..."):
                 # appraisal = generate_self_appraisal(email, llm, pinecone_index)
                 appraisal = create_self_appraisal(llm_choice, email)
-            st.write(appraisal)
-
+            pretty_print_appraisal(appraisal)
 
 if __name__ == "__main__":
     setup_streamlit_ui()

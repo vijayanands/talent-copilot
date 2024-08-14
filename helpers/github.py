@@ -1,8 +1,8 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any
-from constants import user_to_external_users
+from typing import Any, Dict
+from constants import user_to_external_users, map_user
 from helpers.github_client import GitHubAPIClient
 
 github_repo = "Hello-World"
@@ -60,7 +60,70 @@ def _get_commits_per_user_in_repo(owner, repo):
         return None  # Return None in case of an error
 
 
-def get_github_contributions_by_author(author):
+def _extract_comment_info(pr_comments):
+    comments = []
+    for comment in pr_comments:
+        if comment["body"] is not None or comment["body"] != "":
+            comments.append({
+                "author": comment["user"]["login"],
+                "comment_url": comment["html_url"],
+                "comment_body": comment["body"],
+            })
+    return comments
+
+def _extract_pr_info(pr, owner: str, repo: str) -> dict:
+    # comments = _get_pull_request_comments_by_author(owner, repo, pr["number"])
+    client = GitHubAPIClient()
+    pr_comments = client.fetch_PR_comments(owner, repo, pr["number"])
+
+    return {
+        "number": pr["number"],
+        "pr_title": pr["title"],
+        "pr_url": pr["html_url"],
+        "author": pr["user"]["login"],
+        "body": pr["body"],
+        "comments": _extract_comment_info(pr_comments) if pr_comments else [],
+    }
+
+def initialize_github_hack():
+    contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
+    print(contributors)
+    for username in contributors:
+        map_user(username)
+
+def list_repo_contributors(owner: str, repo: str) -> Any:
+    client = GitHubAPIClient()
+    all_contributors = client.list_contributors(owner, repo)
+    print(f"Found {len(all_contributors)} contributors in {owner}/{repo}")
+    return all_contributors
+
+def get_all_pull_requests_data(owner: str, repo: str) -> Any:
+    client = GitHubAPIClient()
+    raw_prs: Any = client.fetch_PR_data(owner, repo)
+    prs = [_extract_pr_info(pr, owner, repo) for pr in raw_prs]
+
+    print(f"Found {len(prs)} pull requests in {owner}/{repo}")
+    return prs
+
+def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
+    # Get a list of external user ids mapped to the author
+    external_usernames = user_to_external_users[author]
+
+    if not external_usernames:
+        logging.warning(f"No external usernames found for author: {author}")
+        return None
+
+    client = GitHubAPIClient()
+    raw_prs: Any = client.fetch_PR_data(owner, repo)
+
+    pr_list = []
+    for user in external_usernames:
+        raw_prs_by_author = [pr for pr in raw_prs if pr["user"]["login"].lower() == user.lower()]
+        prs_by_author = [_extract_pr_info(pr, owner, repo) for pr in raw_prs_by_author]
+        pr_list.extend(prs_by_author)
+    return pr_list
+
+def get_commits_by_author(owner: str, repo: str, author: str) -> Any:
     # Get a list of external user ids mapped to the author
     external_usernames = user_to_external_users[author]
 
@@ -85,74 +148,35 @@ def get_github_contributions_by_author(author):
             continue
         total_commits += commit_info.get("total_commits")
         commit_info_list.append(commit_info)
+    return commit_info_list, total_commits
+
+def get_github_contributions_by_author(author):
+    commit_info_list, total_commits = get_commits_by_author(owner=github_owner, repo=github_repo, author=author)
+    pr_list = get_pull_requests_by_author(github_owner, github_repo, author)
 
     return {
         "author": author,
         "total_commits": total_commits,
-        "commit_info_list": commit_info_list,
+        "total_pull_requests": len(pr_list),
+        "commits": commit_info_list,
+        "pull_requests": pr_list
     }
-
-def extract_comment_info(pr_comments):
-    comments = []
-    for comment in pr_comments:
-        comments.append({
-            "author": comment["user"]["login"],
-            "comment_id": comment["id"],
-            "comment_url": comment["html_url"],
-            "comment_body": comment["body"],
-            "created_at": comment["created_at"],
-            "updated_at": comment["updated_at"],
-        })
-    return comments
-
-def extract_pr_info(pr, owner: str, repo: str) -> dict:
-    # comments = _get_pull_request_comments_by_author(owner, repo, pr["number"])
-    client = GitHubAPIClient()
-    pr_comments = client.fetch_PR_comments(owner, repo, pr["number"])
-
-    return {
-        "number": pr["number"],
-        "pr_title": pr["title"],
-        "pr_url": pr["html_url"],
-        "author": pr["user"]["login"],
-        "assignee": pr["assignee"],
-        "assignees": pr["assignees"],
-        "body": pr["body"],
-        "created_at": pr["created_at"],
-        "closed_at": pr["closed_at"],
-        "merged_at": pr["merged_at"],
-        "labels": pr["labels"],
-        "milestone": pr["milestone"],
-        "comments": extract_comment_info(pr_comments) if pr_comments else [],
-    }
-
-def get_all_pull_requests_data(owner: str, repo: str) -> Any:
-    client = GitHubAPIClient()
-    raw_prs: Any = client.fetch_PR_data(owner, repo)
-    prs = [extract_pr_info(pr, owner, repo) for pr in raw_prs]
-
-    print(f"Found {len(prs)} pull requests in {owner}/{repo}")
-    return prs
-
-def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
-    client = GitHubAPIClient()
-    raw_prs: Any = client.fetch_PR_data(owner, repo)
-
-    raw_prs_by_author = [pr for pr in raw_prs if pr["user"]["login"].lower() == author.lower()]
-    prs_by_author = [extract_pr_info(pr, owner, repo) for pr in raw_prs_by_author]
-    print(f"Found {len(prs_by_author)} pull requests by {author}")
-    return prs_by_author
-
 
 if __name__ == "__main__":
-    prs = get_all_pull_requests_data(github_owner, github_repo)
-    print(f"\nAll pull requests in {github_owner}/{github_repo}:")
-    print(json.dumps(prs, indent=2))
-
     author = "vijayanands@gmail.com"
-    prs_by_author = get_pull_requests_by_author(github_owner, github_repo, author)
-    print(f"\nPull requests by {author}:")
-    print(json.dumps(prs_by_author, indent=2))
+    initialize_github_hack()
+
+    # contributors = list_repo_contributors(github_owner, github_repo)
+    # print(f"\nAll contributors in {github_owner}/{github_repo}:")
+    # print(json.dumps(contributors, indent=2))
+    #
+    # prs = get_all_pull_requests_data(github_owner, github_repo)
+    # print(f"\nAll pull requests in {github_owner}/{github_repo}:")
+    # print(json.dumps(prs, indent=2))
+    #
+    # prs_by_author = get_pull_requests_by_author(github_owner, github_repo, author)
+    # print(f"\nPull requests by {author}:")
+    # print(json.dumps(prs_by_author, indent=2))
 
     contributions_by_author = get_github_contributions_by_author(author)
     print(f"\nGitHub contributions by {author}:")

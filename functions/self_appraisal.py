@@ -2,12 +2,9 @@ import json
 
 from dotenv import load_dotenv
 from helpers.confluence import get_confluence_contributions_by_author
-from helpers.github import get_github_contributions_by_author
+from helpers.github import get_github_contributions_by_author, initialize_github_hack
 from helpers.jira import get_jira_contributions_by_author
 from functions.llamaindex_appraisal import self_appraisal_tool
-from helpers.github import list_repo_contributors
-from constants import map_user
-
 
 debug_jira = False
 debug_confluence = False
@@ -35,15 +32,6 @@ def prompt_for_vendor():
         if vendor in ["openai", "anthropic"]:
             return vendor
         print("Invalid vendor. Please choose either 'openai' or 'anthropic'.")
-
-
-def initialize_github_hack():
-    contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
-    print(contributors)
-
-    external_usernames = {contributor["login"] for contributor in contributors}
-    for username in external_usernames:
-        map_user(username)
 
 
 def create_self_appraisal(vendor, author):
