@@ -152,6 +152,23 @@ def get_confluence_contributions_by_author(author: str):
     return confluence_data
 
 
+def get_confluence_pages_space(base_url, username, api_token, space_id):
+    api_endpoint = f"{base_url}/wiki/api/v2/spaces/{space_id}/pages"
+
+    headers = get_headers(username, api_token)
+    params = {"limit": 100, "status": "current"}  # Adjust as needed
+
+    response = requests.get(api_endpoint, headers=headers, params=params)
+
+    if response.status_code == 200:
+        pages = response.json()["results"]
+        return pages
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return None
+
+
 # if __name__ == "__main__":
 #     base_url = "https://vijayanands.atlassian.net/wiki"
 #     username = "vijayanands@gmail.com"
