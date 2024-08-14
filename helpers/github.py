@@ -5,10 +5,8 @@ import sys
 import time
 from collections import defaultdict
 from typing import Any, Dict
-
 from dotenv import load_dotenv
-
-from user_mapping import get_external_usernames, get_mapped_user
+from constants import user_to_external_users
 
 load_dotenv()
 
@@ -114,20 +112,6 @@ def fetch_issues_data(owner: str, repo: str) -> Any:
 
     print(f"Fetched {len(all_issues)} issues")
     return all_issues
-
-
-def map_github_users(github_data: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
-    mapped_github_activities = {}
-
-    for username, count in github_data.items():
-        mapped_user = get_mapped_user(username)
-        if mapped_user:
-            mapped_github_activities[mapped_user["email"]] = {
-                "github_commits": count,
-                "user_info": mapped_user,
-            }
-
-    return mapped_github_activities
 
 
 def fetch_PR_data(owner: str, repo: str) -> Any:
@@ -273,7 +257,7 @@ def get_commits_per_user_in_repo(owner, repo):
 
 def get_github_contributions_by_author(author):
     # Get a list of external user ids mapped to the author
-    external_usernames = get_external_usernames(author)
+    external_usernames = user_to_external_users[author]
 
     if not external_usernames:
         logging.warning(f"No external usernames found for author: {author}")
@@ -291,6 +275,9 @@ def get_github_contributions_by_author(author):
     total_commits = 0
     for username in external_usernames:
         commit_info = github_data.get(username)
+        if not commit_info:
+            logging.warning(f"No commit info found for external username: {username}")
+            continue
         total_commits += commit_info.get("total_commits")
         commit_info_list.append(commit_info)
 

@@ -167,7 +167,6 @@ tools.db
 #generated json files
 *.json
 tools/credentials.txt
-user_mapping.db
 functions/llamaindex/appraisal.html
 functions/llamaindex/appraisal.pdf
 functions/llamaindex/data.json

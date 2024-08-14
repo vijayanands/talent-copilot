@@ -116,20 +116,23 @@ def save_appraisal_to_json(appraisal: str, filename: str) -> None:
 
 def self_appraisal_tool(author: str, llm_vendor: str):
     # Generate appraisal based on the chosen vendor
-    if llm_vendor == "openai":
+    if llm_vendor.lower() == "openai":
         appraisal = generate_self_appraisal(
             author,
             "openai",
             model="gpt-4o-mini",
             api_key=os.getenv("OPENAI_API_KEY"),
         )
-    else:  # anthropic
+    elif llm_vendor.lower() == "anthropic":  # anthropic
         appraisal = generate_self_appraisal(
             author,
             "anthropic",
             model="claude-3-opus-20240229",
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
+    else:
+        print("Error: Unsupported LLM vendor")
+        return None
 
     # Save appraisal to JSON
     print(appraisal)
@@ -139,3 +142,4 @@ def self_appraisal_tool(author: str, llm_vendor: str):
 
     # Generate HTML and PDF documents
     generate_appraisal_docs(json_file_name, author)
+    return appraisal

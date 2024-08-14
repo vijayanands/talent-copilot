@@ -7,8 +7,6 @@ from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
 from tools.headers import get_headers
-from user_mapping import get_mapped_user
-
 load_dotenv()
 
 atlassian_base_url = "https://vijayanands.atlassian.net"
@@ -24,9 +22,6 @@ def get_spaces(base_url, username, api_token) -> None or List[Dict[str, Any]]:
         data = response.json()
         return data["results"]
     return None
-
-
-# url = "https://cwiki.apache.org/confluence/display/KAFKA/Clients"
 
 
 def get_page_content(base_url, page_id, username, api_token) -> str or None:
@@ -97,20 +92,6 @@ def clean_confluence_content(html_content):
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text
-
-
-def map_confluence_users(confluence_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    mapped_confluence_activities = {}
-
-    for username, content in confluence_data.items():
-        mapped_user = get_mapped_user(username)
-        if mapped_user:
-            mapped_confluence_activities[mapped_user["email"]] = {
-                "confluence_contributions": content,
-                "user_info": mapped_user,
-            }
-
-    return mapped_confluence_activities
 
 
 def get_confluence_contributions(
