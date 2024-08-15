@@ -183,49 +183,6 @@ def register_user(email, password, is_manager, linkedin_profile):
     session.commit()
     session.close()
 
-def main_app():
-    st.title("Employee Copilot")
-
-    # Sidebar
-    with st.sidebar:
-        st.header("Settings")
-        llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
-
-    # Tabs using Streamlit's native tab component
-    tab1, tab2 = st.tabs(["Q&A Chatbot", "Self-Appraisal Generator"])
-
-    with tab1:
-        st.header("Q&A Chatbot")
-        query = st.text_input("Enter your question:")
-
-        # Debug checkbox moved outside of the button click condition
-        show_full_response = st.checkbox("Show full response (debug)", value=False)
-
-        if st.button("Ask", key="ask_button"):
-            # Initialize data
-            index = ingest_data()
-            llm = get_llm(llm_choice)
-            with st.spinner("Generating response..."):
-                full_response, response_text = ask(llm, query, index)
-
-            # Display the response text
-            st.write("Response:")
-            st.write(response_text)
-
-            # Optionally show full response based on checkbox
-            if show_full_response:
-                st.write("Full Response (Debug):")
-                st.write(full_response)
-
-    with tab2:
-        st.header("Self-Appraisal Generator")
-        email = st.selectbox("Select author email:", unique_user_emails)
-        if st.button("Generate Self-Appraisal", key="generate_button"):
-            llm = get_llm(llm_choice)
-            with st.spinner("Generating self-appraisal..."):
-                appraisal = create_self_appraisal(llm_choice, email)
-            pretty_print_appraisal(appraisal)
-
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -296,6 +253,42 @@ def set_title_bar():
         unsafe_allow_html=True
     )
 
+def main_app():
+    st.title("PathForge Dashboard")
+
+    tab1, tab2 = st.tabs(["Q&A Chatbot", "Self-Appraisal Generator"])
+
+    with tab1:
+        st.header("Q&A Chatbot")
+        query = st.text_input("Enter your question:")
+
+        show_full_response = st.checkbox("Show full response (debug)", value=False)
+
+        if st.button("Ask", key="ask_button"):
+            # Initialize data
+            index = ingest_data()
+            llm = get_llm(st.session_state.llm_choice)
+            with st.spinner("Generating response..."):
+                full_response, response_text = ask(llm, query, index)
+
+            # Display the response text
+            st.write("Response:")
+            st.write(response_text)
+
+            # Optionally show full response based on checkbox
+            if show_full_response:
+                st.write("Full Response (Debug):")
+                st.write(full_response)
+
+    with tab2:
+        st.header("Self-Appraisal Generator")
+        email = st.selectbox("Select author email:", unique_user_emails)
+        if st.button("Generate Self-Appraisal", key="generate_button"):
+            llm = get_llm(st.session_state.llm_choice)
+            with st.spinner("Generating self-appraisal..."):
+                appraisal = create_self_appraisal(llm, email)
+            pretty_print_appraisal(appraisal)
+
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
 
@@ -331,19 +324,31 @@ def setup_streamlit_ui():
     set_page_container_style()
     set_title_bar()
 
-    if 'user' not in st.session_state:
+    if 'user' in st.session_state:
+        # Sidebar (only shown when user is logged in)
+        with st.sidebar:
+            st.write(f"Welcome, {st.session_state.user.email}")
+            st.markdown("---")  # Add a horizontal line for visual separation
+
+            st.header("Settings")
+            llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
+            st.session_state.llm_choice = llm_choice
+
+            st.markdown("---")  # Add another horizontal line for visual separation
+
+            if st.button("Logout", key="logout_button"):
+                del st.session_state.user
+                st.rerun()
+
+        # Main content for logged-in users
+        main_app()
+    else:
+        # Login/Signup pages (no sidebar)
         tab1, tab2 = st.tabs(["Login", "Sign Up"])
         with tab1:
             login_page()
         with tab2:
             signup_page()
-    else:
-        st.title(f"Welcome, {st.session_state.user.email}")
-        if st.button("Logout", key="logout_button"):
-            del st.session_state.user
-            st.rerun()
-        main_app()
-
 if __name__ == "__main__":
     setup_streamlit_ui()
 
