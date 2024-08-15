@@ -1,35 +1,19 @@
 import json
 import streamlit as st
 import os
-from llama_index.core import VectorStoreIndex, download_loader
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.legacy.vector_stores import PineconeVectorStore
+from llama_index.core import download_loader
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.anthropic import Anthropic
 from llama_index.core.schema import Document
-from pinecone import Pinecone, ServerlessSpec
 
 from constants import unique_user_emails
 from functions.self_appraisal import create_self_appraisal
 from dotenv import load_dotenv
 from typing import List
 
+from helpers.ingestion import ingest_data
+
 load_dotenv()
-
-# Initialize Pinecone
-index_name = "pathforge-data"
-pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
-
-if index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=index_name,
-        dimension=1536,
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-    )
-
-pinecone_index = pc.Index(index_name)
-
 
 def get_llm(llm_choice):
     if llm_choice == "OpenAI":
@@ -51,20 +35,6 @@ def load_json_files_from_directory(directory_path: str) -> List[Document]:
             except Exception as e:
                 st.error(f"Error loading {filename}: {str(e)}")
     return documents
-
-
-@st.cache_resource
-def ingest_data():
-    directory_path = "pathforge-data"
-    all_documents = load_json_files_from_directory(directory_path)
-
-    vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
-    embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
-
-    index = VectorStoreIndex.from_documents(
-        all_documents, vector_store=vector_store, embed_model=embed_model
-    )
-    return index
 
 
 def pretty_print_appraisal(appraisal_data):
@@ -173,7 +143,6 @@ def setup_streamlit_ui():
         if st.button("Generate Self-Appraisal", key="generate_button"):
             llm = get_llm(llm_choice)
             with st.spinner("Generating self-appraisal..."):
-                # appraisal = generate_self_appraisal(email, llm, pinecone_index)
                 appraisal = create_self_appraisal(llm_choice, email)
             pretty_print_appraisal(appraisal)
 

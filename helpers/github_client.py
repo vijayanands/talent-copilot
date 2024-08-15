@@ -148,26 +148,6 @@ class GitHubAPIClient:
         print(f"Fetched {len(all_comments)} comments for PR #{pr_number}")
         return all_comments
 
-    # def list_contributors(self, owner: str, repo: str) -> Any:
-    #     url = f"{self.base_url}/repos/{owner}/{repo}/contributors"
-    #     params: Dict[str, Any] = {"per_page": 100}
-    #     all_contributors = []
-    #
-    #     while url:
-    #         response = self.api_call(url, params)
-    #         if response.status_code != 200:
-    #             logging.error(f"Error fetching contributors: {response.status_code}")
-    #             logging.error(f"Response content: {response.text}")
-    #             break
-    #         contributors = response.json()
-    #         all_contributors.extend(contributors)
-    #
-    #         # Check for pagination
-    #         url = response.links.get("next", {}).get("url")
-    #
-    #     print(f"Fetched {len(all_contributors)} contributors")
-    #     return all_contributors
-
     def list_contributors(self, owner: str, repo: str) -> Any:
         all_contributors: Set[str] = set()
 
