@@ -172,11 +172,24 @@ def get_github_contributions_by_repo(repo_owner, repo_name):
     commits_per_user = _get_commits_per_user_in_repo(repo_owner, repo_name)
     pull_requests_per_user = get_pull_requests_per_user(repo_owner, repo_name)
 
+    keys = list(commits_per_user.keys()) + list(pull_requests_per_user.keys())
+    for key in keys:
+        map_user(key)
+
     github_contributions = {}
     for user in unique_user_emails:
         github_contributions[user] = {}
-        github_contributions[user]["commits"] = commits_per_user[user]
-        github_contributions[user]["pull_requests"] = pull_requests_per_user[user]
+        # Get a list of external user ids mapped to the author
+        external_usernames = user_to_external_users[user]
+        commits = []
+        pull_requests = []
+        for external_user in external_usernames:
+            if external_user in commits_per_user:
+                commits.extend(commits_per_user[external_user]["commits"])
+            if external_user in pull_requests_per_user:
+                pull_requests.extend(pull_requests_per_user[external_user]["pull_requests"])
+        github_contributions[user]["commits"] = commits
+        github_contributions[user]["pull_requests"] = pull_requests
 
     return github_contributions
 

@@ -80,7 +80,7 @@ def pretty_print_appraisal(appraisal_data):
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
     response = query_engine.query(query)
-    return response
+    return response, response.response  # Return both full response and text
 
 
 def setup_streamlit_ui():
@@ -129,13 +129,25 @@ def setup_streamlit_ui():
     with tab1:
         st.header("Q&A Chatbot")
         query = st.text_input("Enter your question:")
+
+        # Debug checkbox moved outside of the button click condition
+        show_full_response = st.checkbox("Show full response (debug)", value=False)
+
         if st.button("Ask", key="ask_button"):
             # Initialize data
             index = ingest_data()
             llm = get_llm(llm_choice)
             with st.spinner("Generating response..."):
-                response = ask(llm, query, index)
-            st.write(response)
+                full_response, response_text = ask(llm, query, index)
+
+            # Display the response text
+            st.write("Response:")
+            st.write(response_text)
+
+            # Optionally show full response based on checkbox
+            if show_full_response:
+                st.write("Full Response (Debug):")
+                st.write(full_response)
 
     with tab2:
         st.header("Self-Appraisal Generator")
@@ -148,3 +160,13 @@ def setup_streamlit_ui():
 
 if __name__ == "__main__":
     setup_streamlit_ui()
+
+
+# Example usage
+# questions = [
+#     "What are the Jira issues for vijayanands@gmail.com?",
+#     "How many pull requests are there for vijayanands@yahoo.com?",
+#     "What is the content of the 'Getting started in Confluence' page for vjy1970@gmail.com?",
+#     "Which users have GitHub data?",
+#     "List all email addresses that have Confluence data.",
+# ]
