@@ -197,12 +197,12 @@ def calculate_similarity(text1: str, text2: str) -> float:
 
 
 def ingest_data(recreate_index: bool = False):
-    local_persist_path = "data/pinecone_store"
+    local_persist_path = "/tmp/talent-copilot/data/pinecone_store"
 
     # Set up Pinecone vector store
     embed_model = OpenAIEmbedding()
 
-    if recreate_index:
+    if recreate_index or not os.path.exists(local_persist_path):
         # Delete local store if it exists
         if os.path.exists(local_persist_path):
             print(f"Deleting existing local store at {local_persist_path}")
@@ -215,45 +215,40 @@ def ingest_data(recreate_index: bool = False):
         if not create_pinecone_index():
             print("Failed to create Pinecone index. Exiting.")
             return None
-    elif index_name not in pc.list_indexes().names():
-        print(f"Pinecone index {index_name} does not exist and recreate_index is False.")
-        print("Please check the 'Recreate Index' option in the settings to create a new index.")
-        return None
 
-    print("Initializing Pinecone vector store...")
-    vector_store = PineconeVectorStore(index_name=index_name)
+        print("Initializing Pinecone vector store...")
+        vector_store = PineconeVectorStore(index_name=index_name)
 
-    if os.path.exists(local_persist_path) and not recreate_index:
-        print("Loading existing Pinecone store from local persistence...")
-        storage_context = StorageContext.from_defaults(persist_dir=local_persist_path, vector_store=vector_store)
-        index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
-    else:
         print("Creating new storage context...")
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-        if recreate_index:
-            print("Recreating index with new documents...")
-            documents = _get_documents_to_ingest()
-            index = VectorStoreIndex.from_documents(
-                documents, storage_context=storage_context, embed_model=embed_model
-            )
-            # Comprehensive verification with retries
-            if verify_index_creation_with_retries(index, documents):
-                print("Index created and verified successfully. Persisting Pinecone store locally...")
-                storage_context.persist(persist_dir=local_persist_path)
-            else:
-                print("Failed to verify index creation after multiple attempts. Please check the logs and try again.")
-                return None
+        print("Creating index with new documents...")
+        documents = _get_documents_to_ingest()
+        index = VectorStoreIndex.from_documents(
+            documents, storage_context=storage_context, embed_model=embed_model
+        )
+
+        # Comprehensive verification with retries
+        if verify_index_creation_with_retries(index, documents):
+            print("Index created and verified successfully. Persisting Pinecone store locally...")
+            os.makedirs(os.path.dirname(local_persist_path), exist_ok=True)
+            storage_context.persist(persist_dir=local_persist_path)
         else:
-            print("Error: Local store not found and recreate_index is False.")
-            print("Please check the 'Recreate Index' option in the settings to create a new index.")
+            print("Failed to verify index creation after multiple attempts. Please check the logs and try again.")
             return None
+    else:
+        print("Loading existing Pinecone store from local persistence...")
+        vector_store = PineconeVectorStore(index_name=index_name)
+        storage_context = StorageContext.from_defaults(persist_dir=local_persist_path, vector_store=vector_store)
+        index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
 
     return index
+
 # Example usage
 if __name__ == "__main__":
     questions = [
         "What are the Jira issues for vijayanands@gmail.com?",
+        "What are the Jira issues resolved by vijayanands@gmail.com?",
         "How many pull requests are there for vijayanands@yahoo.com?",
         "What is the content of the 'Getting started in Confluence' page for vjy1970@gmail.com?",
         "Which users have GitHub data?",
@@ -261,7 +256,8 @@ if __name__ == "__main__":
     ]
 
     # Set up query engine
-    index = ingest_data()
+    recreate_index = True
+    index = ingest_data(recreate_index=recreate_index)
     if index is None:
         exit(1)
 
