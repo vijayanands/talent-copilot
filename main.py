@@ -287,6 +287,13 @@ def main_app():
                     st.write("Full Response (Debug):")
                     st.write(full_response)
 
+    with tab2:
+        st.header("Self-Appraisal Generator")
+        email = st.selectbox("Select author email:", unique_user_emails)
+        if st.button("Generate Self-Appraisal", key="generate_button"):
+            with st.spinner("Generating self-appraisal..."):
+                appraisal = create_self_appraisal(st.session_state.llm_choice, email)
+            pretty_print_appraisal(appraisal)
 
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
