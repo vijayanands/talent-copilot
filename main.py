@@ -220,7 +220,7 @@ def set_page_container_style(
 
 
 def set_title_bar():
-    logo_path = "pathforge-logo-final.png"  # Replace with the actual path to your logo file
+    logo_path = "data/pathforge-logo-final.png"  # Replace with the actual path to your logo file
     logo_base64 = get_base64_of_bin_file(logo_path)
 
     st.markdown(

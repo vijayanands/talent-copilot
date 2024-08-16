@@ -1333,6 +1333,21 @@ llama-index-core = ">=0.10.7,<0.11.0"
 llama-parse = ">=0.4.0"
 
 [[package]]
+name = "llama-index-vector-stores-pinecone"
+version = "0.1.9"
+description = "llama-index vector_stores pinecone integration"
+optional = false
+python-versions = "<3.13,>=3.8.1"
+files = [
+    {file = "llama_index_vector_stores_pinecone-0.1.9-py3-none-any.whl", hash = "sha256:efddd4df93c50452d93b69abde681c7692039a8353275ca85aa9c7df47305fb6"},
+    {file = "llama_index_vector_stores_pinecone-0.1.9.tar.gz", hash = "sha256:50298d3abb25714ba10dcfe0c86927d4866a49e9326c1c4e18ba5ad652358167"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.10.11.post1,<0.11.0"
+pinecone-client = ">=3.2.2,<6.0.0"
+
+[[package]]
 name = "llama-parse"
 version = "0.4.9"
 description = "Parse files into RAG-Optimized formats."
@@ -2127,10 +2142,7 @@ files = [
 [package.dependencies]
 annotated-types = ">=0.4.0"
 pydantic-core = "2.20.1"
-typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
-    {version = ">=4.6.1", markers = "python_version < \"3.13\""},
-]
+typing-extensions = {version = ">=4.6.1", markers = "python_version < \"3.13\""}
 
 [package.extras]
 email = ["email-validator (>=2.0.0)"]
@@ -3349,5 +3361,5 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.12"
-content-hash = "dd0aea93c9858cba7782208fe924b840e5f863236eba5a2f225b9590d719c0e9"
+python-versions = ">=3.12,<3.13"
+content-hash = "d44a771e73cb43a961b8890069a8c9b809e290854d0ef2b5cd8933ca0ff0ed64"
