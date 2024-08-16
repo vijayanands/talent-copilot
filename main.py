@@ -265,29 +265,28 @@ def main_app():
         show_full_response = st.checkbox("Show full response (debug)", value=False)
 
         if st.button("Ask", key="ask_button"):
-            # Initialize data
-            index = ingest_data()
-            llm = get_llm(st.session_state.llm_choice)
-            with st.spinner("Generating response..."):
-                full_response, response_text = ask(llm, query, index)
+            if not query.strip():  # Check if query is empty or just whitespace
+                st.error("Please enter a question before clicking 'Ask'.")
+            else:
+                # Initialize data
+                index = ingest_data(st.session_state.recreate_index)
+                if index is None:
+                    st.error("Failed to initialize the index. Please check the logs and try again.")
+                    return
 
-            # Display the response text
-            st.write("Response:")
-            st.write(response_text)
+                llm = get_llm(st.session_state.llm_choice)
+                with st.spinner("Generating response..."):
+                    full_response, response_text = ask(llm, query, index)
 
-            # Optionally show full response based on checkbox
-            if show_full_response:
-                st.write("Full Response (Debug):")
-                st.write(full_response)
+                # Display the response text
+                st.write("Response:")
+                st.write(response_text)
 
-    with tab2:
-        st.header("Self-Appraisal Generator")
-        email = st.selectbox("Select author email:", unique_user_emails)
-        if st.button("Generate Self-Appraisal", key="generate_button"):
-            llm = get_llm(st.session_state.llm_choice)
-            with st.spinner("Generating self-appraisal..."):
-                appraisal = create_self_appraisal(llm, email)
-            pretty_print_appraisal(appraisal)
+                # Optionally show full response based on checkbox
+                if show_full_response:
+                    st.write("Full Response (Debug):")
+                    st.write(full_response)
+
 
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
@@ -334,6 +333,10 @@ def setup_streamlit_ui():
             llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
             st.session_state.llm_choice = llm_choice
 
+            # Add RECREATE_INDEX setting
+            recreate_index = st.checkbox("Recreate Index", value=False, help="If checked, the index will be recreated on the next query. This may take some time.")
+            st.session_state.recreate_index = recreate_index
+
             st.markdown("---")  # Add another horizontal line for visual separation
 
             if st.button("Logout", key="logout_button"):
@@ -349,6 +352,7 @@ def setup_streamlit_ui():
             login_page()
         with tab2:
             signup_page()
+
 if __name__ == "__main__":
     setup_streamlit_ui()
 

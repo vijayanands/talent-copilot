@@ -196,34 +196,33 @@ def calculate_similarity(text1: str, text2: str) -> float:
     return overlap / min(len(words1), len(words2))
 
 
-def ingest_data():
-    recreate_index = os.environ.get("RECREATE_INDEX", "false").lower() == "true"
+def ingest_data(recreate_index: bool = False):
     local_persist_path = "data/pinecone_store"
 
     # Set up Pinecone vector store
     embed_model = OpenAIEmbedding()
-    
+
     if recreate_index:
         # Delete local store if it exists
         if os.path.exists(local_persist_path):
             print(f"Deleting existing local store at {local_persist_path}")
             shutil.rmtree(local_persist_path)
-        
+
         if index_name in pc.list_indexes().names():
             print(f"Deleting existing Pinecone index: {index_name}")
             pc.delete_index(index_name)
-        
+
         if not create_pinecone_index():
             print("Failed to create Pinecone index. Exiting.")
             return None
     elif index_name not in pc.list_indexes().names():
         print(f"Pinecone index {index_name} does not exist and recreate_index is False.")
-        print("Please set RECREATE_INDEX=true to create a new index.")
+        print("Please check the 'Recreate Index' option in the settings to create a new index.")
         return None
 
     print("Initializing Pinecone vector store...")
     vector_store = PineconeVectorStore(index_name=index_name)
-    
+
     if os.path.exists(local_persist_path) and not recreate_index:
         print("Loading existing Pinecone store from local persistence...")
         storage_context = StorageContext.from_defaults(persist_dir=local_persist_path, vector_store=vector_store)
@@ -231,7 +230,7 @@ def ingest_data():
     else:
         print("Creating new storage context...")
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        
+
         if recreate_index:
             print("Recreating index with new documents...")
             documents = _get_documents_to_ingest()
@@ -247,11 +246,10 @@ def ingest_data():
                 return None
         else:
             print("Error: Local store not found and recreate_index is False.")
-            print("Please set RECREATE_INDEX=true to create a new index.")
+            print("Please check the 'Recreate Index' option in the settings to create a new index.")
             return None
 
     return index
-
 # Example usage
 if __name__ == "__main__":
     questions = [
