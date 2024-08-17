@@ -347,21 +347,28 @@ def main_app():
             pretty_print_appraisal(appraisal)
 
 
-def update_user_profile(user_id, first_name, last_name, address, phone, linkedin_profile):
+def update_user_profile(user_id, **kwargs):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
     if user:
-        user.first_name = first_name
-        user.last_name = last_name
-        user.address = address
-        user.phone = phone
-        user.linkedin_profile = linkedin_profile
-        session.commit()
-        session.close()
-        return True
+        changed = False
+        for key, value in kwargs.items():
+            if hasattr(user, key) and getattr(user, key) != value:
+                setattr(user, key, value)
+                changed = True
+        if changed:
+            session.commit()
+            session.refresh(user)
+            session.close()
+            return user
     session.close()
-    return False
+    return None
 
+def get_user_by_id(user_id):
+    session = Session()
+    user = session.query(User).filter_by(id=user_id).first()
+    session.close()
+    return user
 
 def change_user_password(user_id, old_password, new_password):
     session = Session()
@@ -380,47 +387,90 @@ def account_page():
 
     user = st.session_state.user
 
-    # Display current profile information
-    st.subheader("Profile Information")
-    col1, col2 = st.columns(2)
-    with col1:
-        first_name = st.text_input("First Name", value=user.first_name)
-        last_name = st.text_input("Last Name", value=user.last_name)
-        address = st.text_input("Address", value=user.address)
-    with col2:
-        phone = st.text_input("Phone Number", value=user.phone)
-        linkedin_profile = st.text_input("LinkedIn Profile URL", value=user.linkedin_profile)
+    # Create tabs for Profile Information and Change Password
+    profile_tab, password_tab = st.tabs(["Profile Information", "Change Password"])
 
-    if st.button("Update Profile"):
-        if update_user_profile(user.id, first_name, last_name, address, phone, linkedin_profile):
-            st.success("Profile updated successfully!")
-            st.session_state.user = verify_login(user.email, user.password)  # Refresh user data
+    with profile_tab:
+        st.subheader("Profile Information")
+
+        # Initialize session state for edit mode if not exists
+        if 'edit_mode' not in st.session_state:
+            st.session_state.edit_mode = False
+
+        # Edit button with pencil icon
+        edit_button = st.button("✏️ Edit")
+
+        if edit_button:
+            st.session_state.edit_mode = not st.session_state.edit_mode
+
+        if st.session_state.edit_mode:
+            # Edit mode: show editable fields
+            col1, col2 = st.columns(2)
+            with col1:
+                first_name = st.text_input("First Name", value=user.first_name)
+                last_name = st.text_input("Last Name", value=user.last_name)
+                address = st.text_input("Address", value=user.address)
+            with col2:
+                phone = st.text_input("Phone Number", value=user.phone)
+                linkedin_profile = st.text_input("LinkedIn Profile URL", value=user.linkedin_profile)
+
+            if st.button("Update Profile"):
+                # Prepare a dictionary of changed fields
+                updates = {}
+                if first_name != user.first_name:
+                    updates['first_name'] = first_name
+                if last_name != user.last_name:
+                    updates['last_name'] = last_name
+                if address != user.address:
+                    updates['address'] = address
+                if phone != user.phone:
+                    updates['phone'] = phone
+                if linkedin_profile != user.linkedin_profile:
+                    updates['linkedin_profile'] = linkedin_profile
+
+                if updates:
+                    updated_user = update_user_profile(user.id, **updates)
+                    if updated_user:
+                        st.success("Profile updated successfully!")
+                        st.session_state.user = updated_user  # Update the session state with the new user data
+                        st.session_state.edit_mode = False  # Exit edit mode
+                        st.rerun()  # Rerun to show updated profile
+                    else:
+                        st.error("Failed to update profile. Please try again.")
+                else:
+                    st.info("No changes detected in the profile.")
         else:
-            st.error("Failed to update profile. Please try again.")
+            # Display mode: show non-editable fields
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**First Name:** {user.first_name}")
+                st.write(f"**Last Name:** {user.last_name}")
+                st.write(f"**Address:** {user.address or 'Not provided'}")
+            with col2:
+                st.write(f"**Phone Number:** {user.phone or 'Not provided'}")
+                st.write(f"**LinkedIn Profile URL:** {user.linkedin_profile or 'Not provided'}")
 
-    st.markdown("---")
+    with password_tab:
+        st.subheader("Change Password")
+        old_password = st.text_input("Current Password", type="password")
+        new_password = st.text_input("New Password", type="password")
+        confirm_new_password = st.text_input("Confirm New Password", type="password")
 
-    # Change password section
-    st.subheader("Change Password")
-    old_password = st.text_input("Current Password", type="password")
-    new_password = st.text_input("New Password", type="password")
-    confirm_new_password = st.text_input("Confirm New Password", type="password")
-
-    if st.button("Change Password"):
-        if not old_password or not new_password or not confirm_new_password:
-            st.error("Please fill in all password fields.")
-        elif new_password != confirm_new_password:
-            st.error("New passwords do not match.")
-        elif not is_password_valid(new_password):
-            st.error(
-                "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
-        else:
-            if change_user_password(user.id, old_password, new_password):
-                st.success("Password changed successfully! You will now be logged out.")
-                st.session_state.logout_after_password_change = True
-                st.rerun()
+        if st.button("Change Password"):
+            if not old_password or not new_password or not confirm_new_password:
+                st.error("Please fill in all password fields.")
+            elif new_password != confirm_new_password:
+                st.error("New passwords do not match.")
+            elif not is_password_valid(new_password):
+                st.error(
+                    "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
             else:
-                st.error("Failed to change password. Please check your current password and try again.")
+                if change_user_password(user.id, old_password, new_password):
+                    st.success("Password changed successfully! You will now be logged out.")
+                    st.session_state.logout_after_password_change = True
+                    st.rerun()
+                else:
+                    st.error("Failed to change password. Please check your current password and try again.")
 
 
 def setup_streamlit_ui():
@@ -499,6 +549,7 @@ def setup_streamlit_ui():
             login_page()
         with tab2:
             signup_page()
+
 
 if __name__ == "__main__":
     setup_streamlit_ui()
