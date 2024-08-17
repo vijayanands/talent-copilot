@@ -88,6 +88,7 @@ def _extract_jira_response(base_url, response):
         jira_data["timespent"] = issue["fields"]["timespent"]
         jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
         jira_data["priority"] = issue["fields"]["priority"]["name"]
+        jira_data["resolved_by"] = jira_data["assignee"] if jira_data["assignee"]!= "Unassigned" else None
         print(json.dumps(jira_data, indent=5))
         jira_list.append(jira_data)
     # Get the total number of issues
@@ -132,7 +133,7 @@ def count_resolved_issues(base_url, username, author):
     # Set up the parameters for the request
     params = {
         "jql": jql_query,
-        "fields": ["issuetype", "timespent", "resolutiondate", "priority", "summary", "description", "comments", "reporter", "assignee"],
+        "fields": ["issuetype", "timespent", "resolution", "resolutiondate", "priority", "summary", "description", "comments", "reporter", "assignee"],
         # "maxResults": 0,  # We only need the total, not the actual issues
         # "maxResults": 0,  # We only need the total, not the actual issues
     }
