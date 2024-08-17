@@ -48,6 +48,14 @@ Session = sessionmaker(bind=engine)
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
+def verify_current_password(user_id, provided_password):
+    session = Session()
+    user = session.query(User).filter_by(id=user_id).first()
+    session.close()
+    if user:
+        return bcrypt.checkpw(provided_password.encode('utf-8'), user.password)
+    return False
+
 def verify_password(stored_password, provided_password):
     return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password)
 
@@ -164,25 +172,25 @@ def signup_page():
     st.header("Sign Up")
 
     # Initialize session state variables
-    if 'password_match_error' not in st.session_state:
-        st.session_state.password_match_error = ""
-    if 'signup_password' not in st.session_state:
-        st.session_state.signup_password = ""
-    if 'signup_confirm_password' not in st.session_state:
-        st.session_state.signup_confirm_password = ""
+    if 'signup_password_match_error' not in st.session_state:
+        st.session_state.signup_password_match_error = ""
 
     col1, col2 = st.columns(2)
 
     with col1:
         first_name = st.text_input("First Name*", key="signup_first_name")
         email = st.text_input("Email*", key="signup_email")
-        password = st.text_input("Password*", type="password", key="signup_password", on_change=check_password_match)
-        confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password", on_change=check_password_match)
+        password = st.text_input("Password*", type="password", key="signup_password",
+                                 on_change=check_password_match,
+                                 args=('signup_password', 'signup_confirm_password', 'signup_password_match_error'))
+        confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password",
+                                         on_change=check_password_match,
+                                         args=('signup_password', 'signup_confirm_password', 'signup_password_match_error'))
         st.caption("Password must be at least 8 characters long, contain at least one number and one symbol.")
 
         # Display password match error if it exists
-        if st.session_state.password_match_error:
-            st.error(st.session_state.password_match_error)
+        if st.session_state.signup_password_match_error:
+            st.error(st.session_state.signup_password_match_error)
 
         is_manager = st.checkbox("I am a people manager", key="signup_is_manager")
 
@@ -211,12 +219,13 @@ def signup_page():
             except Exception as e:
                 st.error(f"Error creating account: {str(e)}")
 
-def check_password_match():
-    if 'signup_password' in st.session_state and 'signup_confirm_password' in st.session_state:
-        if st.session_state.signup_password != st.session_state.signup_confirm_password:
-            st.session_state.password_match_error = "Passwords do not match."
+
+def check_password_match(password_key, confirm_password_key, error_key):
+    if password_key in st.session_state and confirm_password_key in st.session_state:
+        if st.session_state[password_key] != st.session_state[confirm_password_key]:
+            st.session_state[error_key] = "Passwords do not match."
         else:
-            st.session_state.password_match_error = ""
+            st.session_state[error_key] = ""
 
 def register_user(email, password, is_manager, linkedin_profile, first_name, last_name, address, phone):
     session = Session()
@@ -370,17 +379,17 @@ def get_user_by_id(user_id):
     session.close()
     return user
 
-def change_user_password(user_id, old_password, new_password):
+# Update the change_user_password function to only take user_id and new_password
+def change_user_password(user_id, new_password):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
-    if user and verify_password(user.password, old_password):
+    if user:
         user.password = hash_password(new_password)
         session.commit()
         session.close()
         return True
     session.close()
     return False
-
 
 def account_page():
     st.header("Account")
@@ -452,12 +461,32 @@ def account_page():
 
     with password_tab:
         st.subheader("Change Password")
-        old_password = st.text_input("Current Password", type="password")
-        new_password = st.text_input("New Password", type="password")
-        confirm_new_password = st.text_input("Confirm New Password", type="password")
+
+        # Initialize session state variables if not exists
+        if 'change_password_match_error' not in st.session_state:
+            st.session_state.change_password_match_error = ""
+        if 'current_password_error' not in st.session_state:
+            st.session_state.current_password_error = ""
+
+        current_password = st.text_input("Current Password", type="password", key="current_password")
+        new_password = st.text_input("New Password", type="password", key="new_password",
+                                     on_change=check_password_match,
+                                     args=('new_password', 'confirm_new_password', 'change_password_match_error'))
+        confirm_new_password = st.text_input("Confirm New Password", type="password", key="confirm_new_password",
+                                             on_change=check_password_match,
+                                             args=(
+                                             'new_password', 'confirm_new_password', 'change_password_match_error'))
+
+        # Display password match error if it exists
+        if st.session_state.change_password_match_error:
+            st.error(st.session_state.change_password_match_error)
+
+        # Display current password error if it exists
+        if st.session_state.current_password_error:
+            st.error(st.session_state.current_password_error)
 
         if st.button("Change Password"):
-            if not old_password or not new_password or not confirm_new_password:
+            if not current_password or not new_password or not confirm_new_password:
                 st.error("Please fill in all password fields.")
             elif new_password != confirm_new_password:
                 st.error("New passwords do not match.")
@@ -465,12 +494,17 @@ def account_page():
                 st.error(
                     "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
             else:
-                if change_user_password(user.id, old_password, new_password):
-                    st.success("Password changed successfully! You will now be logged out.")
-                    st.session_state.logout_after_password_change = True
-                    st.rerun()
+                # Verify current password
+                if not verify_current_password(user.id, current_password):
+                    st.session_state.current_password_error = "Current password is incorrect."
+                    st.error("Current password is incorrect.")
                 else:
-                    st.error("Failed to change password. Please check your current password and try again.")
+                    if change_user_password(user.id, new_password):
+                        st.success("Password changed successfully! You will now be logged out.")
+                        st.session_state.logout_after_password_change = True
+                        st.rerun()
+                    else:
+                        st.error("Failed to change password. Please try again.")
 
 
 def setup_streamlit_ui():
