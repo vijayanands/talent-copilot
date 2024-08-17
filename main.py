@@ -416,7 +416,9 @@ def account_page():
                 "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
         else:
             if change_user_password(user.id, old_password, new_password):
-                st.success("Password changed successfully!")
+                st.success("Password changed successfully! You will now be logged out.")
+                st.session_state.logout_after_password_change = True
+                st.rerun()
             else:
                 st.error("Failed to change password. Please check your current password and try again.")
 
@@ -456,7 +458,12 @@ def setup_streamlit_ui():
     set_page_container_style()
     set_title_bar()
 
-    if 'user' in st.session_state:
+    if 'logout_after_password_change' in st.session_state and st.session_state.logout_after_password_change:
+        del st.session_state.user
+        del st.session_state.logout_after_password_change
+        st.info("You have been logged out due to a password change. Please log in with your new password.")
+        login_page()
+    elif 'user' in st.session_state:
         # Sidebar (only shown when user is logged in)
         with st.sidebar:
             st.write(f"Welcome, {st.session_state.user.email}")
