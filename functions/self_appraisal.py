@@ -12,28 +12,6 @@ debug_github = True
 
 load_dotenv()
 
-
-def prompt_for_author(unique_user_emails):
-    choices = ", ".join(unique_user_emails)
-    while True:
-        author = input(
-            f"Enter the unique user email for generating appraisals ({choices}): "
-        )
-        if author in unique_user_emails:
-            return author
-        print("Invalid email. Please try again.")
-
-
-def prompt_for_vendor():
-    while True:
-        vendor = input(
-            "Choose the AI model vendor to use (openai, anthropic): "
-        ).lower()
-        if vendor in ["openai", "anthropic"]:
-            return vendor
-        print("Invalid vendor. Please choose either 'openai' or 'anthropic'.")
-
-
 def create_self_appraisal(vendor, author):
     initialize_github_hack()
     return self_appraisal_tool(author, vendor)

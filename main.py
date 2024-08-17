@@ -313,49 +313,6 @@ def set_title_bar():
         unsafe_allow_html=True
     )
 
-def main_app():
-    st.title("PathForge Dashboard")
-
-    tab1, tab2 = st.tabs(["Q&A Chatbot", "Self-Appraisal Generator"])
-
-    with tab1:
-        st.header("Q&A Chatbot")
-        query = st.text_input("Enter your question:")
-
-        show_full_response = st.checkbox("Show full response (debug)", value=False)
-
-        if st.button("Ask", key="ask_button"):
-            if not query.strip():  # Check if query is empty or just whitespace
-                st.error("Please enter a question before clicking 'Ask'.")
-            else:
-                # Initialize data
-                index = ingest_data(st.session_state.recreate_index)
-                if index is None:
-                    st.error("Failed to initialize the index. Please check the logs and try again.")
-                    return
-
-                llm = get_llm(st.session_state.llm_choice)
-                with st.spinner("Generating response..."):
-                    full_response, response_text = ask(llm, query, index)
-
-                # Display the response text
-                st.write("Response:")
-                st.write(response_text)
-
-                # Optionally show full response based on checkbox
-                if show_full_response:
-                    st.write("Full Response (Debug):")
-                    st.write(full_response)
-
-    with tab2:
-        st.header("Self-Appraisal Generator")
-        email = st.selectbox("Select author email:", unique_user_emails)
-        if st.button("Generate Self-Appraisal", key="generate_button"):
-            with st.spinner("Generating self-appraisal..."):
-                appraisal = create_self_appraisal(st.session_state.llm_choice, email)
-            pretty_print_appraisal(appraisal)
-
-
 def update_user_profile(user_id, **kwargs):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
@@ -515,6 +472,48 @@ def account_page():
                         st.rerun()
                     else:
                         st.error("Failed to change password. Please try again.")
+
+def main_app():
+    st.title("PathForge Dashboard")
+
+    tab1, tab2 = st.tabs(["Q&A Chatbot", "Self-Appraisal Generator"])
+
+    with tab1:
+        st.header("Q&A Chatbot")
+        query = st.text_input("Enter your question:")
+
+        show_full_response = st.checkbox("Show full response (debug)", value=False)
+
+        if st.button("Ask", key="ask_button"):
+            if not query.strip():  # Check if query is empty or just whitespace
+                st.error("Please enter a question before clicking 'Ask'.")
+            else:
+                # Initialize data
+                index = ingest_data(st.session_state.recreate_index)
+                if index is None:
+                    st.error("Failed to initialize the index. Please check the logs and try again.")
+                    return
+
+                llm = get_llm(st.session_state.llm_choice)
+                with st.spinner("Generating response..."):
+                    full_response, response_text = ask(llm, query, index)
+
+                # Display the response text
+                st.write("Response:")
+                st.write(response_text)
+
+                # Optionally show full response based on checkbox
+                if show_full_response:
+                    st.write("Full Response (Debug):")
+                    st.write(full_response)
+
+    with tab2:
+        st.header("Self-Appraisal Generator")
+        if st.button("Generate Self-Appraisal", key="generate_button"):
+            user_email = st.session_state.user.email  # Get the current user's email
+            with st.spinner(f"Generating self-appraisal for {user_email} ..."):
+                appraisal = create_self_appraisal(st.session_state.llm_choice, user_email)
+            pretty_print_appraisal(appraisal)
 
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
