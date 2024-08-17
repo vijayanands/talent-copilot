@@ -346,6 +346,81 @@ def main_app():
                 appraisal = create_self_appraisal(st.session_state.llm_choice, email)
             pretty_print_appraisal(appraisal)
 
+
+def update_user_profile(user_id, first_name, last_name, address, phone, linkedin_profile):
+    session = Session()
+    user = session.query(User).filter_by(id=user_id).first()
+    if user:
+        user.first_name = first_name
+        user.last_name = last_name
+        user.address = address
+        user.phone = phone
+        user.linkedin_profile = linkedin_profile
+        session.commit()
+        session.close()
+        return True
+    session.close()
+    return False
+
+
+def change_user_password(user_id, old_password, new_password):
+    session = Session()
+    user = session.query(User).filter_by(id=user_id).first()
+    if user and verify_password(user.password, old_password):
+        user.password = hash_password(new_password)
+        session.commit()
+        session.close()
+        return True
+    session.close()
+    return False
+
+
+def account_page():
+    st.header("Account")
+
+    user = st.session_state.user
+
+    # Display current profile information
+    st.subheader("Profile Information")
+    col1, col2 = st.columns(2)
+    with col1:
+        first_name = st.text_input("First Name", value=user.first_name)
+        last_name = st.text_input("Last Name", value=user.last_name)
+        address = st.text_input("Address", value=user.address)
+    with col2:
+        phone = st.text_input("Phone Number", value=user.phone)
+        linkedin_profile = st.text_input("LinkedIn Profile URL", value=user.linkedin_profile)
+
+    if st.button("Update Profile"):
+        if update_user_profile(user.id, first_name, last_name, address, phone, linkedin_profile):
+            st.success("Profile updated successfully!")
+            st.session_state.user = verify_login(user.email, user.password)  # Refresh user data
+        else:
+            st.error("Failed to update profile. Please try again.")
+
+    st.markdown("---")
+
+    # Change password section
+    st.subheader("Change Password")
+    old_password = st.text_input("Current Password", type="password")
+    new_password = st.text_input("New Password", type="password")
+    confirm_new_password = st.text_input("Confirm New Password", type="password")
+
+    if st.button("Change Password"):
+        if not old_password or not new_password or not confirm_new_password:
+            st.error("Please fill in all password fields.")
+        elif new_password != confirm_new_password:
+            st.error("New passwords do not match.")
+        elif not is_password_valid(new_password):
+            st.error(
+                "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
+        else:
+            if change_user_password(user.id, old_password, new_password):
+                st.success("Password changed successfully!")
+            else:
+                st.error("Failed to change password. Please check your current password and try again.")
+
+
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
 
@@ -387,11 +462,15 @@ def setup_streamlit_ui():
             st.write(f"Welcome, {st.session_state.user.email}")
             st.markdown("---")  # Add a horizontal line for visual separation
 
+            # Navigation
+            page = st.radio("Navigation", ["Dashboard", "Account"])
+
+            st.markdown("---")
+
             st.header("Settings")
             llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
             st.session_state.llm_choice = llm_choice
 
-            # Add RECREATE_INDEX setting
             recreate_index = st.checkbox("Recreate Index", value=False, help="If checked, the index will be recreated on the next query. This may take some time.")
             st.session_state.recreate_index = recreate_index
 
@@ -402,7 +481,10 @@ def setup_streamlit_ui():
                 st.rerun()
 
         # Main content for logged-in users
-        main_app()
+        if page == "Dashboard":
+            main_app()
+        elif page == "Account":
+            account_page()
     else:
         # Login/Signup pages (no sidebar)
         tab1, tab2 = st.tabs(["Login", "Sign Up"])
