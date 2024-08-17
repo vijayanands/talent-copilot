@@ -391,6 +391,7 @@ def change_user_password(user_id, new_password):
     session.close()
     return False
 
+
 def account_page():
     st.header("Account")
 
@@ -515,6 +516,12 @@ def account_page():
                     else:
                         st.error("Failed to change password. Please try again.")
 
+def show_initial_dashboard():
+    tab1, tab2 = st.tabs(["Login", "Sign Up"])
+    with tab1:
+        login_page()
+    with tab2:
+        signup_page()
 
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
@@ -555,7 +562,7 @@ def setup_streamlit_ui():
         del st.session_state.user
         del st.session_state.logout_after_password_change
         st.info("You have been logged out due to a password change. Please log in with your new password.")
-        login_page()
+        show_initial_dashboard()
     elif 'user' in st.session_state:
         # Sidebar (only shown when user is logged in)
         with st.sidebar:
@@ -587,11 +594,7 @@ def setup_streamlit_ui():
             account_page()
     else:
         # Login/Signup pages (no sidebar)
-        tab1, tab2 = st.tabs(["Login", "Sign Up"])
-        with tab1:
-            login_page()
-        with tab2:
-            signup_page()
+        show_initial_dashboard()
 
 
 if __name__ == "__main__":
