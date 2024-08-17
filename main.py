@@ -31,6 +31,10 @@ class User(Base):
     password = Column(String, nullable=False)
     is_manager = Column(Boolean, default=False)
     linkedin_profile = Column(String)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    address = Column(String)
+    phone = Column(String)
 
 # Check if table exists, create only if it doesn't
 def create_table_if_not_exists(engine, table):
@@ -158,31 +162,78 @@ def login_page():
 
 def signup_page():
     st.header("Sign Up")
-    email = st.text_input("Email", key="signup_email")
-    password = st.text_input("Password", type="password", key="signup_password")
-    st.caption("Password must be at least 8 characters long, contain at least one number and one symbol.")
-    is_manager = st.checkbox("I am a people manager", key="signup_is_manager")
-    linkedin_profile = st.text_input("LinkedIn Profile (optional)", key="signup_linkedin")
+
+    # Initialize session state variables
+    if 'password_match_error' not in st.session_state:
+        st.session_state.password_match_error = ""
+    if 'signup_password' not in st.session_state:
+        st.session_state.signup_password = ""
+    if 'signup_confirm_password' not in st.session_state:
+        st.session_state.signup_confirm_password = ""
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        first_name = st.text_input("First Name*", key="signup_first_name")
+        email = st.text_input("Email*", key="signup_email")
+        password = st.text_input("Password*", type="password", key="signup_password", on_change=check_password_match)
+        confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password", on_change=check_password_match)
+        st.caption("Password must be at least 8 characters long, contain at least one number and one symbol.")
+
+        # Display password match error if it exists
+        if st.session_state.password_match_error:
+            st.error(st.session_state.password_match_error)
+
+        is_manager = st.checkbox("I am a people manager", key="signup_is_manager")
+
+    with col2:
+        last_name = st.text_input("Last Name*", key="signup_last_name")
+        address = st.text_input("Address (optional)", key="signup_address")
+        phone = st.text_input("Phone (optional)", key="signup_phone")
+        linkedin_profile = st.text_input("LinkedIn Profile (optional)", key="signup_linkedin")
+
     if st.button("Sign Up", key="signup_button"):
-        if not is_password_valid(password):
-            st.error("Password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
+        if not first_name or not last_name:
+            st.error("First name and last name are required.")
+        elif not is_password_valid(st.session_state.signup_password):
+            st.error(
+                "Password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
+        elif st.session_state.signup_password != st.session_state.signup_confirm_password:
+            st.error("Passwords do not match. Please try again.")
         else:
             try:
-                register_user(email, password, is_manager, linkedin_profile)
+                register_user(email, st.session_state.signup_password, is_manager, linkedin_profile, first_name, last_name, address, phone)
                 st.success("Account created successfully! Please log in.")
+                # Clear the form after successful signup
+                for key in st.session_state.keys():
+                    if key.startswith('signup_'):
+                        del st.session_state[key]
             except Exception as e:
                 st.error(f"Error creating account: {str(e)}")
 
-def register_user(email, password, is_manager, linkedin_profile):
+def check_password_match():
+    if 'signup_password' in st.session_state and 'signup_confirm_password' in st.session_state:
+        if st.session_state.signup_password != st.session_state.signup_confirm_password:
+            st.session_state.password_match_error = "Passwords do not match."
+        else:
+            st.session_state.password_match_error = ""
+
+def register_user(email, password, is_manager, linkedin_profile, first_name, last_name, address, phone):
     session = Session()
-    if not is_password_valid(password):
-        raise ValueError("Password does not meet the requirements.")
     hashed_password = hash_password(password)
-    new_user = User(email=email, password=hashed_password, is_manager=is_manager, linkedin_profile=linkedin_profile)
+    new_user = User(
+        email=email,
+        password=hashed_password,
+        is_manager=is_manager,
+        linkedin_profile=linkedin_profile,
+        first_name=first_name,
+        last_name=last_name,
+        address=address,
+        phone=phone
+    )
     session.add(new_user)
     session.commit()
     session.close()
-
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
