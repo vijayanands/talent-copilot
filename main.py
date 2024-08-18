@@ -478,7 +478,7 @@ def main_app():
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Q&A Chatbot",
-        "Self-Appraisal Generator",
+        "Performance Management",
         "Learning & Development",
         "Skills",
         "Jobs/Career"
@@ -514,31 +514,39 @@ def main_app():
                     st.write(full_response)
 
     with tab2:
-        st.header("Self-Appraisal Generator")
-        if st.button("Generate Self-Appraisal", key="generate_button"):
-            user_email = st.session_state.user.email  # Get the current user's email
-            with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                appraisal = create_self_appraisal(st.session_state.llm_choice, user_email)
-            pretty_print_appraisal(appraisal)
+        st.header("Performance Management")
+
+        performance_subtab1, performance_subtab2 = st.tabs(["Self-Appraisal", "Other Performance Tools"])
+
+        with performance_subtab1:
+            st.subheader("Self-Appraisal Generator")
+            if st.button("Generate Self-Appraisal", key="generate_button"):
+                user_email = st.session_state.user.email  # Get the current user's email
+                with st.spinner(f"Generating self-appraisal for {user_email} ..."):
+                    appraisal = create_self_appraisal(st.session_state.llm_choice, user_email)
+                pretty_print_appraisal(appraisal)
+
+        with performance_subtab2:
+            st.write("This section is under development. Here you will find additional performance management tools.")
+            st.info("Coming soon: Goal setting, performance reviews, and feedback mechanisms.")
 
     with tab3:
         st.header("Learning & Development")
-        st.write("This section is under development. Here you will be able to track your learning progress and find development opportunities.")
-        # Placeholder for future Learning & Development content
+        st.write(
+            "This section is under development. Here you will be able to track your learning progress and find development opportunities.")
         st.info("Coming soon: Course recommendations, learning paths, and skill gap analysis.")
 
     with tab4:
         st.header("Skills")
         st.write("This section is under development. Here you will be able to view and manage your skills profile.")
-        # Placeholder for future Skills content
         st.info("Coming soon: Skill assessment, endorsements, and skill-based project matching.")
 
     with tab5:
         st.header("Jobs/Career")
-        st.write("This section is under development. Here you will be able to explore career opportunities and plan your career path.")
-        # Placeholder for future Jobs/Career content
+        st.write(
+            "This section is under development. Here you will be able to explore career opportunities and plan your career path.")
         st.info("Coming soon: Job recommendations, career path visualization, and mentorship opportunities.")
-        
+
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
     with tab1:
