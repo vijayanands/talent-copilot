@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 
 from functions.llamaindex_appraisal import self_appraisal_tool
 from helpers.confluence import get_confluence_contributions_by_author
-from helpers.github import (get_github_contributions_by_author,
-                            initialize_github_hack)
+from helpers.github import get_github_contributions_by_author, initialize_github_hack
 from helpers.jira import get_jira_contributions_by_author
 
 debug_jira = False
