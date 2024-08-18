@@ -1,33 +1,47 @@
 import os
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from main import User, Base  # Import User and Base from main.py
+
+from main import Base, User  # Import User and Base from main.py
 
 
 def get_db_path():
     while True:
-        db_path = input("Enter the path to users.db (or press Enter for default './users.db'): ").strip()
+        db_path = input(
+            "Enter the path to users.db (or press Enter for default './users.db'): "
+        ).strip()
         if not db_path:
-            db_path = './users.db'
+            db_path = "./users.db"
 
         if os.path.isfile(db_path):
             return db_path
         elif os.path.isdir(os.path.dirname(db_path)):
             return db_path
         else:
-            print(f"The directory {os.path.dirname(db_path)} does not exist. Please enter a valid path.")
+            print(
+                f"The directory {os.path.dirname(db_path)} does not exist. Please enter a valid path."
+            )
 
 
 def create_engine_with_path(db_path):
-    return create_engine(f'sqlite:///{db_path}')
+    return create_engine(f"sqlite:///{db_path}")
 
 
 def update_schema(engine):
     with engine.connect() as conn:
         try:
             # Use text() to create SQL expressions
-            conn.execute(text("ALTER TABLE users ADD COLUMN first_name VARCHAR NOT NULL DEFAULT ''"))
-            conn.execute(text("ALTER TABLE users ADD COLUMN last_name VARCHAR NOT NULL DEFAULT ''"))
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN first_name VARCHAR NOT NULL DEFAULT ''"
+                )
+            )
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN last_name VARCHAR NOT NULL DEFAULT ''"
+                )
+            )
             conn.execute(text("ALTER TABLE users ADD COLUMN address VARCHAR"))
             conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR"))
             conn.commit()
@@ -65,15 +79,17 @@ if __name__ == "__main__":
 
         choice = input("Enter your choice (1-3): ")
 
-        if choice == '1':
+        if choice == "1":
             update_schema(engine)
-        elif choice == '2':
-            confirm = input("Are you sure you want to truncate the database? This will delete all user data. (y/n): ")
-            if confirm.lower() == 'y':
+        elif choice == "2":
+            confirm = input(
+                "Are you sure you want to truncate the database? This will delete all user data. (y/n): "
+            )
+            if confirm.lower() == "y":
                 truncate_database(engine)
             else:
                 print("Operation cancelled.")
-        elif choice == '3':
+        elif choice == "3":
             break
         else:
             print("Invalid choice. Please try again.")

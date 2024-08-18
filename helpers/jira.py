@@ -2,11 +2,11 @@ import json
 import os
 from collections import defaultdict
 from typing import Any, Dict, List
-from constants import unique_user_emails
 
 import requests
 from dotenv import load_dotenv
 
+from constants import unique_user_emails
 from tools.auth import get_headers
 
 load_dotenv()
@@ -64,13 +64,14 @@ def _extract_description_content(description):
                 _process_content(item["content"])
 
             elif item["type"] == "inlineCard":
-                url = item['attrs']['url']
+                url = item["attrs"]["url"]
                 extracted_content.append(f"    " * indent_level + f"Link: {url}")
 
     for item in description:
         _process_content([item])
 
     return "\n".join(extracted_content).strip()
+
 
 def _extract_jira_response(base_url, response):
     # Parse the JSON response
@@ -80,15 +81,26 @@ def _extract_jira_response(base_url, response):
         jira_data = defaultdict()
         jira_data["summary"] = issue["fields"]["summary"]
         jira_data["reporter"] = issue["fields"]["reporter"]["emailAddress"]
-        jira_data["assignee"] = issue["fields"]["assignee"]["emailAddress"] if issue["fields"][
-            "assignee"] else "Unassigned"
+        jira_data["assignee"] = (
+            issue["fields"]["assignee"]["emailAddress"]
+            if issue["fields"]["assignee"]
+            else "Unassigned"
+        )
         jira_data["link"] = f"{base_url}/browse/{issue['key']}"
-        content = issue["fields"]["description"]["content"] if issue["fields"]["description"] else None
-        jira_data["description"] = _extract_description_content(content) if content else None
+        content = (
+            issue["fields"]["description"]["content"]
+            if issue["fields"]["description"]
+            else None
+        )
+        jira_data["description"] = (
+            _extract_description_content(content) if content else None
+        )
         jira_data["timespent"] = issue["fields"]["timespent"]
         jira_data["resolutiondate"] = issue["fields"]["resolutiondate"]
         jira_data["priority"] = issue["fields"]["priority"]["name"]
-        jira_data["resolved_by"] = jira_data["assignee"] if jira_data["assignee"]!= "Unassigned" else None
+        jira_data["resolved_by"] = (
+            jira_data["assignee"] if jira_data["assignee"] != "Unassigned" else None
+        )
         print(json.dumps(jira_data, indent=5))
         jira_list.append(jira_data)
     # Get the total number of issues
@@ -96,6 +108,7 @@ def _extract_jira_response(base_url, response):
     jira_response["total_resolved"] = len(jira_list)
     jira_response["jiras_resolved"] = jira_list
     return jira_response
+
 
 def fetch_jira_projects(base_url: str, username: str) -> List[Dict[str, Any]]:
     """
@@ -109,7 +122,7 @@ def fetch_jira_projects(base_url: str, username: str) -> List[Dict[str, Any]]:
         api_endpoint,
         headers=headers,
     )
-    
+
     if response.status_code == 200:
         return response.json()
     else:
@@ -133,7 +146,18 @@ def count_resolved_issues(base_url, username, author):
     # Set up the parameters for the request
     params = {
         "jql": jql_query,
-        "fields": ["issuetype", "timespent", "resolution", "resolutiondate", "priority", "summary", "description", "comments", "reporter", "assignee"],
+        "fields": [
+            "issuetype",
+            "timespent",
+            "resolution",
+            "resolutiondate",
+            "priority",
+            "summary",
+            "description",
+            "comments",
+            "reporter",
+            "assignee",
+        ],
         # "maxResults": 0,  # We only need the total, not the actual issues
         # "maxResults": 0,  # We only need the total, not the actual issues
     }
@@ -141,7 +165,9 @@ def count_resolved_issues(base_url, username, author):
     try:
         # Make the API request
         response = requests.get(
-            api_endpoint, headers=get_headers(username, atlassian_api_token), params=params
+            api_endpoint,
+            headers=get_headers(username, atlassian_api_token),
+            params=params,
         )
         response.raise_for_status()  # Raise an exception for bad status codes
 
@@ -151,7 +177,6 @@ def count_resolved_issues(base_url, username, author):
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
-
 
 
 def count_resolved_issues_by_assignee(base_url, username):
@@ -179,7 +204,9 @@ def count_resolved_issues_by_assignee(base_url, username):
         while True:
             # Make the API request
             response = requests.get(
-                api_endpoint, headers=get_headers(username, atlassian_api_token), params=params
+                api_endpoint,
+                headers=get_headers(username, atlassian_api_token),
+                params=params,
             )
             response.raise_for_status()  # Raise an exception for bad status codes
 
@@ -222,12 +249,14 @@ def get_jira_contributions_by_author(author: str):
     else:
         return None
 
+
 def get_jira_contributions_per_user():
     all_jira_contributions = {}
     for user in unique_user_emails:
         contributions = get_jira_contributions_by_author(user)
         all_jira_contributions[user] = contributions
     return all_jira_contributions
+
 
 # Usage example
 if __name__ == "__main__":
@@ -237,10 +266,14 @@ if __name__ == "__main__":
         contributions = get_jira_contributions_by_author(author)
         print(f"Jira contributions by {author}:")
         print(json.dumps(contributions, indent=2))
-        resolved_count = count_resolved_issues(atlassian_base_url, atlassian_username, author)
+        resolved_count = count_resolved_issues(
+            atlassian_base_url, atlassian_username, author
+        )
         if resolved_count is not None:
             print(f"Number of resolved issues by {author}: {resolved_count}")
-        resolved_counts = count_resolved_issues_by_assignee(atlassian_base_url, atlassian_username)
+        resolved_counts = count_resolved_issues_by_assignee(
+            atlassian_base_url, atlassian_username
+        )
         if resolved_counts is not None:
             print("Number of resolved issues by assignee:")
             for assignee, count in sorted(

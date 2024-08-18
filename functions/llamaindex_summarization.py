@@ -1,13 +1,14 @@
-import os
 import json
+import os
 import uuid
 
-from llama_index.core import VectorStoreIndex, Document
+from dotenv import load_dotenv
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.llms.openai import OpenAI
-from dotenv import load_dotenv
 
 load_dotenv()
+
 
 def summarize_data(data, id=None):
     # Check if data is a string (possibly a JSON string)
@@ -19,22 +20,26 @@ def summarize_data(data, id=None):
 
     # Ensure data is a dictionary
     if not isinstance(data, dict):
-        raise ValueError("Input must be a dictionary or a JSON string representing a dictionary")
+        raise ValueError(
+            "Input must be a dictionary or a JSON string representing a dictionary"
+        )
 
     # Convert the dictionary to LlamaIndex Document objects
     documents = []
     if not isinstance(data, dict):
-        raise ValueError(f"Each value in the dictionary must be a dictionary, found {type(doc)} for key {key}")
+        raise ValueError(
+            f"Each value in the dictionary must be a dictionary, found {type(doc)} for key {key}"
+        )
 
-    content = data.get('content')
+    content = data.get("content")
     if not content:
         raise ValueError(f"The dictionary for key {data} must contain a 'content' key")
 
-    extra_info = {k: v for k, v in data.items() if k != 'content'}
+    extra_info = {k: v for k, v in data.items() if k != "content"}
     # Initialize id randomly if not provided
     if id is None:
         id = str(uuid.uuid4())
-    extra_info['id'] = id  # Add the id to extra_info
+    extra_info["id"] = id  # Add the id to extra_info
 
     # Create Document object with the updated method
     documents.append(Document(text=content, metadata=extra_info))
@@ -52,10 +57,11 @@ def summarize_data(data, id=None):
     # 5. Generate the summary
     summary_prompt = "Please provide a comprehensive summary of the document."
     # Customize the LLM
-    llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", temperature=0.1)
+    llm = OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", temperature=0.1
+    )
     query_engine_custom = index.as_query_engine(llm=llm)
     summary_custom = query_engine_custom.query(summary_prompt)
 
     print(summary_custom.response)
     return summary_custom.response
-

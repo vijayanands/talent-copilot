@@ -1,23 +1,22 @@
 import json
 import os
-import time
-import shutil
 import random
+import shutil
+import time
 from typing import Dict, List
-from uuid import uuid5, NAMESPACE_DNS
+from uuid import NAMESPACE_DNS, uuid5
 
-from llama_index.core import VectorStoreIndex, Document, StorageContext
+from dotenv import load_dotenv
+from llama_index.core import Document, StorageContext, VectorStoreIndex
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.pinecone import PineconeVectorStore
+from pinecone import Pinecone, PineconeException, ServerlessSpec
 
+from constants import unique_user_emails
 from helpers.confluence import get_confluence_contributions_per_user
 from helpers.github import get_github_contributions_by_repo
 from helpers.jira import get_jira_contributions_per_user
-from constants import unique_user_emails
-from pinecone import Pinecone, ServerlessSpec, PineconeException
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -27,6 +26,7 @@ atlassian_username = "vijayanands@gmail.com"
 # Initialize Pinecone
 index_name = "pathforge-data"
 pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+
 
 # Function to convert nested dictionary to string
 def _dict_to_string(d: Dict, indent: int = 0) -> str:
@@ -46,9 +46,11 @@ def _dict_to_string(d: Dict, indent: int = 0) -> str:
             result.append(f"{'  ' * indent}{key}: {value}")
     return "\n".join(result)
 
+
 # Function to generate a consistent ID for a user
 def _generate_key(user: str) -> str:
     return str(uuid5(NAMESPACE_DNS, user))
+
 
 def _get_documents_to_ingest() -> List[Document]:
     # Fetch data
@@ -61,7 +63,7 @@ def _get_documents_to_ingest() -> List[Document]:
         all_documents_per_user[user] = {
             "jira": jira_documents[user],
             "github": github_documents[user],
-            "confluence": confluence_documents[user]
+            "confluence": confluence_documents[user],
         }
 
     print(json.dumps(all_documents_per_user, indent=2))
@@ -74,13 +76,14 @@ def _get_documents_to_ingest() -> List[Document]:
             "email": user,
             "has_jira": bool(user_data["jira"]),
             "has_github": bool(user_data["github"]),
-            "has_confluence": bool(user_data["confluence"])
+            "has_confluence": bool(user_data["confluence"]),
         }
         user_id = _generate_key(user)
         doc = Document(text=content, metadata=metadata, id_=user_id)
         documents.append(doc)
 
     return documents
+
 
 def create_pinecone_index():
     try:
@@ -91,12 +94,12 @@ def create_pinecone_index():
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
-        
+
         # Wait for the index to be created
         while True:
             try:
                 index_description = pc.describe_index(index_name)
-                if index_description.status['ready']:
+                if index_description.status["ready"]:
                     print(f"Pinecone index {index_name} is ready.")
                     return True
                 else:
@@ -110,9 +113,14 @@ def create_pinecone_index():
         return False
 
 
-def verify_index_creation_with_retries(index: VectorStoreIndex, documents: List[Document],
-                                       max_retries: int = 5, retry_delay: int = 10,
-                                       sample_size: int = 5, similarity_threshold: float = 0.5) -> bool:
+def verify_index_creation_with_retries(
+    index: VectorStoreIndex,
+    documents: List[Document],
+    max_retries: int = 5,
+    retry_delay: int = 10,
+    sample_size: int = 5,
+    similarity_threshold: float = 0.5,
+) -> bool:
     for attempt in range(max_retries):
         print(f"Verification attempt {attempt + 1} of {max_retries}")
         if verify_index_creation(index, documents, sample_size, similarity_threshold):
@@ -127,8 +135,12 @@ def verify_index_creation_with_retries(index: VectorStoreIndex, documents: List[
     return False
 
 
-def verify_index_creation(index: VectorStoreIndex, documents: List[Document],
-                          sample_size: int = 5, similarity_threshold: float = 0.5) -> bool:
+def verify_index_creation(
+    index: VectorStoreIndex,
+    documents: List[Document],
+    sample_size: int = 5,
+    similarity_threshold: float = 0.5,
+) -> bool:
     # Step 1: Verify vector count
     if not verify_vector_count(index):
         return False
@@ -149,14 +161,15 @@ def verify_vector_count(index: VectorStoreIndex) -> bool:
     pinecone_index = pc.Index(index_name)
 
     stats = pinecone_index.describe_index_stats()
-    vector_count = stats['total_vector_count']
+    vector_count = stats["total_vector_count"]
 
     print(f"Pinecone index stats - Total vectors: {vector_count}")
     return vector_count > 0
 
 
-def verify_document_retrieval(query_engine: BaseQueryEngine, document: Document,
-                              similarity_threshold: float) -> bool:
+def verify_document_retrieval(
+    query_engine: BaseQueryEngine, document: Document, similarity_threshold: float
+) -> bool:
     # Extract multiple snippets from the document
     snippets = extract_snippets(document.text, num_snippets=3, snippet_length=100)
 
@@ -175,14 +188,16 @@ def verify_document_retrieval(query_engine: BaseQueryEngine, document: Document,
     return False
 
 
-def extract_snippets(text: str, num_snippets: int = 3, snippet_length: int = 100) -> List[str]:
+def extract_snippets(
+    text: str, num_snippets: int = 3, snippet_length: int = 100
+) -> List[str]:
     if len(text) <= snippet_length:
         return [text]
 
     snippets = []
     for _ in range(num_snippets):
         start = random.randint(0, max(0, len(text) - snippet_length))
-        snippets.append(text[start:start + snippet_length])
+        snippets.append(text[start : start + snippet_length])
 
     return snippets
 
@@ -230,19 +245,28 @@ def ingest_data(recreate_index: bool = False):
 
         # Comprehensive verification with retries
         if verify_index_creation_with_retries(index, documents):
-            print("Index created and verified successfully. Persisting Pinecone store locally...")
+            print(
+                "Index created and verified successfully. Persisting Pinecone store locally..."
+            )
             os.makedirs(os.path.dirname(local_persist_path), exist_ok=True)
             storage_context.persist(persist_dir=local_persist_path)
         else:
-            print("Failed to verify index creation after multiple attempts. Please check the logs and try again.")
+            print(
+                "Failed to verify index creation after multiple attempts. Please check the logs and try again."
+            )
             return None
     else:
         print("Loading existing Pinecone store from local persistence...")
         vector_store = PineconeVectorStore(index_name=index_name)
-        storage_context = StorageContext.from_defaults(persist_dir=local_persist_path, vector_store=vector_store)
-        index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
+        storage_context = StorageContext.from_defaults(
+            persist_dir=local_persist_path, vector_store=vector_store
+        )
+        index = VectorStoreIndex.from_vector_store(
+            vector_store, storage_context=storage_context
+        )
 
     return index
+
 
 # Example usage
 if __name__ == "__main__":

@@ -2,7 +2,8 @@ import json
 import logging
 from collections import defaultdict
 from typing import Any, Dict
-from constants import user_to_external_users, map_user, unique_user_emails
+
+from constants import map_user, unique_user_emails, user_to_external_users
 from helpers.github_client import GitHubAPIClient
 
 github_repo = "Hello-World"
@@ -64,12 +65,15 @@ def _extract_comment_info(pr_comments):
     comments = []
     for comment in pr_comments:
         if comment["body"] is not None or comment["body"] != "":
-            comments.append({
-                "author": comment["user"]["login"],
-                "comment_url": comment["html_url"],
-                "comment_body": comment["body"],
-            })
+            comments.append(
+                {
+                    "author": comment["user"]["login"],
+                    "comment_url": comment["html_url"],
+                    "comment_body": comment["body"],
+                }
+            )
     return comments
+
 
 def _extract_pr_info(pr) -> dict:
     return {
@@ -80,17 +84,20 @@ def _extract_pr_info(pr) -> dict:
         "body": pr["body"],
     }
 
+
 def initialize_github_hack():
     contributors = list_repo_contributors(owner="octocat", repo="Hello-World")
     print(contributors)
     for username in contributors:
         map_user(username)
 
+
 def list_repo_contributors(owner: str, repo: str) -> Any:
     client = GitHubAPIClient()
     all_contributors = client.list_contributors(owner, repo)
     print(f"Found {len(all_contributors)} contributors in {owner}/{repo}")
     return all_contributors
+
 
 def get_all_pull_requests_data(owner: str, repo: str) -> Any:
     client = GitHubAPIClient()
@@ -99,6 +106,7 @@ def get_all_pull_requests_data(owner: str, repo: str) -> Any:
 
     print(f"Found {len(prs)} pull requests in {owner}/{repo}")
     return prs
+
 
 def get_pull_requests_per_user(owner: str, repo: str) -> Any:
     client = GitHubAPIClient()
@@ -110,6 +118,7 @@ def get_pull_requests_per_user(owner: str, repo: str) -> Any:
         prs_by_author[author]["author"] = author
         prs_by_author[author].setdefault("pull_requests", []).append(pr_info)
     return prs_by_author
+
 
 def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
     # Get a list of external user ids mapped to the author
@@ -124,10 +133,13 @@ def get_pull_requests_by_author(owner: str, repo: str, author: str) -> Any:
 
     pr_list = []
     for user in external_usernames:
-        raw_prs_by_author = [pr for pr in raw_prs if pr["user"]["login"].lower() == user.lower()]
+        raw_prs_by_author = [
+            pr for pr in raw_prs if pr["user"]["login"].lower() == user.lower()
+        ]
         prs_by_author = [_extract_pr_info(pr) for pr in raw_prs_by_author]
         pr_list.extend(prs_by_author)
     return pr_list
+
 
 def get_commits_by_author(owner: str, repo: str, author: str) -> Any:
     # Get a list of external user ids mapped to the author
@@ -156,8 +168,11 @@ def get_commits_by_author(owner: str, repo: str, author: str) -> Any:
         commit_info_list.append(commit_info)
     return commit_info_list, total_commits
 
+
 def get_github_contributions_by_author(author):
-    commit_info_list, total_commits = get_commits_by_author(owner=github_owner, repo=github_repo, author=author)
+    commit_info_list, total_commits = get_commits_by_author(
+        owner=github_owner, repo=github_repo, author=author
+    )
     pr_list = get_pull_requests_by_author(github_owner, github_repo, author)
 
     return {
@@ -165,8 +180,9 @@ def get_github_contributions_by_author(author):
         "total_commits": total_commits,
         "total_pull_requests": len(pr_list),
         "commits": commit_info_list,
-        "pull_requests": pr_list
+        "pull_requests": pr_list,
     }
+
 
 def get_github_contributions_by_repo(repo_owner, repo_name):
     commits_per_user = _get_commits_per_user_in_repo(repo_owner, repo_name)
@@ -187,11 +203,14 @@ def get_github_contributions_by_repo(repo_owner, repo_name):
             if external_user in commits_per_user:
                 commits.extend(commits_per_user[external_user]["commits"])
             if external_user in pull_requests_per_user:
-                pull_requests.extend(pull_requests_per_user[external_user]["pull_requests"])
+                pull_requests.extend(
+                    pull_requests_per_user[external_user]["pull_requests"]
+                )
         github_contributions[user]["commits"] = commits
         github_contributions[user]["pull_requests"] = pull_requests
 
     return github_contributions
+
 
 if __name__ == "__main__":
     author = "vijayanands@gmail.com"

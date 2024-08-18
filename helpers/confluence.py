@@ -6,9 +6,9 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
-from tools.auth import get_headers
-from functions.llamaindex_summarization import summarize_data
 from constants import unique_user_emails
+from functions.llamaindex_summarization import summarize_data
+from tools.auth import get_headers
 
 load_dotenv()
 
@@ -153,10 +153,13 @@ def get_confluence_contributions_by_author(author: str):
     )
     for key, doc in confluence_data.items():
         if not isinstance(doc, dict):
-            raise ValueError(f"Each value in the dictionary must be a dictionary, found {type(doc)} for key {key}")
+            raise ValueError(
+                f"Each value in the dictionary must be a dictionary, found {type(doc)} for key {key}"
+            )
         summary = summarize_data(doc, id=key)
         doc["summary"] = summary
     return confluence_data
+
 
 def get_confluence_contributions_per_user():
     confluence_contributions = {}
@@ -164,6 +167,7 @@ def get_confluence_contributions_per_user():
         confluence_data = get_confluence_contributions_by_author(user)
         confluence_contributions[user] = confluence_data
     return confluence_contributions
+
 
 def get_confluence_pages_space(base_url, username, api_token, space_id):
     api_endpoint = f"{base_url}/wiki/api/v2/spaces/{space_id}/pages"

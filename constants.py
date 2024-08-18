@@ -1,6 +1,6 @@
 import hashlib
 from collections import defaultdict
-from typing import List, Dict
+from typing import Dict, List
 
 unique_user_emails = [
     "vijayanands@gmail.com",

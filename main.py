@@ -1,30 +1,33 @@
 import base64
+import json
 import os
-import streamlit as st
-import bcrypt
 import re as regex
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, inspect
+from typing import List
+
+import bcrypt
+import streamlit as st
+from dotenv import load_dotenv
+from llama_index.core import download_loader
+from llama_index.core.schema import Document
+from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.openai import OpenAI
+from sqlalchemy import Boolean, Column, Integer, String, create_engine, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import json
-from llama_index.core import download_loader
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.anthropic import Anthropic
-from llama_index.core.schema import Document
+
 from constants import unique_user_emails
 from functions.self_appraisal import create_self_appraisal
-from dotenv import load_dotenv
-from typing import List
 from helpers.ingestion import ingest_data
 
 load_dotenv()
 
 # Database setup
-engine = create_engine('sqlite:///users.db', echo=True)
+engine = create_engine("sqlite:///users.db", echo=True)
 Base = declarative_base()
 
+
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
@@ -36,36 +39,48 @@ class User(Base):
     address = Column(String)
     phone = Column(String)
 
+
 # Check if table exists, create only if it doesn't
 def create_table_if_not_exists(engine, table):
     if not inspect(engine).has_table(table.__tablename__):
         table.__table__.create(engine)
 
+
 create_table_if_not_exists(engine, User)
 
 Session = sessionmaker(bind=engine)
 
+
 def hash_password(password):
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
 
 def verify_current_password(user_id, provided_password):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
     session.close()
     if user:
-        return bcrypt.checkpw(provided_password.encode('utf-8'), user.password)
+        return bcrypt.checkpw(provided_password.encode("utf-8"), user.password)
     return False
 
+
 def verify_password(stored_password, provided_password):
-    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password)
+    return bcrypt.checkpw(provided_password.encode("utf-8"), stored_password)
+
 
 def register_user(email, password, is_manager, linkedin_profile):
     session = Session()
     hashed_password = hash_password(password)
-    new_user = User(email=email, password=hashed_password, is_manager=is_manager, linkedin_profile=linkedin_profile)
+    new_user = User(
+        email=email,
+        password=hashed_password,
+        is_manager=is_manager,
+        linkedin_profile=linkedin_profile,
+    )
     session.add(new_user)
     session.commit()
     session.close()
+
 
 def verify_login(email, password):
     session = Session()
@@ -74,6 +89,7 @@ def verify_login(email, password):
     if user and verify_password(user.password, password):
         return user
     return None
+
 
 def get_llm(llm_choice):
     if llm_choice == "OpenAI":
@@ -137,10 +153,12 @@ def pretty_print_appraisal(appraisal_data):
         for opportunity in appraisal_data["Learning Opportunities"]:
             st.markdown(f"• {opportunity}")
 
+
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
     response = query_engine.query(query)
     return response, response.response  # Return both full response and text
+
 
 def is_password_valid(password):
     # Check if password is at least 8 characters long
@@ -153,6 +171,7 @@ def is_password_valid(password):
     if not regex.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
         return False
     return True
+
 
 def login_page():
     st.header("Login")
@@ -172,7 +191,7 @@ def signup_page():
     st.header("Sign Up")
 
     # Initialize session state variables
-    if 'signup_password_match_error' not in st.session_state:
+    if "signup_password_match_error" not in st.session_state:
         st.session_state.signup_password_match_error = ""
 
     col1, col2 = st.columns(2)
@@ -180,13 +199,31 @@ def signup_page():
     with col1:
         first_name = st.text_input("First Name*", key="signup_first_name")
         email = st.text_input("Email*", key="signup_email")
-        password = st.text_input("Password*", type="password", key="signup_password",
-                                 on_change=check_password_match,
-                                 args=('signup_password', 'signup_confirm_password', 'signup_password_match_error'))
-        confirm_password = st.text_input("Confirm Password*", type="password", key="signup_confirm_password",
-                                         on_change=check_password_match,
-                                         args=('signup_password', 'signup_confirm_password', 'signup_password_match_error'))
-        st.caption("Password must be at least 8 characters long, contain at least one number and one symbol.")
+        password = st.text_input(
+            "Password*",
+            type="password",
+            key="signup_password",
+            on_change=check_password_match,
+            args=(
+                "signup_password",
+                "signup_confirm_password",
+                "signup_password_match_error",
+            ),
+        )
+        confirm_password = st.text_input(
+            "Confirm Password*",
+            type="password",
+            key="signup_confirm_password",
+            on_change=check_password_match,
+            args=(
+                "signup_password",
+                "signup_confirm_password",
+                "signup_password_match_error",
+            ),
+        )
+        st.caption(
+            "Password must be at least 8 characters long, contain at least one number and one symbol."
+        )
 
         # Display password match error if it exists
         if st.session_state.signup_password_match_error:
@@ -198,23 +235,37 @@ def signup_page():
         last_name = st.text_input("Last Name*", key="signup_last_name")
         address = st.text_input("Address (optional)", key="signup_address")
         phone = st.text_input("Phone (optional)", key="signup_phone")
-        linkedin_profile = st.text_input("LinkedIn Profile (optional)", key="signup_linkedin")
+        linkedin_profile = st.text_input(
+            "LinkedIn Profile (optional)", key="signup_linkedin"
+        )
 
     if st.button("Sign Up", key="signup_button"):
         if not first_name or not last_name:
             st.error("First name and last name are required.")
         elif not is_password_valid(st.session_state.signup_password):
             st.error(
-                "Password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
-        elif st.session_state.signup_password != st.session_state.signup_confirm_password:
+                "Password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol."
+            )
+        elif (
+            st.session_state.signup_password != st.session_state.signup_confirm_password
+        ):
             st.error("Passwords do not match. Please try again.")
         else:
             try:
-                register_user(email, st.session_state.signup_password, is_manager, linkedin_profile, first_name, last_name, address, phone)
+                register_user(
+                    email,
+                    st.session_state.signup_password,
+                    is_manager,
+                    linkedin_profile,
+                    first_name,
+                    last_name,
+                    address,
+                    phone,
+                )
                 st.success("Account created successfully! Please log in.")
                 # Clear the form after successful signup
                 for key in st.session_state.keys():
-                    if key.startswith('signup_'):
+                    if key.startswith("signup_"):
                         del st.session_state[key]
             except Exception as e:
                 st.error(f"Error creating account: {str(e)}")
@@ -227,7 +278,10 @@ def check_password_match(password_key, confirm_password_key, error_key):
         else:
             st.session_state[error_key] = ""
 
-def register_user(email, password, is_manager, linkedin_profile, first_name, last_name, address, phone):
+
+def register_user(
+    email, password, is_manager, linkedin_profile, first_name, last_name, address, phone
+):
     session = Session()
     hashed_password = hash_password(password)
     new_user = User(
@@ -238,27 +292,33 @@ def register_user(email, password, is_manager, linkedin_profile, first_name, las
         first_name=first_name,
         last_name=last_name,
         address=address,
-        phone=phone
+        phone=phone,
     )
     session.add(new_user)
     session.commit()
     session.close()
 
+
 def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
+    with open(bin_file, "rb") as f:
         data = f.read()
     return base64.b64encode(data).decode()
 
 
 def set_page_container_style(
-        max_width: int = 1100, max_width_100_percent: bool = False,
-        padding_top: int = 1, padding_right: int = 10, padding_left: int = 10, padding_bottom: int = 10,
-        color: str = 'black', background_color: str = '#f0f2f6',
+    max_width: int = 1100,
+    max_width_100_percent: bool = False,
+    padding_top: int = 1,
+    padding_right: int = 10,
+    padding_left: int = 10,
+    padding_bottom: int = 10,
+    color: str = "black",
+    background_color: str = "#f0f2f6",
 ):
     if max_width_100_percent:
-        max_width_str = f'max-width: 100%;'
+        max_width_str = f"max-width: 100%;"
     else:
-        max_width_str = f'max-width: {max_width}px;'
+        max_width_str = f"max-width: {max_width}px;"
     st.markdown(
         f"""
         <style>
@@ -310,8 +370,9 @@ def set_title_bar():
             <h1>PathForge - Empowering Employee Performance, Career, Skills and Learning through AI</h1>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
+
 
 def update_user_profile(user_id, **kwargs):
     session = Session()
@@ -330,11 +391,13 @@ def update_user_profile(user_id, **kwargs):
     session.close()
     return None
 
+
 def get_user_by_id(user_id):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
     session.close()
     return user
+
 
 # Update the change_user_password function to only take user_id and new_password
 def change_user_password(user_id, new_password):
@@ -361,7 +424,7 @@ def account_page():
         st.subheader("Profile Information")
 
         # Initialize session state for edit mode if not exists
-        if 'edit_mode' not in st.session_state:
+        if "edit_mode" not in st.session_state:
             st.session_state.edit_mode = False
 
         # Edit button with pencil icon
@@ -379,21 +442,23 @@ def account_page():
                 address = st.text_input("Address", value=user.address)
             with col2:
                 phone = st.text_input("Phone Number", value=user.phone)
-                linkedin_profile = st.text_input("LinkedIn Profile URL", value=user.linkedin_profile)
+                linkedin_profile = st.text_input(
+                    "LinkedIn Profile URL", value=user.linkedin_profile
+                )
 
             if st.button("Update Profile"):
                 # Prepare a dictionary of changed fields
                 updates = {}
                 if first_name != user.first_name:
-                    updates['first_name'] = first_name
+                    updates["first_name"] = first_name
                 if last_name != user.last_name:
-                    updates['last_name'] = last_name
+                    updates["last_name"] = last_name
                 if address != user.address:
-                    updates['address'] = address
+                    updates["address"] = address
                 if phone != user.phone:
-                    updates['phone'] = phone
+                    updates["phone"] = phone
                 if linkedin_profile != user.linkedin_profile:
-                    updates['linkedin_profile'] = linkedin_profile
+                    updates["linkedin_profile"] = linkedin_profile
 
                 if updates:
                     updated_user = update_user_profile(user.id, **updates)
@@ -415,27 +480,46 @@ def account_page():
                 st.write(f"**Address:** {user.address or 'Not provided'}")
             with col2:
                 st.write(f"**Phone Number:** {user.phone or 'Not provided'}")
-                st.write(f"**LinkedIn Profile URL:** {user.linkedin_profile or 'Not provided'}")
+                st.write(
+                    f"**LinkedIn Profile URL:** {user.linkedin_profile or 'Not provided'}"
+                )
 
     with password_tab:
         st.subheader("Change Password")
 
         # Initialize session state variables if not exists
-        if 'change_password_match_error' not in st.session_state:
+        if "change_password_match_error" not in st.session_state:
             st.session_state.change_password_match_error = ""
-        if 'current_password_error' not in st.session_state:
+        if "current_password_error" not in st.session_state:
             st.session_state.current_password_error = ""
-        if 'new_password_error' not in st.session_state:
+        if "new_password_error" not in st.session_state:
             st.session_state.new_password_error = ""
 
-        current_password = st.text_input("Current Password", type="password", key="current_password")
-        new_password = st.text_input("New Password", type="password", key="new_password",
-                                     on_change=check_password_match,
-                                     args=('new_password', 'confirm_new_password', 'change_password_match_error'))
-        confirm_new_password = st.text_input("Confirm New Password", type="password", key="confirm_new_password",
-                                             on_change=check_password_match,
-                                             args=(
-                                             'new_password', 'confirm_new_password', 'change_password_match_error'))
+        current_password = st.text_input(
+            "Current Password", type="password", key="current_password"
+        )
+        new_password = st.text_input(
+            "New Password",
+            type="password",
+            key="new_password",
+            on_change=check_password_match,
+            args=(
+                "new_password",
+                "confirm_new_password",
+                "change_password_match_error",
+            ),
+        )
+        confirm_new_password = st.text_input(
+            "Confirm New Password",
+            type="password",
+            key="confirm_new_password",
+            on_change=check_password_match,
+            args=(
+                "new_password",
+                "confirm_new_password",
+                "change_password_match_error",
+            ),
+        )
 
         # Display password match error if it exists
         if st.session_state.change_password_match_error:
@@ -456,33 +540,45 @@ def account_page():
                 st.error("New passwords do not match.")
             elif not is_password_valid(new_password):
                 st.error(
-                    "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol.")
+                    "New password does not meet the requirements. Please ensure it's at least 8 characters long, contains at least one number and one symbol."
+                )
             else:
                 # Verify current password
                 if not verify_current_password(user.id, current_password):
-                    st.session_state.current_password_error = "Current password is incorrect."
+                    st.session_state.current_password_error = (
+                        "Current password is incorrect."
+                    )
                     st.error("Current password is incorrect.")
                 elif current_password == new_password:
-                    st.session_state.new_password_error = "New password must be different from the current password."
-                    st.error("New password must be different from the current password.")
+                    st.session_state.new_password_error = (
+                        "New password must be different from the current password."
+                    )
+                    st.error(
+                        "New password must be different from the current password."
+                    )
                 else:
                     if change_user_password(user.id, new_password):
-                        st.success("Password changed successfully! You will now be logged out.")
+                        st.success(
+                            "Password changed successfully! You will now be logged out."
+                        )
                         st.session_state.logout_after_password_change = True
                         st.rerun()
                     else:
                         st.error("Failed to change password. Please try again.")
 
+
 def main_app():
     st.title("PathForge Dashboard")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Q&A Chatbot",
-        "Performance Management",
-        "Learning & Development",
-        "Skills",
-        "Jobs/Career"
-    ])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "Q&A Chatbot",
+            "Performance Management",
+            "Learning & Development",
+            "Skills",
+            "Jobs/Career",
+        ]
+    )
 
     with tab1:
         st.header("Q&A Chatbot")
@@ -497,7 +593,9 @@ def main_app():
                 # Initialize data
                 index = ingest_data(st.session_state.recreate_index)
                 if index is None:
-                    st.error("Failed to initialize the index. Please check the logs and try again.")
+                    st.error(
+                        "Failed to initialize the index. Please check the logs and try again."
+                    )
                     return
 
                 llm = get_llm(st.session_state.llm_choice)
@@ -516,36 +614,55 @@ def main_app():
     with tab2:
         st.header("Performance Management")
 
-        performance_subtab1, performance_subtab2 = st.tabs(["Self-Appraisal", "Other Performance Tools"])
+        performance_subtab1, performance_subtab2 = st.tabs(
+            ["Self-Appraisal", "Other Performance Tools"]
+        )
 
         with performance_subtab1:
             st.subheader("Self-Appraisal Generator")
             if st.button("Generate Self-Appraisal", key="generate_button"):
                 user_email = st.session_state.user.email  # Get the current user's email
                 with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                    appraisal = create_self_appraisal(st.session_state.llm_choice, user_email)
+                    appraisal = create_self_appraisal(
+                        st.session_state.llm_choice, user_email
+                    )
                 pretty_print_appraisal(appraisal)
 
         with performance_subtab2:
-            st.write("This section is under development. Here you will find additional performance management tools.")
-            st.info("Coming soon: Goal setting, performance reviews, and feedback mechanisms.")
+            st.write(
+                "This section is under development. Here you will find additional performance management tools."
+            )
+            st.info(
+                "Coming soon: Goal setting, performance reviews, and feedback mechanisms."
+            )
 
     with tab3:
         st.header("Learning & Development")
         st.write(
-            "This section is under development. Here you will be able to track your learning progress and find development opportunities.")
-        st.info("Coming soon: Course recommendations, learning paths, and skill gap analysis.")
+            "This section is under development. Here you will be able to track your learning progress and find development opportunities."
+        )
+        st.info(
+            "Coming soon: Course recommendations, learning paths, and skill gap analysis."
+        )
 
     with tab4:
         st.header("Skills")
-        st.write("This section is under development. Here you will be able to view and manage your skills profile.")
-        st.info("Coming soon: Skill assessment, endorsements, and skill-based project matching.")
+        st.write(
+            "This section is under development. Here you will be able to view and manage your skills profile."
+        )
+        st.info(
+            "Coming soon: Skill assessment, endorsements, and skill-based project matching."
+        )
 
     with tab5:
         st.header("Jobs/Career")
         st.write(
-            "This section is under development. Here you will be able to explore career opportunities and plan your career path.")
-        st.info("Coming soon: Job recommendations, career path visualization, and mentorship opportunities.")
+            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
+        )
+        st.info(
+            "Coming soon: Job recommendations, career path visualization, and mentorship opportunities."
+        )
+
 
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
@@ -553,6 +670,7 @@ def show_initial_dashboard():
         login_page()
     with tab2:
         signup_page()
+
 
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
@@ -589,12 +707,17 @@ def setup_streamlit_ui():
     set_page_container_style()
     set_title_bar()
 
-    if 'logout_after_password_change' in st.session_state and st.session_state.logout_after_password_change:
+    if (
+        "logout_after_password_change" in st.session_state
+        and st.session_state.logout_after_password_change
+    ):
         del st.session_state.user
         del st.session_state.logout_after_password_change
-        st.info("You have been logged out due to a password change. Please log in with your new password.")
+        st.info(
+            "You have been logged out due to a password change. Please log in with your new password."
+        )
         show_initial_dashboard()
-    elif 'user' in st.session_state:
+    elif "user" in st.session_state:
         # Sidebar (only shown when user is logged in)
         with st.sidebar:
             st.write(f"Welcome, {st.session_state.user.email}")
@@ -609,7 +732,11 @@ def setup_streamlit_ui():
             llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
             st.session_state.llm_choice = llm_choice
 
-            recreate_index = st.checkbox("Recreate Index", value=False, help="If checked, the index will be recreated on the next query. This may take some time.")
+            recreate_index = st.checkbox(
+                "Recreate Index",
+                value=False,
+                help="If checked, the index will be recreated on the next query. This may take some time.",
+            )
             st.session_state.recreate_index = recreate_index
 
             st.markdown("---")  # Add another horizontal line for visual separation

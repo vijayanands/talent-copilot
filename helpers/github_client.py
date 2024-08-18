@@ -1,8 +1,9 @@
+import logging
 import os
 import sys
+from typing import Any, Dict, List, Set
+
 import requests
-import logging
-from typing import Any, Dict, Set, List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -153,20 +154,28 @@ class GitHubAPIClient:
 
         # Fetch commit contributors
         commit_contributors = self._fetch_contributors(owner, repo, "contributors")
-        all_contributors.update(contributor['login'] for contributor in commit_contributors)
+        all_contributors.update(
+            contributor["login"] for contributor in commit_contributors
+        )
 
         # Fetch comment contributors
         comment_contributors = self._fetch_contributors(owner, repo, "comments")
-        all_contributors.update(contributor['user']['login'] for contributor in comment_contributors)
+        all_contributors.update(
+            contributor["user"]["login"] for contributor in comment_contributors
+        )
 
         # Fetch pull request contributors
         pr_contributors = self._fetch_contributors(owner, repo, "pulls")
-        all_contributors.update(contributor['user']['login'] for contributor in pr_contributors)
+        all_contributors.update(
+            contributor["user"]["login"] for contributor in pr_contributors
+        )
 
         print(f"Fetched {len(all_contributors)} unique contributors")
         return list(all_contributors)
 
-    def _fetch_contributors(self, owner: str, repo: str, contribution_type: str) -> List[Dict[str, Any]]:
+    def _fetch_contributors(
+        self, owner: str, repo: str, contribution_type: str
+    ) -> List[Dict[str, Any]]:
         url = f"{self.base_url}/repos/{owner}/{repo}/{contribution_type}"
         params: Dict[str, Any] = {"per_page": 100, "state": "all"}
         all_items = []
@@ -174,7 +183,9 @@ class GitHubAPIClient:
         while url:
             response = self.api_call(url, params)
             if response.status_code != 200:
-                logging.error(f"Error fetching {contribution_type}: {response.status_code}")
+                logging.error(
+                    f"Error fetching {contribution_type}: {response.status_code}"
+                )
                 logging.error(f"Response content: {response.text}")
                 break
             items = response.json()
