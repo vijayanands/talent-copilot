@@ -12,6 +12,7 @@ from llama_index.llms.openai import OpenAI
 
 from functions.self_appraisal import create_self_appraisal
 from helpers.ingestion import ingest_data
+from manager_dashboard import manager_dashboard
 from models.models import verify_current_password, register_user, verify_login, check_password_match, \
     update_user_profile, change_user_password, is_password_valid, get_user_skills, engine, create_tables_if_not_exist, \
     update_user_profile, update_user_skills
@@ -518,22 +519,17 @@ def skills_section():
         with col3:
             st.button("Save", on_click=save_skills)
             
-def main_app():
-    st.title("PathForge Dashboard")
-
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [
-            "Performance Management",
-            "Learning & Development",
-            "Skills",
-            "Jobs/Career",
-            "Q&A Chatbot",
-        ]
-    )
+def my_assistant_dashboard():
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "Performance Management",
+        "Learning & Development",
+        "Skills",
+        "Jobs/Career",
+        "Q&A Chatbot",
+    ])
 
     with tab1:
         st.header("Performance Management")
-
         performance_subtab1, performance_subtab2 = st.tabs(
             ["Self-Appraisal", "Other Performance Tools"]
         )
@@ -541,7 +537,7 @@ def main_app():
         with performance_subtab1:
             st.subheader("Self-Appraisal Generator")
             if st.button("Generate Self-Appraisal", key="generate_button"):
-                user_email = st.session_state.user.email  # Get the current user's email
+                user_email = st.session_state.user.email
                 with st.spinner(f"Generating self-appraisal for {user_email} ..."):
                     appraisal = create_self_appraisal(
                         st.session_state.llm_choice, user_email
@@ -590,10 +586,9 @@ def main_app():
         show_full_response = st.checkbox("Show full response (debug)", value=False)
 
         if st.button("Ask", key="ask_button"):
-            if not query.strip():  # Check if query is empty or just whitespace
+            if not query.strip():
                 st.error("Please enter a question before clicking 'Ask'.")
             else:
-                # Initialize data
                 index = ingest_data(st.session_state.recreate_index)
                 if index is None:
                     st.error(
@@ -605,14 +600,29 @@ def main_app():
                 with st.spinner("Generating response..."):
                     full_response, response_text = ask(llm, query, index)
 
-                # Display the response text
                 st.write("Response:")
                 st.write(response_text)
 
-                # Optionally show full response based on checkbox
                 if show_full_response:
                     st.write("Full Response (Debug):")
                     st.write(full_response)
+
+
+def main_app():
+    st.title("PathForge Dashboard")
+
+    is_manager = st.session_state.user.is_manager
+
+    if is_manager:
+        tab1, tab2 = st.tabs(["Manager Dashboard", "My Assistant"])
+
+        with tab1:
+            manager_dashboard()
+
+        with tab2:
+            my_assistant_dashboard()
+    else:
+        my_assistant_dashboard()
 
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
@@ -657,23 +667,16 @@ def setup_streamlit_ui():
     set_page_container_style()
     set_title_bar()
 
-    if (
-        "logout_after_password_change" in st.session_state
-        and st.session_state.logout_after_password_change
-    ):
+    if "logout_after_password_change" in st.session_state and st.session_state.logout_after_password_change:
         del st.session_state.user
         del st.session_state.logout_after_password_change
-        st.info(
-            "You have been logged out due to a password change. Please log in with your new password."
-        )
+        st.info("You have been logged out due to a password change. Please log in with your new password.")
         show_initial_dashboard()
     elif "user" in st.session_state:
-        # Sidebar (only shown when user is logged in)
         with st.sidebar:
             st.write(f"Welcome, {st.session_state.user.email}")
-            st.markdown("---")  # Add a horizontal line for visual separation
+            st.markdown("---")
 
-            # Navigation
             page = st.radio("Navigation", ["Dashboard", "Account"])
 
             st.markdown("---")
@@ -689,21 +692,18 @@ def setup_streamlit_ui():
             )
             st.session_state.recreate_index = recreate_index
 
-            st.markdown("---")  # Add another horizontal line for visual separation
+            st.markdown("---")
 
             if st.button("Logout", key="logout_button"):
                 del st.session_state.user
                 st.rerun()
 
-        # Main content for logged-in users
         if page == "Dashboard":
             main_app()
         elif page == "Account":
             account_page()
     else:
-        # Login/Signup pages (no sidebar)
         show_initial_dashboard()
-
 
 if __name__ == "__main__":
     setup_streamlit_ui()
