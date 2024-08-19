@@ -1,6 +1,7 @@
 import streamlit as st
-from models.models import update_user_profile, verify_current_password, change_user_password, is_password_valid
-from helpers.password import check_password_match
+from models.models import update_user_profile, verify_current_password, change_user_password, is_password_valid, \
+    check_password_match
+
 
 def account_page():
     st.header("Account")
