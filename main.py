@@ -590,6 +590,20 @@ def account_page():
                         st.error("Failed to change password. Please try again.")
 
 
+def get_user_skills(user_id):
+    session = Session()
+    linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user_id).first()
+    session.close()
+
+    if linkedin_info and linkedin_info.scraped_info:
+        try:
+            profile_data = json.loads(linkedin_info.scraped_info)
+            return profile_data.get('skills', [])
+        except json.JSONDecodeError:
+            return []
+    return []
+
+
 def main_app():
     st.title("PathForge Dashboard")
 
@@ -639,12 +653,23 @@ def main_app():
 
     with tab3:
         st.header("Skills")
-        st.write(
-            "This section is under development. Here you will be able to view and manage your skills profile."
-        )
-        st.info(
-            "Coming soon: Skill assessment, and endorsements"
-        )
+
+        skills_subtab1, skills_subtab2 = st.tabs(["My Skills", "Endorsements"])
+
+        with skills_subtab1:
+            st.subheader("My Skills")
+            user_skills = get_user_skills(st.session_state.user.id)
+
+            if user_skills:
+                st.write("Here are your skills based on your LinkedIn profile:")
+                for skill in user_skills:
+                    st.markdown(f"- {skill}")
+            else:
+                st.info("No skills found. Make sure you've added your LinkedIn profile in your account settings.")
+
+        with skills_subtab2:
+            st.subheader("Endorsements")
+            st.info("This feature is coming soon. Here you'll be able to view and manage skill endorsements.")
 
     with tab4:
         st.header("Jobs/Career")
