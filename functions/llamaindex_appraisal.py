@@ -7,11 +7,10 @@ from typing import List
 from dotenv import load_dotenv
 from llama_index.core.agent import ReActAgent
 from llama_index.core.tools import BaseTool, FunctionTool
-from llama_index.llms.anthropic import Anthropic
-from llama_index.llms.openai import OpenAI
 
 from functions.prompts import APPRAISAL_PROMPT
 from helpers.confluence import get_confluence_contributions_by_author
+from helpers.get_llm import get_llm
 from helpers.github import get_github_contributions_by_author
 from helpers.jira import get_jira_contributions_by_author
 from tools.generate_appraisal_docs import generate_appraisal_docs
@@ -29,24 +28,6 @@ tools: List[BaseTool] = [
     FunctionTool.from_defaults(fn=get_github_contributions_by_author),
     FunctionTool.from_defaults(fn=get_confluence_contributions_by_author),
 ]
-
-
-def get_llm(vendor: str, **kwargs):
-    """
-    Factory function to create an LLM instance based on the vendor.
-    """
-    if vendor.lower() == "openai":
-        return OpenAI(
-            temperature=kwargs.get("temperature", 0.7),
-            model=kwargs.get("model", "gpt-3.5-turbo"),
-        )
-    elif vendor.lower() == "anthropic":
-        return Anthropic(
-            temperature=kwargs.get("temperature", 0.7),
-            model=kwargs.get("model", "claude-2"),
-        )
-    else:
-        raise ValueError(f"Unsupported LLM vendor: {vendor}")
 
 
 def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
