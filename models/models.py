@@ -4,7 +4,7 @@ from datetime import datetime
 
 import bcrypt
 import streamlit as st
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -25,6 +25,13 @@ class User(Base):
     last_name = Column(String, nullable=False)
     address = Column(String)
     phone = Column(String)
+    skills = Column(String, default='{}')  # Store skills as a JSON string
+
+    def get_skills(self):
+        return json.loads(self.skills)
+
+    def set_skills(self, skills_dict):
+        self.skills = json.dumps(skills_dict)
 
 
 def hash_password(password):
@@ -100,7 +107,6 @@ def update_user_profile(user_id, **kwargs):
                 setattr(user, key, value)
                 changed = True
 
-                # If linkedin_profile has changed, update or create LinkedInProfileInfo
                 if key == 'linkedin_profile':
                     linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user.id).first()
                     if linkedin_info:
@@ -117,6 +123,10 @@ def update_user_profile(user_id, **kwargs):
                         )
                         session.add(new_linkedin_info)
 
+                    # Update user's skills
+                    skills = scraped_info.get('skills', [])
+                    user.skills = {skill: user.skills.get(skill, 3) for skill in skills}
+
         if changed:
             session.commit()
             session.refresh(user)
@@ -124,7 +134,6 @@ def update_user_profile(user_id, **kwargs):
             return user
     session.close()
     return None
-
 
 def get_user_by_id(user_id):
     session = Session()
@@ -171,18 +180,23 @@ class LinkedInProfileInfo(Base):
 
 User.linkedin_info = relationship("LinkedInProfileInfo", uselist=False, back_populates="user")
 
+
 def get_user_skills(user_id):
     session = Session()
-    linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user_id).first()
+    user = session.query(User).filter_by(id=user_id).first()
     session.close()
+    return user.get_skills() if user else {}
 
-    if linkedin_info and linkedin_info.scraped_info:
-        try:
-            profile_data = json.loads(linkedin_info.scraped_info)
-            return profile_data.get('skills', [])
-        except json.JSONDecodeError:
-            return []
-    return []
+def update_user_skills(user_id, skills):
+    session = Session()
+    user = session.query(User).filter_by(id=user_id).first()
+    if user:
+        user.set_skills(skills)
+        session.commit()
+        session.close()
+        return True
+    session.close()
+    return False
 
 
 engine = create_engine("sqlite:///users.db", echo=True)
