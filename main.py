@@ -3,11 +3,11 @@ import base64
 import streamlit as st
 from dotenv import load_dotenv
 
-from login_signup import login_page, signup_page
-from manager_dashboard import manager_dashboard
+from web.login_signup import login_page, signup_page
+from web.manager_dashboard import manager_dashboard
 from models.models import engine, create_tables_if_not_exist
-from individual_contributor_dashboard import individual_contributor_dashboard
-from account_page import account_page
+from web.individual_contributor_dashboard import individual_contributor_dashboard
+from web.account_page import account_page
 
 load_dotenv()
 
