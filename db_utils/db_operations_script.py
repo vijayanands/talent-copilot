@@ -3,7 +3,7 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from main import Base, User  # Import User and Base from main.py
+from models.models import User, Base
 
 
 def get_db_path():
