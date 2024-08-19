@@ -3,6 +3,7 @@ import json
 import os
 import re as regex
 from typing import List
+from datetime import datetime
 
 import bcrypt
 import streamlit as st
@@ -11,13 +12,13 @@ from llama_index.core import download_loader
 from llama_index.core.schema import Document
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai import OpenAI
-from sqlalchemy import Boolean, Column, Integer, String, create_engine, inspect
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, DateTime, create_engine, inspect
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
-from constants import unique_user_emails
 from functions.self_appraisal import create_self_appraisal
 from helpers.ingestion import ingest_data
+from helpers.linkedin import get_linkedin_profile_json
 
 load_dotenv()
 
@@ -39,14 +40,27 @@ class User(Base):
     address = Column(String)
     phone = Column(String)
 
+class LinkedInProfileInfo(Base):
+    __tablename__ = "linkedin_profile_info"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), unique=True, nullable=False)
+    linkedin_profile_url = Column(String, nullable=False)
+    scraped_info = Column(String)  # This will store the JSON string of the scraped info
+    last_updated = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="linkedin_info")
+
+User.linkedin_info = relationship("LinkedInProfileInfo", uselist=False, back_populates="user")
 
 # Check if table exists, create only if it doesn't
-def create_table_if_not_exists(engine, table):
-    if not inspect(engine).has_table(table.__tablename__):
-        table.__table__.create(engine)
+def create_tables_if_not_exist(engine):
+    if not inspect(engine).has_table(User.__tablename__):
+        User.__table__.create(engine)
+    if not inspect(engine).has_table(LinkedInProfileInfo.__tablename__):
+        LinkedInProfileInfo.__table__.create(engine)
 
-
-create_table_if_not_exists(engine, User)
+create_tables_if_not_exist(engine)
 
 Session = sessionmaker(bind=engine)
 
@@ -67,8 +81,7 @@ def verify_current_password(user_id, provided_password):
 def verify_password(stored_password, provided_password):
     return bcrypt.checkpw(provided_password.encode("utf-8"), stored_password)
 
-
-def register_user(email, password, is_manager, linkedin_profile):
+def register_user(email, password, is_manager, linkedin_profile, first_name, last_name, address, phone):
     session = Session()
     hashed_password = hash_password(password)
     new_user = User(
@@ -76,11 +89,25 @@ def register_user(email, password, is_manager, linkedin_profile):
         password=hashed_password,
         is_manager=is_manager,
         linkedin_profile=linkedin_profile,
+        first_name=first_name,
+        last_name=last_name,
+        address=address,
+        phone=phone,
     )
     session.add(new_user)
+    session.flush()  # This will assign an id to new_user
+
+    if linkedin_profile:
+        scraped_info = get_linkedin_profile_json(linkedin_profile)
+        linkedin_info = LinkedInProfileInfo(
+            user_id=new_user.id,
+            linkedin_profile_url=linkedin_profile,
+            scraped_info=json.dumps(scraped_info)
+        )
+        session.add(linkedin_info)
+
     session.commit()
     session.close()
-
 
 def verify_login(email, password):
     session = Session()
@@ -278,27 +305,6 @@ def check_password_match(password_key, confirm_password_key, error_key):
         else:
             st.session_state[error_key] = ""
 
-
-def register_user(
-    email, password, is_manager, linkedin_profile, first_name, last_name, address, phone
-):
-    session = Session()
-    hashed_password = hash_password(password)
-    new_user = User(
-        email=email,
-        password=hashed_password,
-        is_manager=is_manager,
-        linkedin_profile=linkedin_profile,
-        first_name=first_name,
-        last_name=last_name,
-        address=address,
-        phone=phone,
-    )
-    session.add(new_user)
-    session.commit()
-    session.close()
-
-
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, "rb") as f:
         data = f.read()
@@ -383,6 +389,24 @@ def update_user_profile(user_id, **kwargs):
             if hasattr(user, key) and getattr(user, key) != value:
                 setattr(user, key, value)
                 changed = True
+
+                # If linkedin_profile has changed, update or create LinkedInProfileInfo
+                if key == 'linkedin_profile':
+                    linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user.id).first()
+                    if linkedin_info:
+                        linkedin_info.linkedin_profile_url = value
+                        scraped_info = get_linkedin_profile_json(value)
+                        linkedin_info.scraped_info = json.dumps(scraped_info)
+                        linkedin_info.last_updated = datetime.utcnow()
+                    else:
+                        scraped_info = get_linkedin_profile_json(value)
+                        new_linkedin_info = LinkedInProfileInfo(
+                            user_id=user.id,
+                            linkedin_profile_url=value,
+                            scraped_info=json.dumps(scraped_info)
+                        )
+                        session.add(new_linkedin_info)
+
         if changed:
             session.commit()
             session.refresh(user)
@@ -390,7 +414,6 @@ def update_user_profile(user_id, **kwargs):
             return user
     session.close()
     return None
-
 
 def get_user_by_id(user_id):
     session = Session()
@@ -572,15 +595,67 @@ def main_app():
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
-            "Q&A Chatbot",
             "Performance Management",
             "Learning & Development",
             "Skills",
             "Jobs/Career",
+            "Q&A Chatbot",
         ]
     )
 
     with tab1:
+        st.header("Performance Management")
+
+        performance_subtab1, performance_subtab2 = st.tabs(
+            ["Self-Appraisal", "Other Performance Tools"]
+        )
+
+        with performance_subtab1:
+            st.subheader("Self-Appraisal Generator")
+            if st.button("Generate Self-Appraisal", key="generate_button"):
+                user_email = st.session_state.user.email  # Get the current user's email
+                with st.spinner(f"Generating self-appraisal for {user_email} ..."):
+                    appraisal = create_self_appraisal(
+                        st.session_state.llm_choice, user_email
+                    )
+                pretty_print_appraisal(appraisal)
+
+        with performance_subtab2:
+            st.write(
+                "This section is under development. Here you will find additional performance management tools."
+            )
+            st.info(
+                "Coming soon: Goal setting, performance reviews, and feedback mechanisms."
+            )
+
+    with tab2:
+        st.header("Learning & Development")
+        st.write(
+            "This section is under development. Here you will be able to track your learning progress and find development opportunities."
+        )
+        st.info(
+            "Coming soon: Course recommendations, learning paths, and skill gap analysis."
+        )
+
+    with tab3:
+        st.header("Skills")
+        st.write(
+            "This section is under development. Here you will be able to view and manage your skills profile."
+        )
+        st.info(
+            "Coming soon: Skill assessment, and endorsements"
+        )
+
+    with tab4:
+        st.header("Jobs/Career")
+        st.write(
+            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
+        )
+        st.info(
+            "Coming soon: Job recommendations, career path visualization, and mentorship opportunities."
+        )
+
+    with tab5:
         st.header("Q&A Chatbot")
         query = st.text_input("Enter your question:")
 
@@ -610,59 +685,6 @@ def main_app():
                 if show_full_response:
                     st.write("Full Response (Debug):")
                     st.write(full_response)
-
-    with tab2:
-        st.header("Performance Management")
-
-        performance_subtab1, performance_subtab2 = st.tabs(
-            ["Self-Appraisal", "Other Performance Tools"]
-        )
-
-        with performance_subtab1:
-            st.subheader("Self-Appraisal Generator")
-            if st.button("Generate Self-Appraisal", key="generate_button"):
-                user_email = st.session_state.user.email  # Get the current user's email
-                with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                    appraisal = create_self_appraisal(
-                        st.session_state.llm_choice, user_email
-                    )
-                pretty_print_appraisal(appraisal)
-
-        with performance_subtab2:
-            st.write(
-                "This section is under development. Here you will find additional performance management tools."
-            )
-            st.info(
-                "Coming soon: Goal setting, performance reviews, and feedback mechanisms."
-            )
-
-    with tab3:
-        st.header("Learning & Development")
-        st.write(
-            "This section is under development. Here you will be able to track your learning progress and find development opportunities."
-        )
-        st.info(
-            "Coming soon: Course recommendations, learning paths, and skill gap analysis."
-        )
-
-    with tab4:
-        st.header("Skills")
-        st.write(
-            "This section is under development. Here you will be able to view and manage your skills profile."
-        )
-        st.info(
-            "Coming soon: Skill assessment, endorsements, and skill-based project matching."
-        )
-
-    with tab5:
-        st.header("Jobs/Career")
-        st.write(
-            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
-        )
-        st.info(
-            "Coming soon: Job recommendations, career path visualization, and mentorship opportunities."
-        )
-
 
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
