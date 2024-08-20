@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
