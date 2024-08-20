@@ -3,11 +3,11 @@ import base64
 import streamlit as st
 from dotenv import load_dotenv
 
-from web.login_signup import login_page, signup_page
-from web.manager_dashboard import manager_dashboard
+from ui.login_signup import login_page, signup_page
+from ui.manager_dashboard import manager_dashboard
 from models.models import engine, create_tables_if_not_exist
-from web.individual_contributor_dashboard import individual_contributor_dashboard
-from web.account_page import account_page
+from ui.individual_contributor_dashboard import individual_contributor_dashboard
+from ui.account_page import account_page
 
 load_dotenv()
 
@@ -86,7 +86,7 @@ def set_page_container_style(
 
 
 def set_title_bar():
-    logo_path = "data/pathforge-logo-final.png"
+    logo_path = "images/pathforge-logo-final.png"
     logo_base64 = get_base64_of_bin_file(logo_path)
 
     st.markdown(
