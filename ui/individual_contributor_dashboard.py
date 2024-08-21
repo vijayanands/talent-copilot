@@ -157,7 +157,7 @@ def individual_contributor_dashboard():
         "Performance Management",
         "Learning & Development",
         "Skills",
-        "Jobs/Career",
+        "Career",
         "Q&A Chatbot",
     ])
 
@@ -204,12 +204,12 @@ def individual_contributor_dashboard():
             st.info("This feature is coming soon. Here you'll be able to view and manage skill endorsements.")
 
     with tab4:
-        st.header("Jobs/Career")
+        st.header("Career")
         st.write(
             "This section is under development. Here you will be able to explore career opportunities and plan your career path."
         )
         st.info(
-            "Coming soon: Job recommendations, career path visualization, and mentorship opportunities."
+            "Coming soon: Career path visualization, and mentorship opportunities."
         )
 
     with tab5:
