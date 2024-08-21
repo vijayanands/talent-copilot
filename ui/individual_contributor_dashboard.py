@@ -4,6 +4,7 @@ from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
 from models.models import get_user_skills
+from ui.learning_dashboard import learning_dashboard
 
 
 def pretty_print_appraisal(appraisal_data):
@@ -186,6 +187,7 @@ def individual_contributor_dashboard():
             )
 
     with tab2:
+        # pass
         learning_dashboard()
 
     with tab3:

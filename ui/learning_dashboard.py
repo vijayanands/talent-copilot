@@ -1,7 +1,8 @@
 import streamlit as st
 from typing import List
+
+from functions.learning_resource_finder import find_learning_resources
 from models.models import get_user_skills
-from learning_resource_finder import find_learning_resources
 
 def learning_dashboard():
     st.header("Learning & Development")
