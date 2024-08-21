@@ -186,13 +186,7 @@ def individual_contributor_dashboard():
             )
 
     with tab2:
-        st.header("Learning & Development")
-        st.write(
-            "This section is under development. Here you will be able to track your learning progress and find development opportunities."
-        )
-        st.info(
-            "Coming soon: Course recommendations, learning paths, and skill gap analysis."
-        )
+        learning_dashboard()
 
     with tab3:
         st.header("Skills")
