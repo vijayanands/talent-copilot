@@ -6,47 +6,6 @@ from helpers.ingestion import ingest_data
 from models.models import get_user_skills
 from ui.learning_dashboard import learning_dashboard
 
-
-def pretty_print_appraisal(appraisal_data):
-    # Convert string to dictionary if needed
-    if isinstance(appraisal_data, str):
-        try:
-            appraisal_data = json.loads(appraisal_data)
-        except json.JSONDecodeError:
-            st.error("Invalid JSON string provided. Please check the input.")
-            return
-
-    if not isinstance(appraisal_data, dict):
-        st.error("Input must be a dictionary or a valid JSON string.")
-        return
-
-    st.header("Self-Appraisal")
-
-    # Summary
-    if "Summary" in appraisal_data:
-        st.subheader("Summary")
-        st.write(appraisal_data["Summary"])
-
-    # Key Achievements
-    if "Key Achievements" in appraisal_data:
-        st.subheader("Key Achievements")
-        for achievement in appraisal_data["Key Achievements"]:
-            st.markdown(f"• {achievement}")
-
-    # Contributions
-    if "Contributions" in appraisal_data:
-        st.subheader("Contributions")
-        for platform, contribution in appraisal_data["Contributions"].items():
-            st.markdown(f"**{platform}**")
-            st.write(contribution)
-            st.markdown("---")
-
-    # Learning Opportunities
-    if "Learning Opportunities" in appraisal_data:
-        st.subheader("Learning Opportunities")
-        for opportunity in appraisal_data["Learning Opportunities"]:
-            st.markdown(f"• {opportunity}")
-
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
     response = query_engine.query(query)
@@ -153,6 +112,58 @@ def skills_section():
             st.button("Save", on_click=save_skills)
 
 
+def reset_performance_management():
+    if 'appraisal' in st.session_state:
+        del st.session_state.appraisal
+    st.rerun()
+
+
+def pretty_print_appraisal(appraisal_data):
+    # Convert string to dictionary if needed
+    if isinstance(appraisal_data, str):
+        try:
+            appraisal_data = json.loads(appraisal_data)
+        except json.JSONDecodeError:
+            st.error("Invalid JSON string provided. Please check the input.")
+            return
+
+    if not isinstance(appraisal_data, dict):
+        st.error("Input must be a dictionary or a valid JSON string.")
+        return
+
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        st.header("Self-Appraisal")
+
+    with col2:
+        st.button("Reset", on_click=reset_performance_management, key="reset_performance")
+
+    # Summary
+    if "Summary" in appraisal_data:
+        st.subheader("Summary")
+        st.write(appraisal_data["Summary"])
+
+    # Key Achievements
+    if "Key Achievements" in appraisal_data:
+        st.subheader("Key Achievements")
+        for achievement in appraisal_data["Key Achievements"]:
+            st.markdown(f"• {achievement}")
+
+    # Contributions
+    if "Contributions" in appraisal_data:
+        st.subheader("Contributions")
+        for platform, contribution in appraisal_data["Contributions"].items():
+            st.markdown(f"**{platform}**")
+            st.write(contribution)
+            st.markdown("---")
+
+    # Learning Opportunities
+    if "Learning Opportunities" in appraisal_data:
+        st.subheader("Learning Opportunities")
+        for opportunity in appraisal_data["Learning Opportunities"]:
+            st.markdown(f"• {opportunity}")
+
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Performance Management",
@@ -170,13 +181,16 @@ def individual_contributor_dashboard():
 
         with performance_subtab1:
             st.subheader("Self-Appraisal Generator")
+
             if st.button("Generate Self-Appraisal", key="generate_button"):
                 user_email = st.session_state.user.email
                 with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                    appraisal = create_self_appraisal(
+                    st.session_state.appraisal = create_self_appraisal(
                         st.session_state.llm_choice, user_email
                     )
-                pretty_print_appraisal(appraisal)
+
+            if 'appraisal' in st.session_state:
+                pretty_print_appraisal(st.session_state.appraisal)
 
         with performance_subtab2:
             st.write(
@@ -187,7 +201,6 @@ def individual_contributor_dashboard():
             )
 
     with tab2:
-        # pass
         learning_dashboard()
 
     with tab3:

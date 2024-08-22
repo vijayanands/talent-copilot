@@ -5,6 +5,14 @@ from functions.learning_resource_finder import find_learning_resources
 from models.models import get_user_skills
 
 
+def reset_learning_dashboard():
+    st.session_state.selected_skills = []
+    st.session_state.additional_keywords = []
+    st.session_state.show_recommendations = False
+    st.session_state.recommendations = ""
+    st.session_state.new_keyword = ""
+
+
 def learning_dashboard():
     st.header("Learning & Development")
 
@@ -75,7 +83,14 @@ def show_selection_view():
 
 
 def show_recommendation_view():
-    st.subheader("Generating Recommendations Based on:")
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        st.subheader("Generating Recommendations Based on:")
+
+    with col2:
+        st.button("Reset", on_click=reset_learning_dashboard, key="reset_learning")
+
     combined_list = st.session_state.selected_skills + st.session_state.additional_keywords
     for item in combined_list:
         st.write(f"- {item}")
