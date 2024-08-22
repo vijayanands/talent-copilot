@@ -115,7 +115,7 @@ def skills_section():
 def reset_performance_management():
     if 'appraisal' in st.session_state:
         del st.session_state.appraisal
-    st.rerun()
+    st.session_state.reset_appraisal = True
 
 
 def pretty_print_appraisal(appraisal_data):
@@ -182,6 +182,11 @@ def individual_contributor_dashboard():
         with performance_subtab1:
             st.subheader("Self-Appraisal Generator")
 
+            if 'reset_appraisal' in st.session_state and st.session_state.reset_appraisal:
+                if 'appraisal' in st.session_state:
+                    del st.session_state.appraisal
+                del st.session_state.reset_appraisal
+
             if st.button("Generate Self-Appraisal", key="generate_button"):
                 user_email = st.session_state.user.email
                 with st.spinner(f"Generating self-appraisal for {user_email} ..."):
@@ -191,14 +196,7 @@ def individual_contributor_dashboard():
 
             if 'appraisal' in st.session_state:
                 pretty_print_appraisal(st.session_state.appraisal)
-
-        with performance_subtab2:
-            st.write(
-                "This section is under development. Here you will find additional performance management tools."
-            )
-            st.info(
-                "Coming soon: Goal setting, performance reviews, and feedback mechanisms."
-            )
+                st.button("Reset", on_click=reset_performance_management, key="reset_performance")
 
     with tab2:
         learning_dashboard()
