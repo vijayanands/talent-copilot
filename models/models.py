@@ -16,6 +16,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
+
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
@@ -26,6 +27,10 @@ class User(Base):
     address = Column(String)
     phone = Column(String)
     skills = Column(String, default='{}')  # Store skills as a JSON string
+    ladder = Column(String)
+    current_position = Column(String)
+    responsibilities = Column(String)
+    resume_pdf = Column(String)  # Store the file path instead of binary data
 
     def get_skills(self):
         return json.loads(self.skills)
@@ -198,6 +203,39 @@ def update_user_skills(user_id, skills):
     session.close()
     return False
 
+def update_work_profile(user_id, **kwargs):
+    session = Session()
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            for key, value in kwargs.items():
+                setattr(user, key, value)
+            session.commit()
+            session.refresh(user)
+            return user
+        return None
+    except Exception as e:
+        session.rollback()
+        print(f"Error updating work profile: {str(e)}")
+        return None
+    finally:
+        session.close()
+
+def delete_resume(user_id):
+    session = Session()
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        if user:
+            user.resume_pdf = None
+            session.commit()
+            return True
+        return False
+    except Exception as e:
+        session.rollback()
+        print(f"Error deleting resume: {str(e)}")
+        return False
+    finally:
+        session.close()
 
 engine = create_engine("sqlite:///users.db", echo=True)
 
