@@ -293,41 +293,60 @@ def get_all_ladders():
 def get_positions_for_ladder(ladder_id):
     session = Session()
     positions = session.query(Position).filter_by(ladder_id=ladder_id).order_by(Position.level).all()
+    position_dicts = [{"name": p.name, "level": p.level} for p in positions]
     session.close()
-    return positions
+    return position_dicts
 
 def update_ladder_positions(ladder_id, positions):
     session = Session()
-    ladder = session.query(Ladder).filter_by(id=ladder_id).first()
-    if ladder:
-        # Delete existing positions
-        session.query(Position).filter_by(ladder_id=ladder_id).delete()
-        # Add new positions
-        for level, name in enumerate(positions, start=1):
-            new_position = Position(name=name, level=level, ladder_id=ladder_id)
-            session.add(new_position)
+    try:
+        ladder = session.query(Ladder).filter_by(id=ladder_id).first()
+        if ladder:
+            # Delete existing positions
+            session.query(Position).filter_by(ladder_id=ladder_id).delete()
+
+            # Add new positions
+            for position in positions:
+                new_position = Position(
+                    name=position['name'],
+                    level=position['level'],
+                    ladder_id=ladder_id
+                )
+                session.add(new_position)
+
+            session.commit()
+            return True
+    except Exception as e:
+        session.rollback()
+        print(f"Error updating ladder positions: {str(e)}")
+        return False
+    finally:
+        session.close()
+
+def get_eligibility_criteria(position_level):
+    session = Session()
+    position = session.query(Position).filter_by(level=position_level).first()
+    if position:
+        criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
+        session.close()
+        return criteria.criteria if criteria else None
+    session.close()
+    return None
+
+def update_eligibility_criteria(position_level, criteria):
+    session = Session()
+    position = session.query(Position).filter_by(level=position_level).first()
+    if position:
+        existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
+        if existing_criteria:
+            existing_criteria.criteria = criteria
+        else:
+            new_criteria = EligibilityCriteria(position_id=position.id, criteria=criteria)
+            session.add(new_criteria)
         session.commit()
         session.close()
         return True
     session.close()
     return False
-
-def get_eligibility_criteria(position_id):
-    session = Session()
-    criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
-    session.close()
-    return criteria.criteria if criteria else None
-
-def update_eligibility_criteria(position_id, criteria):
-    session = Session()
-    existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
-    if existing_criteria:
-        existing_criteria.criteria = criteria
-    else:
-        new_criteria = EligibilityCriteria(position_id=position_id, criteria=criteria)
-        session.add(new_criteria)
-    session.commit()
-    session.close()
-    return True
 
 Session = sessionmaker(bind=engine)
