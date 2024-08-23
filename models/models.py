@@ -4,7 +4,7 @@ from datetime import datetime
 
 import bcrypt
 import streamlit as st
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, LargeBinary
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, LargeBinary, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -31,6 +31,8 @@ class User(Base):
     current_position = Column(String)
     responsibilities = Column(String)
     resume_pdf = Column(LargeBinary)  # Store the PDF data instead of file path
+    position_id = Column(Integer, ForeignKey('positions.id'))
+    position = relationship("Position")
 
     def get_skills(self):
         return json.loads(self.skills)
@@ -38,6 +40,31 @@ class User(Base):
     def set_skills(self, skills_dict):
         self.skills = json.dumps(skills_dict)
 
+class Ladder(Base):
+    __tablename__ = "ladders"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    prefix = Column(String, nullable=False)
+    positions = relationship("Position", back_populates="ladder", cascade="all, delete-orphan")
+
+class Position(Base):
+    __tablename__ = "positions"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    level = Column(Integer, nullable=False)
+    ladder_id = Column(Integer, ForeignKey('ladders.id'), nullable=False)
+    ladder = relationship("Ladder", back_populates="positions")
+    eligibility_criteria = relationship("EligibilityCriteria", back_populates="position", cascade="all, delete-orphan")
+
+class EligibilityCriteria(Base):
+    __tablename__ = "eligibility_criteria"
+
+    id = Column(Integer, primary_key=True)
+    position_id = Column(Integer, ForeignKey('positions.id'), nullable=False)
+    position = relationship("Position", back_populates="eligibility_criteria")
+    criteria = Column(JSON, nullable=False)
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
@@ -249,6 +276,58 @@ def create_tables_if_not_exist(engine):
         User.__table__.create(engine)
     if not inspect(engine).has_table(LinkedInProfileInfo.__tablename__):
         LinkedInProfileInfo.__table__.create(engine)
+    if not inspect(engine).has_table(Ladder.__tablename__):
+        Ladder.__table__.create(engine)
+    if not inspect(engine).has_table(Position.__tablename__):
+        Position.__table__.create(engine)
+    if not inspect(engine).has_table(EligibilityCriteria.__tablename__):
+        EligibilityCriteria.__table__.create(engine)
 
+# Add functions to interact with new models
+def get_all_ladders():
+    session = Session()
+    ladders = session.query(Ladder).all()
+    session.close()
+    return ladders
+
+def get_positions_for_ladder(ladder_id):
+    session = Session()
+    positions = session.query(Position).filter_by(ladder_id=ladder_id).order_by(Position.level).all()
+    session.close()
+    return positions
+
+def update_ladder_positions(ladder_id, positions):
+    session = Session()
+    ladder = session.query(Ladder).filter_by(id=ladder_id).first()
+    if ladder:
+        # Delete existing positions
+        session.query(Position).filter_by(ladder_id=ladder_id).delete()
+        # Add new positions
+        for level, name in enumerate(positions, start=1):
+            new_position = Position(name=name, level=level, ladder_id=ladder_id)
+            session.add(new_position)
+        session.commit()
+        session.close()
+        return True
+    session.close()
+    return False
+
+def get_eligibility_criteria(position_id):
+    session = Session()
+    criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+    session.close()
+    return criteria.criteria if criteria else None
+
+def update_eligibility_criteria(position_id, criteria):
+    session = Session()
+    existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+    if existing_criteria:
+        existing_criteria.criteria = criteria
+    else:
+        new_criteria = EligibilityCriteria(position_id=position_id, criteria=criteria)
+        session.add(new_criteria)
+    session.commit()
+    session.close()
+    return True
 
 Session = sessionmaker(bind=engine)

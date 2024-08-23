@@ -1,6 +1,5 @@
 import streamlit as st
-from models.models import update_work_profile, get_user_by_id, delete_resume
-import os
+from models.models import update_work_profile, get_user_by_id, delete_resume, get_all_ladders, get_positions_for_ladder
 import base64
 
 def work_profile_section():
@@ -21,28 +20,21 @@ def work_profile_section():
 
     if st.session_state.work_edit_mode:
         # Edit mode: show editable fields
-        ladder = st.selectbox("Career Ladder", 
-                              ["Individual Contributor (Software)", "Management", "Product"], 
-                              index=["Individual Contributor (Software)", "Management", "Product"].index(user.ladder) if user.ladder else 0)
+        ladders = get_all_ladders()
+        ladder_names = [ladder.name for ladder in ladders]
+        selected_ladder = st.selectbox("Career Ladder", 
+                                       options=ladder_names,
+                                       index=ladder_names.index(user.position.ladder.name) if user.position else 0)
 
-        position_options = {
-            "Individual Contributor (Software)": [
-                "Software Engineer", "Sr Software Engineer", "Staff Software Engineer",
-                "Sr Staff Software Engineer", "Principal Engineer", "Distinguished Engineer", "Fellow"
-            ],
-            "Management": [
-                "Manager", "Sr Manager", "Director", "Sr Director",
-                "Vice President", "Sr Vice President", "Executive Vice President"
-            ],
-            "Product": [
-                "Product Manager", "Sr Product Manager", "Group Product Manager",
-                "Vice President", "Sr Vice President"
-            ]
-        }
-
-        current_position = st.selectbox("Current Position", 
-                                        position_options[ladder], 
-                                        index=position_options[ladder].index(user.current_position) if user.current_position in position_options[ladder] else 0)
+        selected_ladder_obj = next((ladder for ladder in ladders if ladder.name == selected_ladder), None)
+        
+        if selected_ladder_obj:
+            positions = get_positions_for_ladder(selected_ladder_obj.id)
+            position_options = [f"{selected_ladder_obj.prefix}{position.level}: {position.name}" for position in positions]
+            
+            current_position = st.selectbox("Current Position", 
+                                            options=position_options,
+                                            index=position_options.index(f"{selected_ladder_obj.prefix}{user.position.level}: {user.position.name}") if user.position else 0)
         
         responsibilities = st.text_area("Current Responsibilities", value=user.responsibilities or "")
 
@@ -51,9 +43,10 @@ def work_profile_section():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Update Work Profile"):
+                selected_position_obj = next((position for position in positions if f"{selected_ladder_obj.prefix}{position.level}: {position.name}" == current_position), None)
+                
                 updates = {
-                    "ladder": ladder,
-                    "current_position": current_position,
+                    "position_id": selected_position_obj.id if selected_position_obj else None,
                     "responsibilities": responsibilities
                 }
 
@@ -75,8 +68,13 @@ def work_profile_section():
                 st.rerun()
     else:
         # Display mode: show non-editable fields
-        st.write(f"**Career Ladder:** {user.ladder or 'Not specified'}")
-        st.write(f"**Current Position:** {user.current_position or 'Not specified'}")
+        if user.position:
+            st.write(f"**Career Ladder:** {user.position.ladder.name}")
+            st.write(f"**Current Position:** {user.position.ladder.prefix}{user.position.level}: {user.position.name}")
+        else:
+            st.write("**Career Ladder:** Not specified")
+            st.write("**Current Position:** Not specified")
+        
         st.write("**Current Responsibilities:**")
         st.write(user.responsibilities or 'Not specified')
 

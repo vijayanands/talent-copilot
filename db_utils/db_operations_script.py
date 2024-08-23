@@ -4,7 +4,7 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from models.models import User, LinkedInProfileInfo
+from models.models import User, LinkedInProfileInfo, Ladder, Position, EligibilityCriteria
 
 
 def get_db_path():
@@ -27,39 +27,6 @@ def get_db_path():
 
 def create_engine_with_path(db_path):
     return create_engine(f"sqlite:///{db_path}")
-
-
-def update_schema(engine):
-    with engine.connect() as conn:
-        try:
-            # Check if new columns exist
-            result = conn.execute(text("PRAGMA table_info(users)"))
-            columns = [row[1] for row in result.fetchall()]
-
-            new_columns = {
-                'ladder': 'TEXT',
-                'current_position': 'TEXT',
-                'responsibilities': 'TEXT',
-                'resume_pdf': 'BLOB',
-                'is_enterprise_admin': 'BOOLEAN'
-            }
-
-            for column, data_type in new_columns.items():
-                if column not in columns:
-                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {column} {data_type}"))
-                    print(f"{column} column added successfully.")
-
-            if 'skills' not in columns:
-                conn.execute(text("ALTER TABLE users ADD COLUMN skills TEXT DEFAULT '{}'"))
-                print("Skills column added successfully.")
-            else:
-                conn.execute(text("ALTER TABLE users ALTER COLUMN skills TYPE TEXT"))
-                print("Skills column type updated to TEXT.")
-
-            conn.commit()
-            print("Schema updated successfully.")
-        except Exception as e:
-            print(f"An error occurred while updating the schema: {str(e)}")
 
 
 def migrate_enterprise_admin_data(engine):
@@ -202,6 +169,116 @@ def migrate_resume_data(engine):
     finally:
         session.close()
 
+def populate_default_ladders_and_positions(engine):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        # Default ladders and positions from work_profile.py
+        default_ladders = {
+            "Individual Contributor (Software)": {
+                "prefix": "IC",
+                "positions": [
+                    "Software Engineer", "Sr Software Engineer", "Staff Software Engineer",
+                    "Sr Staff Software Engineer", "Principal Engineer", "Distinguished Engineer", "Fellow"
+                ]
+            },
+            "Management": {
+                "prefix": "M",
+                "positions": [
+                    "Manager", "Sr Manager", "Director", "Sr Director",
+                    "Vice President", "Sr Vice President", "Executive Vice President"
+                ]
+            },
+            "Product": {
+                "prefix": "PM",
+                "positions": [
+                    "Product Manager", "Sr Product Manager", "Group Product Manager",
+                    "Vice President", "Sr Vice President"
+                ]
+            }
+        }
+
+        for ladder_name, ladder_data in default_ladders.items():
+            ladder = session.query(Ladder).filter_by(name=ladder_name).first()
+            if not ladder:
+                ladder = Ladder(name=ladder_name, prefix=ladder_data["prefix"])
+                session.add(ladder)
+                session.flush()
+
+            existing_positions = session.query(Position).filter_by(ladder_id=ladder.id).all()
+            existing_position_names = [p.name for p in existing_positions]
+
+            for level, position_name in enumerate(ladder_data["positions"], start=1):
+                if position_name not in existing_position_names:
+                    position = Position(name=position_name, level=level, ladder_id=ladder.id)
+                    session.add(position)
+
+        session.commit()
+        print("Default ladders and positions populated successfully.")
+    except Exception as e:
+        session.rollback()
+        print(f"An error occurred while populating default ladders and positions: {str(e)}")
+    finally:
+        session.close()
+
+def update_schema(engine):
+    with engine.connect() as conn:
+        try:
+            # Check if new tables exist
+            result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
+            tables = [row[0] for row in result.fetchall()]
+
+            if 'ladders' not in tables:
+                conn.execute(text("""
+                    CREATE TABLE ladders (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT NOT NULL UNIQUE,
+                        prefix TEXT NOT NULL
+                    )
+                """))
+                print("Ladders table created successfully.")
+
+            if 'positions' not in tables:
+                conn.execute(text("""
+                    CREATE TABLE positions (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        level INTEGER NOT NULL,
+                        ladder_id INTEGER NOT NULL,
+                        FOREIGN KEY (ladder_id) REFERENCES ladders (id)
+                    )
+                """))
+                print("Positions table created successfully.")
+
+            if 'eligibility_criteria' not in tables:
+                conn.execute(text("""
+                    CREATE TABLE eligibility_criteria (
+                        id INTEGER PRIMARY KEY,
+                        position_id INTEGER NOT NULL,
+                        criteria TEXT NOT NULL,
+                        FOREIGN KEY (position_id) REFERENCES positions (id)
+                    )
+                """))
+                print("Eligibility criteria table created successfully.")
+
+            # Check if position_id column exists in users table
+            result = conn.execute(text("PRAGMA table_info(users)"))
+            columns = [row[1] for row in result.fetchall()]
+
+            if 'position_id' not in columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN position_id INTEGER REFERENCES positions(id)"))
+                print("position_id column added to users table successfully.")
+
+            conn.commit()
+            print("Schema updated successfully.")
+
+            # Populate default ladders and positions
+            populate_default_ladders_and_positions(engine)
+
+        except Exception as e:
+            print(f"An error occurred while updating the schema: {str(e)}")
+
 if __name__ == "__main__":
     db_path = get_db_path()
     engine = create_engine_with_path(db_path)
@@ -215,9 +292,10 @@ if __name__ == "__main__":
         print("5. Truncate database")
         print("6. Migrate resume data")
         print("7. Migrate enterprise admin data")
-        print("8. Exit")
+        print("8. Populate default ladders and positions")
+        print("9. Exit")
 
-        choice = input("Enter your choice (1-8): ")
+        choice = input("Enter your choice (1-9): ")
 
         if choice == "1":
             update_schema(engine)
@@ -238,6 +316,8 @@ if __name__ == "__main__":
         elif choice == "7":
             migrate_enterprise_admin_data(engine)
         elif choice == "8":
+            populate_default_ladders_and_positions(engine)
+        elif choice == "9":
             break
         else:
             print("Invalid choice. Please try again.")
