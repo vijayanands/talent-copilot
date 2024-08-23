@@ -9,16 +9,22 @@ def account_page():
 
     user = st.session_state.user
 
+    # Initialize the active tab in session state if it doesn't exist
+    if 'active_tab' not in st.session_state:
+        st.session_state.active_tab = "Personal Profile"
+
     # Create tabs for Personal Profile, Work Profile, and Change Password
-    personal_tab, work_tab, password_tab = st.tabs(["Personal Profile", "Work Profile", "Change Password"])
+    tabs = ["Personal Profile", "Work Profile", "Change Password"]
+    active_tab = st.radio("Select a section:", tabs, key="tab_selector", index=tabs.index(st.session_state.active_tab))
 
-    with personal_tab:
+    # Update the active tab in session state
+    st.session_state.active_tab = active_tab
+
+    if active_tab == "Personal Profile":
         personal_profile_section()
-
-    with work_tab:
+    elif active_tab == "Work Profile":
         work_profile_section()
-
-    with password_tab:
+    elif active_tab == "Change Password":
         change_password_section()
 
 def change_password_section():

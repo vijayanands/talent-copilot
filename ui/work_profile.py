@@ -13,10 +13,11 @@ def work_profile_section():
         st.session_state.work_edit_mode = False
 
     # Edit button with pencil icon
-    work_edit_button = st.button("✏️ Edit Work Profile")
-
-    if work_edit_button:
-        st.session_state.work_edit_mode = not st.session_state.work_edit_mode
+    if not st.session_state.work_edit_mode:
+        work_edit_button = st.button("✏️ Edit Work Profile")
+        if work_edit_button:
+            st.session_state.work_edit_mode = True
+            st.rerun()
 
     if st.session_state.work_edit_mode:
         # Edit mode: show editable fields
@@ -47,34 +48,40 @@ def work_profile_section():
 
         uploaded_file = st.file_uploader("Upload Resume (PDF)", type="pdf")
 
-        if st.button("Update Work Profile"):
-            updates = {
-                "ladder": ladder,
-                "current_position": current_position,
-                "responsibilities": responsibilities
-            }
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Update Work Profile"):
+                updates = {
+                    "ladder": ladder,
+                    "current_position": current_position,
+                    "responsibilities": responsibilities
+                }
 
-            if uploaded_file is not None:
-                # Create a directory to store resumes if it doesn't exist
-                os.makedirs("resumes", exist_ok=True)
-                
-                # Generate a unique filename
-                filename = f"resumes/resume_{user.id}.pdf"
-                
-                # Save the file
-                with open(filename, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                
-                updates["resume_pdf"] = filename
+                if uploaded_file is not None:
+                    # Create a directory to store resumes if it doesn't exist
+                    os.makedirs("resumes", exist_ok=True)
+                    
+                    # Generate a unique filename
+                    filename = f"resumes/resume_{user.id}.pdf"
+                    
+                    # Save the file
+                    with open(filename, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    updates["resume_pdf"] = filename
 
-            updated_user = update_work_profile(user.id, **updates)
-            if updated_user:
-                st.success("Work profile updated successfully!")
-                st.session_state.user = updated_user
+                updated_user = update_work_profile(user.id, **updates)
+                if updated_user:
+                    st.success("Work profile updated successfully!")
+                    st.session_state.user = updated_user
+                    st.session_state.work_edit_mode = False
+                    st.rerun()
+                else:
+                    st.error("Failed to update work profile. Please try again.")
+        with col2:
+            if st.button("Cancel"):
                 st.session_state.work_edit_mode = False
                 st.rerun()
-            else:
-                st.error("Failed to update work profile. Please try again.")
     else:
         # Display mode: show non-editable fields
         st.write(f"**Career Ladder:** {user.ladder or 'Not specified'}")
@@ -116,3 +123,6 @@ def work_profile_section():
                         st.error("Failed to delete resume. Please try again.")
         else:
             st.write("No resume uploaded")
+
+    # Ensure the active tab remains "Work Profile"
+    st.session_state.active_tab = "Work Profile"

@@ -11,10 +11,11 @@ def personal_profile_section():
         st.session_state.edit_mode = False
 
     # Edit button with pencil icon
-    edit_button = st.button("✏️ Edit Personal Profile")
-
-    if edit_button:
-        st.session_state.edit_mode = not st.session_state.edit_mode
+    if not st.session_state.edit_mode:
+        edit_button = st.button("✏️ Edit Personal Profile")
+        if edit_button:
+            st.session_state.edit_mode = True
+            st.rerun()
 
     if st.session_state.edit_mode:
         # Edit mode: show editable fields
@@ -29,31 +30,37 @@ def personal_profile_section():
                 "LinkedIn Profile URL", value=user.linkedin_profile
             )
 
-        if st.button("Update Personal Profile"):
-            # Prepare a dictionary of changed fields
-            updates = {}
-            if first_name != user.first_name:
-                updates["first_name"] = first_name
-            if last_name != user.last_name:
-                updates["last_name"] = last_name
-            if address != user.address:
-                updates["address"] = address
-            if phone != user.phone:
-                updates["phone"] = phone
-            if linkedin_profile != user.linkedin_profile:
-                updates["linkedin_profile"] = linkedin_profile
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Update Personal Profile"):
+                # Prepare a dictionary of changed fields
+                updates = {}
+                if first_name != user.first_name:
+                    updates["first_name"] = first_name
+                if last_name != user.last_name:
+                    updates["last_name"] = last_name
+                if address != user.address:
+                    updates["address"] = address
+                if phone != user.phone:
+                    updates["phone"] = phone
+                if linkedin_profile != user.linkedin_profile:
+                    updates["linkedin_profile"] = linkedin_profile
 
-            if updates:
-                updated_user = update_user_profile(user.id, **updates)
-                if updated_user:
-                    st.success("Profile updated successfully!")
-                    st.session_state.user = updated_user  # Update the session state with the new user data
-                    st.session_state.edit_mode = False  # Exit edit mode
-                    st.rerun()  # Rerun to show updated profile
+                if updates:
+                    updated_user = update_user_profile(user.id, **updates)
+                    if updated_user:
+                        st.success("Profile updated successfully!")
+                        st.session_state.user = updated_user  # Update the session state with the new user data
+                        st.session_state.edit_mode = False  # Exit edit mode
+                        st.rerun()  # Rerun to show updated profile
+                    else:
+                        st.error("Failed to update profile. Please try again.")
                 else:
-                    st.error("Failed to update profile. Please try again.")
-            else:
-                st.info("No changes detected in the profile.")
+                    st.info("No changes detected in the profile.")
+        with col2:
+            if st.button("Cancel"):
+                st.session_state.edit_mode = False
+                st.rerun()
     else:
         # Display mode: show non-editable fields
         col1, col2 = st.columns(2)
