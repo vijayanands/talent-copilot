@@ -8,6 +8,7 @@ from ui.manager_dashboard import manager_dashboard
 from models.models import engine, create_tables_if_not_exist
 from ui.individual_contributor_dashboard import individual_contributor_dashboard
 from ui.account_page import account_page
+from ui.enterprise_admin_dashboard import enterprise_admin_dashboard
 
 load_dotenv()
 
@@ -122,12 +123,16 @@ def set_title_bar():
 def my_assistant_dashboard():
     individual_contributor_dashboard()
 
+
 def main_app():
     st.title("PathForge Dashboard")
 
     is_manager = st.session_state.user.is_manager
+    is_enterprise_admin = st.session_state.user.is_enterprise_admin
 
-    if is_manager:
+    if is_enterprise_admin:
+        enterprise_admin_dashboard()
+    elif is_manager:
         tab1, tab2 = st.tabs(["Manager Dashboard", "My Assistant"])
 
         with tab1:

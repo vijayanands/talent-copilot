@@ -16,11 +16,11 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     is_manager = Column(Boolean, default=False)
+    is_enterprise_admin = Column(Boolean, default=False)  # New field
     linkedin_profile = Column(String)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
@@ -56,13 +56,14 @@ def verify_password(stored_password, provided_password):
     return bcrypt.checkpw(provided_password.encode("utf-8"), stored_password)
 
 
-def register_user(email, password, is_manager, linkedin_profile, first_name, last_name, address, phone):
+def register_user(email, password, is_manager, is_enterprise_admin, linkedin_profile, first_name, last_name, address, phone):
     session = Session()
     hashed_password = hash_password(password)
     new_user = User(
         email=email,
         password=hashed_password,
         is_manager=is_manager,
+        is_enterprise_admin=is_enterprise_admin,
         linkedin_profile=linkedin_profile,
         first_name=first_name,
         last_name=last_name,
@@ -83,7 +84,6 @@ def register_user(email, password, is_manager, linkedin_profile, first_name, las
 
     session.commit()
     session.close()
-
 
 def verify_login(email, password):
     session = Session()

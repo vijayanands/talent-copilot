@@ -40,7 +40,8 @@ def update_schema(engine):
                 'ladder': 'TEXT',
                 'current_position': 'TEXT',
                 'responsibilities': 'TEXT',
-                'resume_pdf': 'TEXT'
+                'resume_pdf': 'BLOB',
+                'is_enterprise_admin': 'BOOLEAN'
             }
 
             for column, data_type in new_columns.items():
@@ -55,15 +56,34 @@ def update_schema(engine):
                 conn.execute(text("ALTER TABLE users ALTER COLUMN skills TYPE TEXT"))
                 print("Skills column type updated to TEXT.")
 
-            # Update resume_pdf column to LargeBinary
-            conn.execute(text("ALTER TABLE users ALTER COLUMN resume_pdf TYPE BLOB"))
-            print("Resume_pdf column type updated to BLOB.")
-
             conn.commit()
             print("Schema updated successfully.")
         except Exception as e:
             print(f"An error occurred while updating the schema: {str(e)}")
 
+
+def migrate_enterprise_admin_data(engine):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        users = session.query(User).all()
+        for user in users:
+            if user.is_enterprise_admin is None:
+                user.is_enterprise_admin = False
+                if user.is_manager:
+                    user.is_manager = False
+                    print(f"User {user.id} was a manager, now set as enterprise admin.")
+                else:
+                    print(f"User {user.id} set as non-enterprise admin.")
+
+        session.commit()
+        print("Enterprise admin data migrated successfully.")
+    except Exception as e:
+        session.rollback()
+        print(f"An error occurred while migrating enterprise admin data: {str(e)}")
+    finally:
+        session.close()
 
 def migrate_linkedin_skills(engine):
     Session = sessionmaker(bind=engine)
@@ -194,9 +214,10 @@ if __name__ == "__main__":
         print("4. Migrate work profile data")
         print("5. Truncate database")
         print("6. Migrate resume data")
-        print("7. Exit")
+        print("7. Migrate enterprise admin data")
+        print("8. Exit")
 
-        choice = input("Enter your choice (1-6): ")
+        choice = input("Enter your choice (1-8): ")
 
         if choice == "1":
             update_schema(engine)
@@ -215,6 +236,8 @@ if __name__ == "__main__":
         elif choice == "6":
             migrate_resume_data(engine)
         elif choice == "7":
+            migrate_enterprise_admin_data(engine)
+        elif choice == "8":
             break
         else:
             print("Invalid choice. Please try again.")

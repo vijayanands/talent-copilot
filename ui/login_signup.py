@@ -59,7 +59,9 @@ def signup_page():
         if st.session_state.signup_password_match_error:
             st.error(st.session_state.signup_password_match_error)
 
-        is_manager = st.checkbox("I am a people manager", key="signup_is_manager")
+        role = st.radio("Select Role", ["Regular User", "People Manager", "Enterprise Admin"])
+        is_manager = role == "People Manager"
+        is_enterprise_admin = role == "Enterprise Admin"
 
     with col2:
         last_name = st.text_input("Last Name*", key="signup_last_name")
@@ -86,6 +88,7 @@ def signup_page():
                     email,
                     st.session_state.signup_password,
                     is_manager,
+                    is_enterprise_admin,
                     linkedin_profile,
                     first_name,
                     last_name,
