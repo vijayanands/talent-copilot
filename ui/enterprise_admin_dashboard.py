@@ -36,7 +36,6 @@ def level_definitions():
         else:
             edit_positions(selected_ladder_obj)
 
-
 def display_current_positions(ladder):
     positions = get_positions_for_ladder(ladder.id)
     st.session_state.positions = positions
@@ -49,7 +48,6 @@ def display_current_positions(ladder):
         st.session_state.edit_mode = True
         st.rerun()
 
-
 def edit_positions(ladder):
     st.write(f"Editing positions for {ladder.name}:")
 
@@ -59,12 +57,16 @@ def edit_positions(ladder):
     positions = st.session_state.positions
 
     for i, position in enumerate(positions):
-        col1, col2 = st.columns([3, 1])
+        col1, col2, col3 = st.columns([3, 1, 1])
         with col1:
             position['name'] = st.text_input(f"Position {position['level']}", value=position['name'],
                                              key=f"position_{i}")
         with col2:
             position['level'] = st.number_input("Level", min_value=1, value=position['level'], key=f"level_{i}")
+        with col3:
+            if st.button("Delete", key=f"delete_{i}"):
+                delete_position(i)
+                st.rerun()
 
     st.write("Add a new position:")
     col1, col2, col3 = st.columns([3, 1, 1])
@@ -94,7 +96,6 @@ def edit_positions(ladder):
 
     st.session_state.positions = positions
 
-
 def add_new_position(positions, name, level):
     # Shift existing positions if necessary
     for position in positions:
@@ -107,29 +108,20 @@ def add_new_position(positions, name, level):
     # Sort positions by level
     positions.sort(key=lambda x: x['level'])
 
-def insert_and_adjust_levels(new_position):
+def delete_position(index):
     positions = st.session_state.positions
-    insert_index = next((i for i, p in enumerate(positions) if p.level >= new_position.level), len(positions))
+    deleted_level = positions[index]['level']
     
-    # Insert the new position
-    positions.insert(insert_index, new_position)
+    # Remove the position
+    del positions[index]
     
-    # Adjust levels of subsequent positions
-    for i in range(insert_index + 1, len(positions)):
-        positions[i].level += 1
+    # Decrement levels for positions above the deleted one
+    for position in positions:
+        if position['level'] > deleted_level:
+            position['level'] -= 1
     
     # Sort positions by level
-    st.session_state.positions = sorted(positions, key=lambda x: x.level)
-
-def update_positions(ladder):
-    positions = [{"name": p.name, "level": p.level} for p in st.session_state.positions]
-    if update_ladder_positions(ladder.id, positions):
-        st.success("Positions updated successfully!")
-        st.session_state.edit_mode = False
-        st.rerun()
-    else:
-        st.error("Failed to update positions.")
-
+    st.session_state.positions = sorted(positions, key=lambda x: x['level'])
 
 def level_eligibility():
     st.header("Level Eligibility")
