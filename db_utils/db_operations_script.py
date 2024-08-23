@@ -55,6 +55,10 @@ def update_schema(engine):
                 conn.execute(text("ALTER TABLE users ALTER COLUMN skills TYPE TEXT"))
                 print("Skills column type updated to TEXT.")
 
+            # Update resume_pdf column to LargeBinary
+            conn.execute(text("ALTER TABLE users ALTER COLUMN resume_pdf TYPE BLOB"))
+            print("Resume_pdf column type updated to BLOB.")
+
             conn.commit()
             print("Schema updated successfully.")
         except Exception as e:
@@ -155,6 +159,29 @@ def migrate_work_profile_data(engine):
     finally:
         session.close()
 
+def migrate_resume_data(engine):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        users = session.query(User).all()
+        for user in users:
+            if user.resume_pdf and os.path.isfile(user.resume_pdf):
+                with open(user.resume_pdf, 'rb') as file:
+                    pdf_data = file.read()
+                    user.resume_pdf = pdf_data
+                os.remove(user.resume_pdf)  # Remove the file after migrating
+            elif user.resume_pdf:
+                user.resume_pdf = None  # Clear invalid file paths
+
+        session.commit()
+        print("Resume data migrated successfully.")
+    except Exception as e:
+        session.rollback()
+        print(f"An error occurred while migrating resume data: {str(e)}")
+    finally:
+        session.close()
+
 if __name__ == "__main__":
     db_path = get_db_path()
     engine = create_engine_with_path(db_path)
@@ -166,7 +193,8 @@ if __name__ == "__main__":
         print("3. Update existing skills")
         print("4. Migrate work profile data")
         print("5. Truncate database")
-        print("6. Exit")
+        print("6. Migrate resume data")
+        print("7. Exit")
 
         choice = input("Enter your choice (1-6): ")
 
@@ -185,6 +213,8 @@ if __name__ == "__main__":
             else:
                 print("Operation cancelled.")
         elif choice == "6":
+            migrate_resume_data(engine)
+        elif choice == "7":
             break
         else:
             print("Invalid choice. Please try again.")

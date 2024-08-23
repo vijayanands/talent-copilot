@@ -4,7 +4,7 @@ from datetime import datetime
 
 import bcrypt
 import streamlit as st
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, JSON
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -30,7 +30,7 @@ class User(Base):
     ladder = Column(String)
     current_position = Column(String)
     responsibilities = Column(String)
-    resume_pdf = Column(String)  # Store the file path instead of binary data
+    resume_pdf = Column(LargeBinary)  # Store the PDF data instead of file path
 
     def get_skills(self):
         return json.loads(self.skills)
@@ -209,7 +209,11 @@ def update_work_profile(user_id, **kwargs):
         user = session.query(User).filter_by(id=user_id).first()
         if user:
             for key, value in kwargs.items():
-                setattr(user, key, value)
+                if key == 'resume_pdf':
+                    # If resume_pdf is provided, it should be the binary data of the PDF
+                    setattr(user, key, value)
+                else:
+                    setattr(user, key, value)
             session.commit()
             session.refresh(user)
             return user
