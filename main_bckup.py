@@ -147,43 +147,30 @@ def main_app():
         my_assistant_dashboard()
 
 
-def show_initial_dashboard():
-    tab1, tab2 = st.tabs(["Login", "Sign Up"])
-    with tab1:
-        login_page()
-    with tab2:
-        signup_page()
-
-
 def setup_sidebar():
     with st.sidebar:
-        # Create a container for the profile image
+        # Create a container for the profile image and hamburger menu
         welcome_container = st.container()
         with welcome_container:
-            if st.session_state.user.profile_image:
-                img_base64 = get_base64_of_bytes(st.session_state.user.profile_image)
-                st.markdown(f'<img src="data:image/png;base64,{img_base64}" width="50" height="50" style="border-radius: 50%;">', unsafe_allow_html=True)
-            else:
-                default_img = get_base64_of_bin_file("images/default_profile.png")
-                st.markdown(f'<img src="data:image/png;base64,{default_img}" width="50" height="50" style="border-radius: 50%;">', unsafe_allow_html=True)
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                if st.session_state.user.profile_image:
+                    img_base64 = get_base64_of_bytes(st.session_state.user.profile_image)
+                    st.markdown(
+                        f'<img src="data:image/png;base64,{img_base64}" width="50" height="50" style="border-radius: 50%;">',
+                        unsafe_allow_html=True)
+                else:
+                    default_img = get_base64_of_bin_file("images/default_profile.png")
+                    st.markdown(
+                        f'<img src="data:image/png;base64,{default_img}" width="50" height="50" style="border-radius: 50%;">',
+                        unsafe_allow_html=True)
+
+            with col2:
+                st.markdown('<span style="font-size: 30px; cursor: pointer;">&#9776;</span>', unsafe_allow_html=True)
 
         st.markdown("---")
-
-        # Initialize the page in session state if it doesn't exist
-        if 'page' not in st.session_state:
-            st.session_state.page = 'Dashboard'
-
-        # Dropdown menu using st.selectbox
-        selected_page = st.selectbox(
-            "Menu",
-            options=["Dashboard", "Account"],
-            index=0 if st.session_state.page == "Dashboard" else 1
-        )
-
-        # Update the page if a different option is selected
-        if selected_page != st.session_state.page:
-            st.session_state.page = selected_page
-            st.rerun()
+        page = st.radio("Navigation", ["Dashboard", "Account"])
 
         st.markdown("---")
 
@@ -204,7 +191,14 @@ def setup_sidebar():
             del st.session_state.user
             st.rerun()
 
-    return st.session_state.page
+    return page
+
+def show_initial_dashboard():
+    tab1, tab2 = st.tabs(["Login", "Sign Up"])
+    with tab1:
+        login_page()
+    with tab2:
+        signup_page()
 
 def setup_streamlit_ui():
     st.set_page_config(page_title="PathForge", layout="wide")
@@ -228,9 +222,10 @@ def setup_streamlit_ui():
     else:
         show_initial_dashboard()
 
-# Add this at the end of your script
 if __name__ == "__main__":
     setup_streamlit_ui()
+
+
 # Example usage
 # questions = [
 #     "What are the Jira issues for vijayanands@gmail.com?",
