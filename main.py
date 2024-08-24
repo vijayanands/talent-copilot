@@ -46,22 +46,16 @@ def set_title_bar():
                 margin-bottom: 20px;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }}
-            .logo-container {{
-                background-color: rgba(255, 255, 255, 0.9);  /* Semi-transparent white background */
-                padding: 5px;
-                border-radius: 5px;
-                margin-right: 20px;
-            }}
             .title-bar img {{
                 height: 50px;
-                display: block;
+                margin-right: 20px;
+                filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
             }}
             .title-bar h1 {{
                 font-size: 24px;
                 color: #ffffff;  /* White for main text */
                 margin: 0;
                 text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-                flex-grow: 1;
             }}
             .title-bar .highlight-blue {{
                 color: #66ccff;  /* Light blue highlight */
@@ -73,9 +67,7 @@ def set_title_bar():
             }}
         </style>
         <div class="title-bar">
-            <div class="logo-container">
-                <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
-            </div>
+            <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
             <h1>
                 <span class="highlight-blue">PathForge</span> - Empowering Employee 
                 <span class="highlight-pink">Performance</span>, 
@@ -87,6 +79,7 @@ def set_title_bar():
         """,
         unsafe_allow_html=True,
     )
+
 
 def main_app():
     is_manager = st.session_state.user.is_manager
