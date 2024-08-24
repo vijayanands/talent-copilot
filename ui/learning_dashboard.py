@@ -15,8 +15,6 @@ def reset_learning_dashboard():
 
 
 def learning_dashboard():
-    st.header("Learning & Development")
-
     # Initialize session state variables
     if "selected_skills" not in st.session_state:
         st.session_state.selected_skills = []

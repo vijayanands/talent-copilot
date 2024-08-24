@@ -175,7 +175,102 @@ def pretty_print_appraisal(appraisal_data):
         for opportunity in appraisal_data["Learning Opportunities"]:
             st.markdown(f"• {opportunity}")
 
+def performance_management_tab():
+    # Initialize the performance management page in session state if it doesn't exist
+    if "performance_page" not in st.session_state:
+        st.session_state.performance_page = "Self-Appraisal"
 
+    # Dropdown menu using st.selectbox
+    selected_performance_page = st.selectbox(
+        "",  # Empty label to hide the heading
+        options=["Self-Appraisal", "Other Performance Tools"],
+        index=0 if st.session_state.performance_page == "Self-Appraisal" else 1,
+    )
+
+    # Update the performance page if a different option is selected
+    if selected_performance_page != st.session_state.performance_page:
+        st.session_state.performance_page = selected_performance_page
+        st.rerun()
+
+    if st.session_state.performance_page == "Self-Appraisal":
+        if (
+                "reset_appraisal" in st.session_state
+                and st.session_state.reset_appraisal
+        ):
+            if "appraisal" in st.session_state:
+                del st.session_state.appraisal
+            del st.session_state.reset_appraisal
+
+        if st.button("Generate Self-Appraisal", key="generate_button"):
+            user_email = st.session_state.user.email
+            with st.spinner(f"Generating self-appraisal for {user_email} ..."):
+                st.session_state.appraisal = create_self_appraisal(
+                    st.session_state.llm_choice, user_email
+                )
+
+        if "appraisal" in st.session_state:
+            pretty_print_appraisal(st.session_state.appraisal)
+            st.button(
+                "Reset",
+                on_click=reset_performance_management,
+                key="reset_performance",
+            )
+    else:
+        st.subheader("Other Performance Tools")
+        st.write("This section is under development. Stay tuned for more performance management tools!")
+
+def skills_tab():
+    # Initialize the skills page in session state if it doesn't exist
+    if "skills_page" not in st.session_state:
+        st.session_state.skills_page = "My Skills"
+
+    # Dropdown menu using st.selectbox
+    selected_skills_page = st.selectbox(
+        "",  # Empty label to hide the heading
+        options=["My Skills", "Endorsements"],
+        index=0 if st.session_state.skills_page == "My Skills" else 1,
+    )
+
+    # Update the skills page if a different option is selected
+    if selected_skills_page != st.session_state.skills_page:
+        st.session_state.skills_page = selected_skills_page
+        st.rerun()
+
+    if st.session_state.skills_page == "My Skills":
+        skills_section()
+    else:
+        st.subheader("Endorsements")
+        st.info(
+            "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
+        )
+
+def q_and_a_tab():
+    query = st.text_input("Enter your question:")
+
+    show_full_response = st.checkbox("Show full response (debug)", value=False)
+
+    if st.button("Ask", key="ask_button"):
+        if not query.strip():
+            st.error("Please enter a question before clicking 'Ask'.")
+        else:
+            index = ingest_data(st.session_state.recreate_index)
+            if index is None:
+                st.error(
+                    "Failed to initialize the index. Please check the logs and try again."
+                )
+                return
+
+            llm = get_llm(st.session_state.llm_choice)
+            with st.spinner("Generating response..."):
+                full_response, response_text = ask(llm, query, index)
+
+            st.write("Response:")
+            st.write(response_text)
+
+            if show_full_response:
+                st.write("Full Response (Debug):")
+                st.write(full_response)
+                
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
@@ -188,82 +283,19 @@ def individual_contributor_dashboard():
     )
 
     with tab1:
-        st.header("Performance Management")
-        performance_subtab1, performance_subtab2 = st.tabs(
-            ["Self-Appraisal", "Other Performance Tools"]
-        )
-
-        with performance_subtab1:
-            st.subheader("Self-Appraisal Generator")
-
-            if (
-                "reset_appraisal" in st.session_state
-                and st.session_state.reset_appraisal
-            ):
-                if "appraisal" in st.session_state:
-                    del st.session_state.appraisal
-                del st.session_state.reset_appraisal
-
-            if st.button("Generate Self-Appraisal", key="generate_button"):
-                user_email = st.session_state.user.email
-                with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                    st.session_state.appraisal = create_self_appraisal(
-                        st.session_state.llm_choice, user_email
-                    )
-
-            if "appraisal" in st.session_state:
-                pretty_print_appraisal(st.session_state.appraisal)
-                st.button(
-                    "Reset",
-                    on_click=reset_performance_management,
-                    key="reset_performance",
-                )
+        performance_management_tab()
 
     with tab2:
         learning_dashboard()
 
     with tab3:
-        st.header("Skills")
-        skills_subtab1, skills_subtab2 = st.tabs(["My Skills", "Endorsements"])
-        with skills_subtab1:
-            skills_section()
-        with skills_subtab2:
-            st.subheader("Endorsements")
-            st.info(
-                "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
-            )
+        skills_tab()
 
     with tab4:
-        st.header("Career")
         st.write(
             "This section is under development. Here you will be able to explore career opportunities and plan your career path."
         )
         st.info("Coming soon: Career path visualization, and mentorship opportunities.")
 
     with tab5:
-        st.header("Q&A Chatbot")
-        query = st.text_input("Enter your question:")
-
-        show_full_response = st.checkbox("Show full response (debug)", value=False)
-
-        if st.button("Ask", key="ask_button"):
-            if not query.strip():
-                st.error("Please enter a question before clicking 'Ask'.")
-            else:
-                index = ingest_data(st.session_state.recreate_index)
-                if index is None:
-                    st.error(
-                        "Failed to initialize the index. Please check the logs and try again."
-                    )
-                    return
-
-                llm = get_llm(st.session_state.llm_choice)
-                with st.spinner("Generating response..."):
-                    full_response, response_text = ask(llm, query, index)
-
-                st.write("Response:")
-                st.write(response_text)
-
-                if show_full_response:
-                    st.write("Full Response (Debug):")
-                    st.write(full_response)
+        q_and_a_tab()
