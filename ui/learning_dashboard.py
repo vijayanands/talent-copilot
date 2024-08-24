@@ -1,5 +1,6 @@
-import streamlit as st
 from typing import List
+
+import streamlit as st
 
 from functions.learning_resource_finder import find_learning_resources
 from models.models import get_user_skills
@@ -17,15 +18,15 @@ def learning_dashboard():
     st.header("Learning & Development")
 
     # Initialize session state variables
-    if 'selected_skills' not in st.session_state:
+    if "selected_skills" not in st.session_state:
         st.session_state.selected_skills = []
-    if 'additional_keywords' not in st.session_state:
+    if "additional_keywords" not in st.session_state:
         st.session_state.additional_keywords = []
-    if 'show_recommendations' not in st.session_state:
+    if "show_recommendations" not in st.session_state:
         st.session_state.show_recommendations = False
-    if 'recommendations' not in st.session_state:
+    if "recommendations" not in st.session_state:
         st.session_state.recommendations = ""
-    if 'new_keyword' not in st.session_state:
+    if "new_keyword" not in st.session_state:
         st.session_state.new_keyword = ""
 
     if not st.session_state.show_recommendations:
@@ -35,7 +36,10 @@ def learning_dashboard():
 
 
 def add_keyword():
-    if st.session_state.new_keyword and st.session_state.new_keyword not in st.session_state.additional_keywords:
+    if (
+        st.session_state.new_keyword
+        and st.session_state.new_keyword not in st.session_state.additional_keywords
+    ):
         st.session_state.additional_keywords.append(st.session_state.new_keyword)
         st.session_state.new_keyword = ""  # Clear the input field
 
@@ -51,7 +55,11 @@ def show_selection_view():
 
         # Create checkboxes for existing skills
         for skill in user_skills:
-            if st.checkbox(skill, key=f"skill_{skill}", value=skill in st.session_state.selected_skills):
+            if st.checkbox(
+                skill,
+                key=f"skill_{skill}",
+                value=skill in st.session_state.selected_skills,
+            ):
                 if skill not in st.session_state.selected_skills:
                     st.session_state.selected_skills.append(skill)
             elif skill in st.session_state.selected_skills:
@@ -91,7 +99,9 @@ def show_recommendation_view():
     with col2:
         st.button("Reset", on_click=reset_learning_dashboard, key="reset_learning")
 
-    combined_list = st.session_state.selected_skills + st.session_state.additional_keywords
+    combined_list = (
+        st.session_state.selected_skills + st.session_state.additional_keywords
+    )
     for item in combined_list:
         st.write(f"- {item}")
 
@@ -100,10 +110,14 @@ def show_recommendation_view():
 
 
 def generate_recommendations():
-    combined_list: List[str] = st.session_state.selected_skills + st.session_state.additional_keywords
+    combined_list: List[str] = (
+        st.session_state.selected_skills + st.session_state.additional_keywords
+    )
 
     if not combined_list:
-        st.warning("Please select at least one skill or keyword before generating recommendations.")
+        st.warning(
+            "Please select at least one skill or keyword before generating recommendations."
+        )
         return
 
     with st.spinner("Generating recommendations..."):

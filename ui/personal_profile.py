@@ -1,5 +1,7 @@
 import streamlit as st
+
 from models.models import update_user_profile
+
 
 def personal_profile_section():
     st.subheader("Personal Profile")
@@ -26,7 +28,9 @@ def personal_profile_section():
             linkedin_profile = st.text_input(
                 "LinkedIn Profile URL", value=user.linkedin_profile
             )
-            profile_image = st.file_uploader("Profile Image", type=["jpg", "jpeg", "png"])
+            profile_image = st.file_uploader(
+                "Profile Image", type=["jpg", "jpeg", "png"]
+            )
 
         col1, col2 = st.columns(2)
         with col1:

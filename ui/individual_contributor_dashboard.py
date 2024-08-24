@@ -1,25 +1,29 @@
 import json
+
 import streamlit as st
+
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
 from models.models import get_user_skills
 from ui.learning_dashboard import learning_dashboard
 
+
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
     response = query_engine.query(query)
     return response, response.response  # Return both full response and text
 
+
 def skills_section():
     st.subheader("My Skills")
 
     # Initialize session state variables
-    if 'skills_edit_mode' not in st.session_state:
+    if "skills_edit_mode" not in st.session_state:
         st.session_state.skills_edit_mode = False
-    if 'user_skills' not in st.session_state:
+    if "user_skills" not in st.session_state:
         st.session_state.user_skills = get_user_skills(st.session_state.user.id)
-    if 'show_add_skill_form' not in st.session_state:
+    if "show_add_skill_form" not in st.session_state:
         st.session_state.show_add_skill_form = False
 
     proficiency_scale = {
@@ -27,7 +31,7 @@ def skills_section():
         2: "Beginner",
         3: "Intermediate",
         4: "Advanced",
-        5: "Expert"
+        5: "Expert",
     }
 
     def toggle_edit_mode():
@@ -82,7 +86,7 @@ def skills_section():
                     "Proficiency",
                     options=list(range(1, 6)),
                     format_func=lambda x: proficiency_scale[x],
-                    horizontal=True
+                    horizontal=True,
                 )
                 submit_button = st.form_submit_button("Add")
                 if submit_button:
@@ -101,10 +105,15 @@ def skills_section():
                     index=proficiency - 1,
                     key=f"proficiency_{skill}",
                     horizontal=True,
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
                 )
             with col3:
-                st.button("Delete", key=f"delete_{skill}", on_click=delete_skill, args=(skill,))
+                st.button(
+                    "Delete",
+                    key=f"delete_{skill}",
+                    on_click=delete_skill,
+                    args=(skill,),
+                )
 
         # Save button
         col1, col2, col3 = st.columns([2, 2, 1])
@@ -113,7 +122,7 @@ def skills_section():
 
 
 def reset_performance_management():
-    if 'appraisal' in st.session_state:
+    if "appraisal" in st.session_state:
         del st.session_state.appraisal
     st.session_state.reset_appraisal = True
 
@@ -137,7 +146,9 @@ def pretty_print_appraisal(appraisal_data):
         st.header("Self-Appraisal")
 
     with col2:
-        st.button("Reset", on_click=reset_performance_management, key="reset_performance")
+        st.button(
+            "Reset", on_click=reset_performance_management, key="reset_performance"
+        )
 
     # Summary
     if "Summary" in appraisal_data:
@@ -164,14 +175,17 @@ def pretty_print_appraisal(appraisal_data):
         for opportunity in appraisal_data["Learning Opportunities"]:
             st.markdown(f"• {opportunity}")
 
+
 def individual_contributor_dashboard():
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Performance Management",
-        "Learning & Development",
-        "Skills",
-        "Career",
-        "Q&A Chatbot",
-    ])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "Performance Management",
+            "Learning & Development",
+            "Skills",
+            "Career",
+            "Q&A Chatbot",
+        ]
+    )
 
     with tab1:
         st.header("Performance Management")
@@ -182,8 +196,11 @@ def individual_contributor_dashboard():
         with performance_subtab1:
             st.subheader("Self-Appraisal Generator")
 
-            if 'reset_appraisal' in st.session_state and st.session_state.reset_appraisal:
-                if 'appraisal' in st.session_state:
+            if (
+                "reset_appraisal" in st.session_state
+                and st.session_state.reset_appraisal
+            ):
+                if "appraisal" in st.session_state:
                     del st.session_state.appraisal
                 del st.session_state.reset_appraisal
 
@@ -194,9 +211,13 @@ def individual_contributor_dashboard():
                         st.session_state.llm_choice, user_email
                     )
 
-            if 'appraisal' in st.session_state:
+            if "appraisal" in st.session_state:
                 pretty_print_appraisal(st.session_state.appraisal)
-                st.button("Reset", on_click=reset_performance_management, key="reset_performance")
+                st.button(
+                    "Reset",
+                    on_click=reset_performance_management,
+                    key="reset_performance",
+                )
 
     with tab2:
         learning_dashboard()
@@ -208,16 +229,16 @@ def individual_contributor_dashboard():
             skills_section()
         with skills_subtab2:
             st.subheader("Endorsements")
-            st.info("This feature is coming soon. Here you'll be able to view and manage skill endorsements.")
+            st.info(
+                "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
+            )
 
     with tab4:
         st.header("Career")
         st.write(
             "This section is under development. Here you will be able to explore career opportunities and plan your career path."
         )
-        st.info(
-            "Coming soon: Career path visualization, and mentorship opportunities."
-        )
+        st.info("Coming soon: Career path visualization, and mentorship opportunities.")
 
     with tab5:
         st.header("Q&A Chatbot")

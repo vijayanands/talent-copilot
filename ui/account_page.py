@@ -1,5 +1,7 @@
 import streamlit as st
-from models.models import verify_current_password, change_user_password, is_password_valid, check_password_match
+
+from models.models import (change_user_password, check_password_match,
+                           is_password_valid, verify_current_password)
 from ui.personal_profile import personal_profile_section
 from ui.work_profile import work_profile_section
 
@@ -10,12 +12,17 @@ def account_page():
     user = st.session_state.user
 
     # Initialize the active tab in session state if it doesn't exist
-    if 'active_tab' not in st.session_state:
+    if "active_tab" not in st.session_state:
         st.session_state.active_tab = "Personal Profile"
 
     # Create tabs for Personal Profile, Work Profile, and Change Password
     tabs = ["Personal Profile", "Work Profile", "Change Password"]
-    active_tab = st.radio("Select a section:", tabs, key="tab_selector", index=tabs.index(st.session_state.active_tab))
+    active_tab = st.radio(
+        "Select a section:",
+        tabs,
+        key="tab_selector",
+        index=tabs.index(st.session_state.active_tab),
+    )
 
     # Update the active tab in session state
     st.session_state.active_tab = active_tab
@@ -26,6 +33,7 @@ def account_page():
         work_profile_section()
     elif active_tab == "Change Password":
         change_password_section()
+
 
 def change_password_section():
     st.subheader("Change Password")
@@ -98,9 +106,7 @@ def change_password_section():
                 st.session_state.new_password_error = (
                     "New password must be different from the current password."
                 )
-                st.error(
-                    "New password must be different from the current password."
-                )
+                st.error("New password must be different from the current password.")
             else:
                 if change_user_password(user.id, new_password):
                     st.success(

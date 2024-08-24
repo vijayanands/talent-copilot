@@ -1,11 +1,13 @@
 import json
-from io import BytesIO
 import re as regex
 from datetime import datetime
-from PIL import Image
+from io import BytesIO
+
 import bcrypt
 import streamlit as st
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, LargeBinary, JSON
+from PIL import Image
+from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, Integer,
+                        LargeBinary, String, create_engine, inspect)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -27,12 +29,12 @@ class User(Base):
     last_name = Column(String, nullable=False)
     address = Column(String)
     phone = Column(String)
-    skills = Column(String, default='{}')
+    skills = Column(String, default="{}")
     ladder = Column(String)
     current_position = Column(String)
     responsibilities = Column(String)
     resume_pdf = Column(LargeBinary)
-    position_id = Column(Integer, ForeignKey('positions.id'))
+    position_id = Column(Integer, ForeignKey("positions.id"))
     position = relationship("Position")
     profile_image = Column(LargeBinary)  # New field for profile image
 
@@ -44,7 +46,7 @@ class User(Base):
 
     def set_profile_image(self, image_file):
         img = Image.open(image_file)
-        img = img.convert('RGB')
+        img = img.convert("RGB")
         img.thumbnail((150, 150))
         buffer = BytesIO()
         img.save(buffer, format="JPEG")
@@ -55,13 +57,17 @@ class User(Base):
             return Image.open(BytesIO(self.profile_image))
         return None
 
+
 class Ladder(Base):
     __tablename__ = "ladders"
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     prefix = Column(String, nullable=False)
-    positions = relationship("Position", back_populates="ladder", cascade="all, delete-orphan")
+    positions = relationship(
+        "Position", back_populates="ladder", cascade="all, delete-orphan"
+    )
+
 
 class Position(Base):
     __tablename__ = "positions"
@@ -69,17 +75,21 @@ class Position(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     level = Column(Integer, nullable=False)
-    ladder_id = Column(Integer, ForeignKey('ladders.id'), nullable=False)
+    ladder_id = Column(Integer, ForeignKey("ladders.id"), nullable=False)
     ladder = relationship("Ladder", back_populates="positions")
-    eligibility_criteria = relationship("EligibilityCriteria", back_populates="position", cascade="all, delete-orphan")
+    eligibility_criteria = relationship(
+        "EligibilityCriteria", back_populates="position", cascade="all, delete-orphan"
+    )
+
 
 class EligibilityCriteria(Base):
     __tablename__ = "eligibility_criteria"
 
     id = Column(Integer, primary_key=True)
-    position_id = Column(Integer, ForeignKey('positions.id'), nullable=False)
+    position_id = Column(Integer, ForeignKey("positions.id"), nullable=False)
     position = relationship("Position", back_populates="eligibility_criteria")
     criteria = Column(JSON, nullable=False)
+
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
@@ -98,7 +108,18 @@ def verify_password(stored_password, provided_password):
     return bcrypt.checkpw(provided_password.encode("utf-8"), stored_password)
 
 
-def register_user(email, password, is_manager, is_enterprise_admin, linkedin_profile, first_name, last_name, address, phone, profile_image=None):
+def register_user(
+    email,
+    password,
+    is_manager,
+    is_enterprise_admin,
+    linkedin_profile,
+    first_name,
+    last_name,
+    address,
+    phone,
+    profile_image=None,
+):
     session = Session()
     hashed_password = hash_password(password)
     new_user = User(
@@ -122,12 +143,13 @@ def register_user(email, password, is_manager, is_enterprise_admin, linkedin_pro
         linkedin_info = LinkedInProfileInfo(
             user_id=new_user.id,
             linkedin_profile_url=linkedin_profile,
-            scraped_info=json.dumps(scraped_info)
+            scraped_info=json.dumps(scraped_info),
         )
         session.add(linkedin_info)
 
     session.commit()
     session.close()
+
 
 def verify_login(email, password):
     session = Session()
@@ -153,15 +175,19 @@ def update_user_profile(user_id, **kwargs):
         changed = False
         for key, value in kwargs.items():
             if hasattr(user, key):
-                if key == 'profile_image':
+                if key == "profile_image":
                     user.set_profile_image(value)
                     changed = True
                 elif getattr(user, key) != value:
                     setattr(user, key, value)
                     changed = True
 
-                if key == 'linkedin_profile':
-                    linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user.id).first()
+                if key == "linkedin_profile":
+                    linkedin_info = (
+                        session.query(LinkedInProfileInfo)
+                        .filter_by(user_id=user.id)
+                        .first()
+                    )
                     if linkedin_info:
                         linkedin_info.linkedin_profile_url = value
                         scraped_info = get_linkedin_profile_json(value)
@@ -172,12 +198,12 @@ def update_user_profile(user_id, **kwargs):
                         new_linkedin_info = LinkedInProfileInfo(
                             user_id=user.id,
                             linkedin_profile_url=value,
-                            scraped_info=json.dumps(scraped_info)
+                            scraped_info=json.dumps(scraped_info),
                         )
                         session.add(new_linkedin_info)
 
                     # Update user's skills
-                    skills = scraped_info.get('skills', [])
+                    skills = scraped_info.get("skills", [])
                     user.skills = {skill: user.skills.get(skill, 3) for skill in skills}
 
         if changed:
@@ -187,6 +213,7 @@ def update_user_profile(user_id, **kwargs):
             return user
     session.close()
     return None
+
 
 def get_user_by_id(user_id):
     session = Session()
@@ -224,14 +251,17 @@ class LinkedInProfileInfo(Base):
     __tablename__ = "linkedin_profile_info"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     linkedin_profile_url = Column(String, nullable=False)
     scraped_info = Column(String)  # This will store the JSON string of the scraped info
     last_updated = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="linkedin_info")
 
-User.linkedin_info = relationship("LinkedInProfileInfo", uselist=False, back_populates="user")
+
+User.linkedin_info = relationship(
+    "LinkedInProfileInfo", uselist=False, back_populates="user"
+)
 
 
 def get_user_skills(user_id):
@@ -239,6 +269,7 @@ def get_user_skills(user_id):
     user = session.query(User).filter_by(id=user_id).first()
     session.close()
     return user.get_skills() if user else {}
+
 
 def update_user_skills(user_id, skills):
     session = Session()
@@ -251,13 +282,14 @@ def update_user_skills(user_id, skills):
     session.close()
     return False
 
+
 def update_work_profile(user_id, **kwargs):
     session = Session()
     try:
         user = session.query(User).filter_by(id=user_id).first()
         if user:
             for key, value in kwargs.items():
-                if key == 'resume_pdf':
+                if key == "resume_pdf":
                     # If resume_pdf is provided, it should be the binary data of the PDF
                     setattr(user, key, value)
                 else:
@@ -272,6 +304,7 @@ def update_work_profile(user_id, **kwargs):
         return None
     finally:
         session.close()
+
 
 def delete_resume(user_id):
     session = Session()
@@ -289,6 +322,7 @@ def delete_resume(user_id):
     finally:
         session.close()
 
+
 engine = create_engine("sqlite:///users.db", echo=True)
 
 
@@ -304,6 +338,7 @@ def create_tables_if_not_exist(engine):
     if not inspect(engine).has_table(EligibilityCriteria.__tablename__):
         EligibilityCriteria.__table__.create(engine)
 
+
 # Add functions to interact with new models
 def get_all_ladders():
     session = Session()
@@ -311,12 +346,19 @@ def get_all_ladders():
     session.close()
     return ladders
 
+
 def get_positions_for_ladder(ladder_id):
     session = Session()
-    positions = session.query(Position).filter_by(ladder_id=ladder_id).order_by(Position.level).all()
+    positions = (
+        session.query(Position)
+        .filter_by(ladder_id=ladder_id)
+        .order_by(Position.level)
+        .all()
+    )
     position_dicts = [{"name": p.name, "level": p.level} for p in positions]
     session.close()
     return position_dicts
+
 
 def update_ladder_positions(ladder_id, positions):
     session = Session()
@@ -329,9 +371,7 @@ def update_ladder_positions(ladder_id, positions):
             # Add new positions
             for position in positions:
                 new_position = Position(
-                    name=position['name'],
-                    level=position['level'],
-                    ladder_id=ladder_id
+                    name=position["name"], level=position["level"], ladder_id=ladder_id
                 )
                 session.add(new_position)
 
@@ -344,30 +384,43 @@ def update_ladder_positions(ladder_id, positions):
     finally:
         session.close()
 
+
 def get_eligibility_criteria(position_level):
     session = Session()
     position = session.query(Position).filter_by(level=position_level).first()
     if position:
-        criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
+        criteria = (
+            session.query(EligibilityCriteria)
+            .filter_by(position_id=position.id)
+            .first()
+        )
         session.close()
         return criteria.criteria if criteria else None
     session.close()
     return None
 
+
 def update_eligibility_criteria(position_level, criteria):
     session = Session()
     position = session.query(Position).filter_by(level=position_level).first()
     if position:
-        existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
+        existing_criteria = (
+            session.query(EligibilityCriteria)
+            .filter_by(position_id=position.id)
+            .first()
+        )
         if existing_criteria:
             existing_criteria.criteria = criteria
         else:
-            new_criteria = EligibilityCriteria(position_id=position.id, criteria=criteria)
+            new_criteria = EligibilityCriteria(
+                position_id=position.id, criteria=criteria
+            )
             session.add(new_criteria)
         session.commit()
         session.close()
         return True
     session.close()
     return False
+
 
 Session = sessionmaker(bind=engine)

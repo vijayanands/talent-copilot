@@ -1,14 +1,17 @@
 import base64
+import os
 
 import streamlit as st
 from dotenv import load_dotenv
 
-from ui.login_signup import login_page, signup_page
-from ui.manager_dashboard import manager_dashboard
-from models.models import engine, create_tables_if_not_exist
-from ui.individual_contributor_dashboard import individual_contributor_dashboard
+from models.models import create_tables_if_not_exist, engine
+from style import set_page_container_style, set_page_style
 from ui.account_page import account_page
 from ui.enterprise_admin_dashboard import enterprise_admin_dashboard
+from ui.individual_contributor_dashboard import \
+    individual_contributor_dashboard
+from ui.login_signup import login_page, signup_page
+from ui.manager_dashboard import manager_dashboard
 
 load_dotenv()
 
@@ -16,77 +19,15 @@ load_dotenv()
 
 create_tables_if_not_exist(engine)
 
+
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, "rb") as f:
         data = f.read()
     return base64.b64encode(data).decode()
 
+
 def get_base64_of_bytes(bytes_data):
     return base64.b64encode(bytes_data).decode()
-
-
-def set_page_style():
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background-color: #f0f2f6;
-        }
-        .content-container {
-            background-color: #ffffff;
-            border-radius: 5px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 5px;
-        }
-        .stTextInput>div>div>input {
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .stSelectbox>div>div>div {
-            border: 1px solid #ccc;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-def set_page_container_style(
-        max_width: int = 1100,
-        max_width_100_percent: bool = False,
-        padding_top: int = 1,
-        padding_right: int = 10,
-        padding_left: int = 10,
-        padding_bottom: int = 10,
-        color: str = "black",
-        background_color: str = "#f0f2f6",
-):
-    if max_width_100_percent:
-        max_width_str = f"max-width: 100%;"
-    else:
-        max_width_str = f"max-width: {max_width}px;"
-    st.markdown(
-        f"""
-            <style>
-                .reportview-container .main .block-container{{
-                    {max_width_str}
-                    padding-top: {padding_top}rem;
-                    padding-right: {padding_right}rem;
-                    padding-left: {padding_left}rem;
-                    padding-bottom: {padding_bottom}rem;
-                }}
-                .reportview-container .main {{
-                    color: {color};
-                    background-color: {background_color};
-                }}
-            </style>
-            """,
-        unsafe_allow_html=True,
-    )
 
 
 def set_title_bar():
@@ -123,13 +64,8 @@ def set_title_bar():
         unsafe_allow_html=True,
     )
 
-def my_assistant_dashboard():
-    individual_contributor_dashboard()
-
 
 def main_app():
-    st.title("PathForge Dashboard")
-
     is_manager = st.session_state.user.is_manager
     is_enterprise_admin = st.session_state.user.is_enterprise_admin
 
@@ -142,9 +78,9 @@ def main_app():
             manager_dashboard()
 
         with tab2:
-            my_assistant_dashboard()
+            individual_contributor_dashboard()
     else:
-        my_assistant_dashboard()
+        individual_contributor_dashboard()
 
 
 def show_initial_dashboard():
@@ -162,22 +98,28 @@ def setup_sidebar():
         with welcome_container:
             if st.session_state.user.profile_image:
                 img_base64 = get_base64_of_bytes(st.session_state.user.profile_image)
-                st.markdown(f'<img src="data:image/png;base64,{img_base64}" width="50" height="50" style="border-radius: 50%;">', unsafe_allow_html=True)
+                st.markdown(
+                    f'<img src="data:image/png;base64,{img_base64}" width="50" height="50" style="border-radius: 50%;">',
+                    unsafe_allow_html=True,
+                )
             else:
                 default_img = get_base64_of_bin_file("images/default_profile.png")
-                st.markdown(f'<img src="data:image/png;base64,{default_img}" width="50" height="50" style="border-radius: 50%;">', unsafe_allow_html=True)
+                st.markdown(
+                    f'<img src="data:image/png;base64,{default_img}" width="50" height="50" style="border-radius: 50%;">',
+                    unsafe_allow_html=True,
+                )
 
-        st.markdown("---")
+        # st.markdown("---")
 
         # Initialize the page in session state if it doesn't exist
-        if 'page' not in st.session_state:
-            st.session_state.page = 'Dashboard'
+        if "page" not in st.session_state:
+            st.session_state.page = "Dashboard"
 
         # Dropdown menu using st.selectbox
         selected_page = st.selectbox(
-            "Menu",
+            "",  # Empty label to hide "Menu"
             options=["Dashboard", "Account"],
-            index=0 if st.session_state.page == "Dashboard" else 1
+            index=0 if st.session_state.page == "Dashboard" else 1,
         )
 
         # Update the page if a different option is selected
@@ -187,18 +129,11 @@ def setup_sidebar():
 
         st.markdown("---")
 
-        st.header("Settings")
-        llm_choice = st.selectbox("Choose LLM", ["OpenAI", "Anthropic"])
-        st.session_state.llm_choice = llm_choice
-
-        recreate_index = st.checkbox(
-            "Recreate Index",
-            value=False,
-            help="If checked, the index will be recreated on the next query. This may take some time.",
+        # Set values from environment variables with defaults
+        st.session_state.llm_choice = os.getenv("LLM_CHOICE", "OpenAI")
+        st.session_state.recreate_index = (
+            os.getenv("RECREATE_INDEX", "False").lower() == "true"
         )
-        st.session_state.recreate_index = recreate_index
-
-        st.markdown("---")
 
         if st.button("Logout", key="logout_button"):
             del st.session_state.user
@@ -206,11 +141,12 @@ def setup_sidebar():
 
     return st.session_state.page
 
+
 def setup_streamlit_ui():
     st.set_page_config(
         page_title="PathForge",
         layout="wide",
-        menu_items=None  # This removes the hamburger menu
+        menu_items=None,  # This removes the hamburger menu
     )
 
     # Hide the "Made with Streamlit" footer and other potential UI elements
@@ -229,10 +165,15 @@ def setup_streamlit_ui():
     set_page_container_style()
     set_title_bar()
 
-    if "logout_after_password_change" in st.session_state and st.session_state.logout_after_password_change:
+    if (
+        "logout_after_password_change" in st.session_state
+        and st.session_state.logout_after_password_change
+    ):
         del st.session_state.user
         del st.session_state.logout_after_password_change
-        st.info("You have been logged out due to a password change. Please log in with your new password.")
+        st.info(
+            "You have been logged out due to a password change. Please log in with your new password."
+        )
         show_initial_dashboard()
     elif "user" in st.session_state:
         page = setup_sidebar()
@@ -243,6 +184,7 @@ def setup_streamlit_ui():
             account_page()
     else:
         show_initial_dashboard()
+
 
 # Add this at the end of your script
 if __name__ == "__main__":
@@ -255,4 +197,3 @@ if __name__ == "__main__":
 #     "Which users have GitHub data?",
 #     "List all email addresses that have Confluence data.",
 # ]
-

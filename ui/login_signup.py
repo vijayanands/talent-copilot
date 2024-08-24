@@ -1,6 +1,7 @@
 import streamlit as st
 
-from models.models import verify_login, check_password_match, is_password_valid, register_user
+from models.models import (check_password_match, is_password_valid,
+                           register_user, verify_login)
 
 
 def login_page():
@@ -57,7 +58,9 @@ def signup_page():
         if st.session_state.signup_password_match_error:
             st.error(st.session_state.signup_password_match_error)
 
-        role = st.radio("Select Role", ["Regular User", "People Manager", "Enterprise Admin"])
+        role = st.radio(
+            "Select Role", ["Regular User", "People Manager", "Enterprise Admin"]
+        )
         is_manager = role == "People Manager"
         is_enterprise_admin = role == "Enterprise Admin"
 
@@ -68,7 +71,9 @@ def signup_page():
         linkedin_profile = st.text_input(
             "LinkedIn Profile (optional)", key="signup_linkedin"
         )
-        profile_image = st.file_uploader("Profile Image (optional)", type=["jpg", "jpeg", "png"])
+        profile_image = st.file_uploader(
+            "Profile Image (optional)", type=["jpg", "jpeg", "png"]
+        )
 
     if st.button("Sign Up", key="signup_button"):
         if not first_name or not last_name:
@@ -93,7 +98,7 @@ def signup_page():
                     last_name,
                     address,
                     phone,
-                    profile_image
+                    profile_image,
                 )
                 st.success("Account created successfully! Please log in.")
                 for key in st.session_state.keys():

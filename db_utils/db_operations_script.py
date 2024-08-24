@@ -4,7 +4,8 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from models.models import User, LinkedInProfileInfo, Ladder, Position, EligibilityCriteria
+from models.models import (EligibilityCriteria, Ladder, LinkedInProfileInfo,
+                           Position, User)
 
 
 def get_db_path():
@@ -52,6 +53,7 @@ def migrate_enterprise_admin_data(engine):
     finally:
         session.close()
 
+
 def migrate_linkedin_skills(engine):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -63,18 +65,24 @@ def migrate_linkedin_skills(engine):
             if linkedin_info.scraped_info:
                 try:
                     profile_data = json.loads(linkedin_info.scraped_info)
-                    skills = profile_data.get('skills', [])
+                    skills = profile_data.get("skills", [])
 
-                    user = session.query(User).filter_by(id=linkedin_info.user_id).first()
+                    user = (
+                        session.query(User).filter_by(id=linkedin_info.user_id).first()
+                    )
 
                     if user:
-                        skills_dict = {skill: 3 for skill in skills}  # Set default proficiency to 3
+                        skills_dict = {
+                            skill: 3 for skill in skills
+                        }  # Set default proficiency to 3
                         user.set_skills(skills_dict)
                         print(f"Updated skills for user {user.id}: {user.get_skills()}")
                     else:
                         print(f"No user found for LinkedIn info {linkedin_info.id}")
                 except json.JSONDecodeError:
-                    print(f"Error decoding LinkedIn info for user {linkedin_info.user_id}")
+                    print(
+                        f"Error decoding LinkedIn info for user {linkedin_info.user_id}"
+                    )
 
         session.commit()
         print("LinkedIn skills migrated successfully.")
@@ -124,6 +132,7 @@ def truncate_database(engine):
     finally:
         session.close()
 
+
 def migrate_work_profile_data(engine):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -146,6 +155,7 @@ def migrate_work_profile_data(engine):
     finally:
         session.close()
 
+
 def migrate_resume_data(engine):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -154,7 +164,7 @@ def migrate_resume_data(engine):
         users = session.query(User).all()
         for user in users:
             if user.resume_pdf and os.path.isfile(user.resume_pdf):
-                with open(user.resume_pdf, 'rb') as file:
+                with open(user.resume_pdf, "rb") as file:
                     pdf_data = file.read()
                     user.resume_pdf = pdf_data
                 os.remove(user.resume_pdf)  # Remove the file after migrating
@@ -169,6 +179,7 @@ def migrate_resume_data(engine):
     finally:
         session.close()
 
+
 def populate_default_ladders_and_positions(engine):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -179,24 +190,37 @@ def populate_default_ladders_and_positions(engine):
             "Individual Contributor (Software)": {
                 "prefix": "IC",
                 "positions": [
-                    "Software Engineer", "Sr Software Engineer", "Staff Software Engineer",
-                    "Sr Staff Software Engineer", "Principal Engineer", "Distinguished Engineer", "Fellow"
-                ]
+                    "Software Engineer",
+                    "Sr Software Engineer",
+                    "Staff Software Engineer",
+                    "Sr Staff Software Engineer",
+                    "Principal Engineer",
+                    "Distinguished Engineer",
+                    "Fellow",
+                ],
             },
             "Management": {
                 "prefix": "M",
                 "positions": [
-                    "Manager", "Sr Manager", "Director", "Sr Director",
-                    "Vice President", "Sr Vice President", "Executive Vice President"
-                ]
+                    "Manager",
+                    "Sr Manager",
+                    "Director",
+                    "Sr Director",
+                    "Vice President",
+                    "Sr Vice President",
+                    "Executive Vice President",
+                ],
             },
             "Product": {
                 "prefix": "PM",
                 "positions": [
-                    "Product Manager", "Sr Product Manager", "Group Product Manager",
-                    "Vice President", "Sr Vice President"
-                ]
-            }
+                    "Product Manager",
+                    "Sr Product Manager",
+                    "Group Product Manager",
+                    "Vice President",
+                    "Sr Vice President",
+                ],
+            },
         }
 
         for ladder_name, ladder_data in default_ladders.items():
@@ -206,41 +230,56 @@ def populate_default_ladders_and_positions(engine):
                 session.add(ladder)
                 session.flush()
 
-            existing_positions = session.query(Position).filter_by(ladder_id=ladder.id).all()
+            existing_positions = (
+                session.query(Position).filter_by(ladder_id=ladder.id).all()
+            )
             existing_position_names = [p.name for p in existing_positions]
 
             for level, position_name in enumerate(ladder_data["positions"], start=1):
                 if position_name not in existing_position_names:
-                    position = Position(name=position_name, level=level, ladder_id=ladder.id)
+                    position = Position(
+                        name=position_name, level=level, ladder_id=ladder.id
+                    )
                     session.add(position)
 
         session.commit()
         print("Default ladders and positions populated successfully.")
     except Exception as e:
         session.rollback()
-        print(f"An error occurred while populating default ladders and positions: {str(e)}")
+        print(
+            f"An error occurred while populating default ladders and positions: {str(e)}"
+        )
     finally:
         session.close()
+
 
 def update_schema(engine):
     with engine.connect() as conn:
         try:
             # Check if new tables exist
-            result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
+            result = conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table'")
+            )
             tables = [row[0] for row in result.fetchall()]
 
-            if 'ladders' not in tables:
-                conn.execute(text("""
+            if "ladders" not in tables:
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE ladders (
                         id INTEGER PRIMARY KEY,
                         name TEXT NOT NULL UNIQUE,
                         prefix TEXT NOT NULL
                     )
-                """))
+                """
+                    )
+                )
                 print("Ladders table created successfully.")
 
-            if 'positions' not in tables:
-                conn.execute(text("""
+            if "positions" not in tables:
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE positions (
                         id INTEGER PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -248,26 +287,36 @@ def update_schema(engine):
                         ladder_id INTEGER NOT NULL,
                         FOREIGN KEY (ladder_id) REFERENCES ladders (id)
                     )
-                """))
+                """
+                    )
+                )
                 print("Positions table created successfully.")
 
-            if 'eligibility_criteria' not in tables:
-                conn.execute(text("""
+            if "eligibility_criteria" not in tables:
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE eligibility_criteria (
                         id INTEGER PRIMARY KEY,
                         position_id INTEGER NOT NULL,
                         criteria TEXT NOT NULL,
                         FOREIGN KEY (position_id) REFERENCES positions (id)
                     )
-                """))
+                """
+                    )
+                )
                 print("Eligibility criteria table created successfully.")
 
             # Check if position_id column exists in users table
             result = conn.execute(text("PRAGMA table_info(users)"))
             columns = [row[1] for row in result.fetchall()]
 
-            if 'position_id' not in columns:
-                conn.execute(text("ALTER TABLE users ADD COLUMN position_id INTEGER REFERENCES positions(id)"))
+            if "position_id" not in columns:
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN position_id INTEGER REFERENCES positions(id)"
+                    )
+                )
                 print("position_id column added to users table successfully.")
 
             conn.commit()
@@ -279,6 +328,7 @@ def update_schema(engine):
         except Exception as e:
             print(f"An error occurred while updating the schema: {str(e)}")
 
+
 def migrate_profile_image(engine):
     with engine.connect() as conn:
         try:
@@ -286,7 +336,7 @@ def migrate_profile_image(engine):
             result = conn.execute(text("PRAGMA table_info(users)"))
             columns = [row[1] for row in result.fetchall()]
 
-            if 'profile_image' not in columns:
+            if "profile_image" not in columns:
                 conn.execute(text("ALTER TABLE users ADD COLUMN profile_image BLOB"))
                 print("profile_image column added to users table successfully.")
             else:
@@ -295,6 +345,7 @@ def migrate_profile_image(engine):
             conn.commit()
         except Exception as e:
             print(f"An error occurred while migrating profile image: {str(e)}")
+
 
 if __name__ == "__main__":
     db_path = get_db_path()
@@ -324,7 +375,9 @@ if __name__ == "__main__":
         elif choice == "4":
             migrate_work_profile_data(engine)
         elif choice == "5":
-            confirm = input("Are you sure you want to truncate the database? This will delete all user data. (y/n): ")
+            confirm = input(
+                "Are you sure you want to truncate the database? This will delete all user data. (y/n): "
+            )
             if confirm.lower() == "y":
                 truncate_database(engine)
             else:
