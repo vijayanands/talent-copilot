@@ -175,22 +175,22 @@ def pretty_print_appraisal(appraisal_data):
         for opportunity in appraisal_data["Learning Opportunities"]:
             st.markdown(f"• {opportunity}")
 
+def update_performance_page():
+    st.session_state.performance_page = st.session_state.performance_selector
+
 def performance_management_tab():
     # Initialize the performance management page in session state if it doesn't exist
     if "performance_page" not in st.session_state:
         st.session_state.performance_page = "Self-Appraisal"
 
-    # Dropdown menu using st.selectbox
-    selected_performance_page = st.selectbox(
+    # Selectbox for choosing the sub-page
+    st.selectbox(
         "",  # Empty label to hide the heading
         options=["Self-Appraisal", "Other Performance Tools"],
         index=0 if st.session_state.performance_page == "Self-Appraisal" else 1,
+        key="performance_selector",
+        on_change=update_performance_page
     )
-
-    # Update the performance page if a different option is selected
-    if selected_performance_page != st.session_state.performance_page:
-        st.session_state.performance_page = selected_performance_page
-        st.rerun()
 
     if st.session_state.performance_page == "Self-Appraisal":
         if (
@@ -219,30 +219,33 @@ def performance_management_tab():
         st.subheader("Other Performance Tools")
         st.write("This section is under development. Stay tuned for more performance management tools!")
 
-def skills_tab():
-    # Initialize the skills page in session state if it doesn't exist
-    if "skills_page" not in st.session_state:
-        st.session_state.skills_page = "My Skills"
+def update_skills_learning_dev_page():
+    st.session_state.skills_learning_dev_page = st.session_state.skills_learning_dev_selector
 
-    # Dropdown menu using st.selectbox
-    selected_skills_page = st.selectbox(
+def skills_learning_development_tab():
+    # Initialize the skills_learning_dev page in session state if it doesn't exist
+    if "skills_learning_dev_page" not in st.session_state:
+        st.session_state.skills_learning_dev_page = "My Skills"
+
+    # Selectbox for choosing the sub-page
+    st.selectbox(
         "",  # Empty label to hide the heading
-        options=["My Skills", "Endorsements"],
-        index=0 if st.session_state.skills_page == "My Skills" else 1,
+        options=["My Skills", "Endorsements", "Learning Recommendations"],
+        index=["My Skills", "Endorsements", "Learning Recommendations"].index(st.session_state.skills_learning_dev_page),
+        key="skills_learning_dev_selector",
+        on_change=update_skills_learning_dev_page
     )
 
-    # Update the skills page if a different option is selected
-    if selected_skills_page != st.session_state.skills_page:
-        st.session_state.skills_page = selected_skills_page
-        st.rerun()
-
-    if st.session_state.skills_page == "My Skills":
+    if st.session_state.skills_learning_dev_page == "My Skills":
         skills_section()
-    else:
+    elif st.session_state.skills_learning_dev_page == "Endorsements":
         st.subheader("Endorsements")
         st.info(
             "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
         )
+    else:  # Learning Recommendations
+        learning_dashboard()
+
 
 def q_and_a_tab():
     query = st.text_input("Enter your question:")
@@ -272,11 +275,10 @@ def q_and_a_tab():
                 st.write(full_response)
 
 def individual_contributor_dashboard():
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    tab1, tab2, tab3, tab4 = st.tabs(
         [
             "Performance Management",
-            "Learning & Development",
-            "Skills",
+            "Skills, Learning and Development",
             "Career",
             "Q&A Chatbot",
         ]
@@ -286,16 +288,13 @@ def individual_contributor_dashboard():
         performance_management_tab()
 
     with tab2:
-        learning_dashboard()
+        skills_learning_development_tab()
 
     with tab3:
-        skills_tab()
-
-    with tab4:
         st.write(
             "This section is under development. Here you will be able to explore career opportunities and plan your career path."
         )
         st.info("Coming soon: Career path visualization, and mentorship opportunities.")
 
-    with tab5:
+    with tab4:
         q_and_a_tab()
