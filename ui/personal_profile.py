@@ -6,11 +6,9 @@ def personal_profile_section():
 
     user = st.session_state.user
 
-    # Initialize session state for edit mode if not exists
     if "edit_mode" not in st.session_state:
         st.session_state.edit_mode = False
 
-    # Edit button with pencil icon
     if not st.session_state.edit_mode:
         edit_button = st.button("✏️ Edit Personal Profile")
         if edit_button:
@@ -18,7 +16,6 @@ def personal_profile_section():
             st.rerun()
 
     if st.session_state.edit_mode:
-        # Edit mode: show editable fields
         col1, col2 = st.columns(2)
         with col1:
             first_name = st.text_input("First Name", value=user.first_name)
@@ -29,11 +26,11 @@ def personal_profile_section():
             linkedin_profile = st.text_input(
                 "LinkedIn Profile URL", value=user.linkedin_profile
             )
+            profile_image = st.file_uploader("Profile Image", type=["jpg", "jpeg", "png"])
 
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Update Personal Profile"):
-                # Prepare a dictionary of changed fields
                 updates = {}
                 if first_name != user.first_name:
                     updates["first_name"] = first_name
@@ -45,14 +42,16 @@ def personal_profile_section():
                     updates["phone"] = phone
                 if linkedin_profile != user.linkedin_profile:
                     updates["linkedin_profile"] = linkedin_profile
+                if profile_image:
+                    updates["profile_image"] = profile_image
 
                 if updates:
                     updated_user = update_user_profile(user.id, **updates)
                     if updated_user:
                         st.success("Profile updated successfully!")
-                        st.session_state.user = updated_user  # Update the session state with the new user data
-                        st.session_state.edit_mode = False  # Exit edit mode
-                        st.rerun()  # Rerun to show updated profile
+                        st.session_state.user = updated_user
+                        st.session_state.edit_mode = False
+                        st.rerun()
                     else:
                         st.error("Failed to update profile. Please try again.")
                 else:
@@ -62,7 +61,6 @@ def personal_profile_section():
                 st.session_state.edit_mode = False
                 st.rerun()
     else:
-        # Display mode: show non-editable fields
         col1, col2 = st.columns(2)
         with col1:
             st.write(f"**First Name:** {user.first_name}")
@@ -73,3 +71,9 @@ def personal_profile_section():
             st.write(
                 f"**LinkedIn Profile URL:** {user.linkedin_profile or 'Not provided'}"
             )
+
+        if user.profile_image:
+            profile_image = user.get_profile_image()
+            st.image(profile_image, caption="Profile Image", width=150)
+        else:
+            st.write("No profile image uploaded")

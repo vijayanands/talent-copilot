@@ -1,7 +1,8 @@
 import json
+from io import BytesIO
 import re as regex
 from datetime import datetime
-
+from PIL import Image
 import bcrypt
 import streamlit as st
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, create_engine, inspect, LargeBinary, JSON
@@ -20,25 +21,39 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     is_manager = Column(Boolean, default=False)
-    is_enterprise_admin = Column(Boolean, default=False)  # New field
+    is_enterprise_admin = Column(Boolean, default=False)
     linkedin_profile = Column(String)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     address = Column(String)
     phone = Column(String)
-    skills = Column(String, default='{}')  # Store skills as a JSON string
+    skills = Column(String, default='{}')
     ladder = Column(String)
     current_position = Column(String)
     responsibilities = Column(String)
-    resume_pdf = Column(LargeBinary)  # Store the PDF data instead of file path
+    resume_pdf = Column(LargeBinary)
     position_id = Column(Integer, ForeignKey('positions.id'))
     position = relationship("Position")
+    profile_image = Column(LargeBinary)  # New field for profile image
 
     def get_skills(self):
         return json.loads(self.skills)
 
     def set_skills(self, skills_dict):
         self.skills = json.dumps(skills_dict)
+
+    def set_profile_image(self, image_file):
+        img = Image.open(image_file)
+        img = img.convert('RGB')
+        img.thumbnail((150, 150))
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG")
+        self.profile_image = buffer.getvalue()
+
+    def get_profile_image(self):
+        if self.profile_image:
+            return Image.open(BytesIO(self.profile_image))
+        return None
 
 class Ladder(Base):
     __tablename__ = "ladders"
@@ -83,7 +98,7 @@ def verify_password(stored_password, provided_password):
     return bcrypt.checkpw(provided_password.encode("utf-8"), stored_password)
 
 
-def register_user(email, password, is_manager, is_enterprise_admin, linkedin_profile, first_name, last_name, address, phone):
+def register_user(email, password, is_manager, is_enterprise_admin, linkedin_profile, first_name, last_name, address, phone, profile_image=None):
     session = Session()
     hashed_password = hash_password(password)
     new_user = User(
@@ -97,6 +112,8 @@ def register_user(email, password, is_manager, is_enterprise_admin, linkedin_pro
         address=address,
         phone=phone,
     )
+    if profile_image:
+        new_user.set_profile_image(profile_image)
     session.add(new_user)
     session.flush()  # This will assign an id to new_user
 
@@ -111,7 +128,7 @@ def register_user(email, password, is_manager, is_enterprise_admin, linkedin_pro
 
     session.commit()
     session.close()
-
+    
 def verify_login(email, password):
     session = Session()
     user = session.query(User).filter_by(email=email).first()
@@ -135,9 +152,13 @@ def update_user_profile(user_id, **kwargs):
     if user:
         changed = False
         for key, value in kwargs.items():
-            if hasattr(user, key) and getattr(user, key) != value:
-                setattr(user, key, value)
-                changed = True
+            if hasattr(user, key):
+                if key == 'profile_image':
+                    user.set_profile_image(value)
+                    changed = True
+                elif getattr(user, key) != value:
+                    setattr(user, key, value)
+                    changed = True
 
                 if key == 'linkedin_profile':
                     linkedin_info = session.query(LinkedInProfileInfo).filter_by(user_id=user.id).first()

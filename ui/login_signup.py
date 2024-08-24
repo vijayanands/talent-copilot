@@ -20,7 +20,6 @@ def login_page():
 def signup_page():
     st.header("Sign Up")
 
-    # Initialize session state variables
     if "signup_password_match_error" not in st.session_state:
         st.session_state.signup_password_match_error = ""
 
@@ -55,7 +54,6 @@ def signup_page():
             "Password must be at least 8 characters long, contain at least one number and one symbol."
         )
 
-        # Display password match error if it exists
         if st.session_state.signup_password_match_error:
             st.error(st.session_state.signup_password_match_error)
 
@@ -70,6 +68,7 @@ def signup_page():
         linkedin_profile = st.text_input(
             "LinkedIn Profile (optional)", key="signup_linkedin"
         )
+        profile_image = st.file_uploader("Profile Image (optional)", type=["jpg", "jpeg", "png"])
 
     if st.button("Sign Up", key="signup_button"):
         if not first_name or not last_name:
@@ -94,9 +93,9 @@ def signup_page():
                     last_name,
                     address,
                     phone,
+                    profile_image
                 )
                 st.success("Account created successfully! Please log in.")
-                # Clear the form after successful signup
                 for key in st.session_state.keys():
                     if key.startswith("signup_"):
                         del st.session_state[key]

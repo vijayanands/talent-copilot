@@ -279,6 +279,23 @@ def update_schema(engine):
         except Exception as e:
             print(f"An error occurred while updating the schema: {str(e)}")
 
+def migrate_profile_image(engine):
+    with engine.connect() as conn:
+        try:
+            # Check if profile_image column exists in users table
+            result = conn.execute(text("PRAGMA table_info(users)"))
+            columns = [row[1] for row in result.fetchall()]
+
+            if 'profile_image' not in columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN profile_image BLOB"))
+                print("profile_image column added to users table successfully.")
+            else:
+                print("profile_image column already exists in users table.")
+
+            conn.commit()
+        except Exception as e:
+            print(f"An error occurred while migrating profile image: {str(e)}")
+
 if __name__ == "__main__":
     db_path = get_db_path()
     engine = create_engine_with_path(db_path)
@@ -293,9 +310,10 @@ if __name__ == "__main__":
         print("6. Migrate resume data")
         print("7. Migrate enterprise admin data")
         print("8. Populate default ladders and positions")
-        print("9. Exit")
+        print("9. Migrate profile image")
+        print("10. Exit")
 
-        choice = input("Enter your choice (1-9): ")
+        choice = input("Enter your choice (1-10): ")
 
         if choice == "1":
             update_schema(engine)
@@ -318,6 +336,8 @@ if __name__ == "__main__":
         elif choice == "8":
             populate_default_ladders_and_positions(engine)
         elif choice == "9":
+            migrate_profile_image(engine)
+        elif choice == "10":
             break
         else:
             print("Invalid choice. Please try again.")
