@@ -128,7 +128,7 @@ def register_user(email, password, is_manager, is_enterprise_admin, linkedin_pro
 
     session.commit()
     session.close()
-    
+
 def verify_login(email, password):
     session = Session()
     user = session.query(User).filter_by(email=email).first()

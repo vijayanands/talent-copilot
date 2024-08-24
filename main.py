@@ -21,6 +21,9 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
+def get_base64_of_bytes(bytes_data):
+    return base64.b64encode(bytes_data).decode()
+
 
 def set_page_style():
     st.markdown(
@@ -145,9 +148,29 @@ def main_app():
 
 def setup_sidebar():
     with st.sidebar:
-        st.write(f"Welcome, {st.session_state.user.email}")
-        st.markdown("---")
+        # Create a container for the welcome message and profile image
+        welcome_container = st.container()
+        with welcome_container:
+            col1, col2 = st.columns([1, 3])
 
+            with col1:
+                if st.session_state.user.profile_image:
+                    # Convert the profile image to base64
+                    img_base64 = get_base64_of_bytes(st.session_state.user.profile_image)
+                    st.markdown(
+                        f'<img src="data:image/png;base64,{img_base64}" width="50" height="50" style="border-radius: 50%;">',
+                        unsafe_allow_html=True)
+                else:
+                    # Display a default image if no profile image is available
+                    default_img = get_base64_of_bin_file("images/default_profile.png")
+                    st.markdown(
+                        f'<img src="data:image/png;base64,{default_img}" width="50" height="50" style="border-radius: 50%;">',
+                        unsafe_allow_html=True)
+
+            with col2:
+                st.write(f"Welcome, {st.session_state.user.first_name} {st.session_state.user.last_name}")
+
+        st.markdown("---")
         page = st.radio("Navigation", ["Dashboard", "Account"])
 
         st.markdown("---")
