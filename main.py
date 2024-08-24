@@ -207,7 +207,23 @@ def setup_sidebar():
     return st.session_state.page
 
 def setup_streamlit_ui():
-    st.set_page_config(page_title="PathForge", layout="wide")
+    st.set_page_config(
+        page_title="PathForge",
+        layout="wide",
+        menu_items=None  # This removes the hamburger menu
+    )
+
+    # Hide the "Made with Streamlit" footer and other potential UI elements
+    hide_streamlit_style = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        .stDeployButton {display:none;}
+        header {visibility: hidden;}
+        #stDecoration {display:none;}
+        </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     set_page_style()
     set_page_container_style()
