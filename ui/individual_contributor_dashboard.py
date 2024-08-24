@@ -270,7 +270,7 @@ def q_and_a_tab():
             if show_full_response:
                 st.write("Full Response (Debug):")
                 st.write(full_response)
-                
+
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [

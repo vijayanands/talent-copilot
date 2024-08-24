@@ -40,30 +40,53 @@ def set_title_bar():
             .title-bar {{
                 display: flex;
                 align-items: center;
-                background-color: #e0e0e0;
-                padding: 10px;
-                border-radius: 5px;
+                background: linear-gradient(135deg, #2c3e50, #4ca1af);  /* Dark blue to teal gradient */
+                padding: 15px;
+                border-radius: 8px;
                 margin-bottom: 20px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }}
+            .logo-container {{
+                background-color: rgba(255, 255, 255, 0.9);  /* Semi-transparent white background */
+                padding: 5px;
+                border-radius: 5px;
+                margin-right: 20px;
             }}
             .title-bar img {{
-                height: 40px;
-                margin-right: 15px;
+                height: 50px;
+                display: block;
             }}
             .title-bar h1 {{
-                font-size: 22px;
-                color: #333333;
+                font-size: 24px;
+                color: #ffffff;  /* White for main text */
                 margin: 0;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+                flex-grow: 1;
+            }}
+            .title-bar .highlight-blue {{
+                color: #66ccff;  /* Light blue highlight */
+                font-weight: bold;
+            }}
+            .title-bar .highlight-pink {{
+                color: #ff99cc;  /* Light pink highlight */
+                font-weight: bold;
             }}
         </style>
         <div class="title-bar">
-            <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
-            <h1>PathForge - Empowering Employee Performance, Career, Skills and Learning through AI</h1>
+            <div class="logo-container">
+                <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
+            </div>
+            <h1>
+                <span class="highlight-blue">PathForge</span> - Empowering Employee 
+                <span class="highlight-pink">Performance</span>, 
+                <span class="highlight-blue">Career</span>, 
+                <span class="highlight-pink">Skills</span> and 
+                <span class="highlight-blue">Learning</span> through AI
+            </h1>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
 
 def main_app():
     is_manager = st.session_state.user.is_manager
