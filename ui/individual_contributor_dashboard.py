@@ -178,6 +178,31 @@ def pretty_print_appraisal(appraisal_data):
 def update_performance_page():
     st.session_state.performance_page = st.session_state.performance_selector
 
+def perform_self_appraisal():
+    if (
+            "reset_appraisal" in st.session_state
+            and st.session_state.reset_appraisal
+    ):
+        if "appraisal" in st.session_state:
+            del st.session_state.appraisal
+        del st.session_state.reset_appraisal
+
+    if st.button("Generate Self-Appraisal", key="generate_button"):
+        user_email = st.session_state.user.email
+        with st.spinner(f"Generating self-appraisal for {user_email} ..."):
+            st.session_state.appraisal = create_self_appraisal(
+                st.session_state.llm_choice, user_email
+            )
+
+    if "appraisal" in st.session_state:
+        pretty_print_appraisal(st.session_state.appraisal)
+        st.button(
+            "Reset",
+            on_click=reset_performance_management,
+            key="reset_performance",
+        )
+
+
 def performance_management_tab():
     # Initialize the performance management page in session state if it doesn't exist
     if "performance_page" not in st.session_state:
@@ -186,35 +211,19 @@ def performance_management_tab():
     # Selectbox for choosing the sub-page
     st.selectbox(
         "",  # Empty label to hide the heading
-        options=["Self-Appraisal", "Other Performance Tools"],
-        index=0 if st.session_state.performance_page == "Self-Appraisal" else 1,
+        options=["Self-Appraisal", "Endorsements", "Other Performance Tools"],
+        index=["Self-Appraisal", "Endorsements", "Other Performance Tools"].index(st.session_state.performance_page),
         key="performance_selector",
         on_change=update_performance_page
     )
 
     if st.session_state.performance_page == "Self-Appraisal":
-        if (
-                "reset_appraisal" in st.session_state
-                and st.session_state.reset_appraisal
-        ):
-            if "appraisal" in st.session_state:
-                del st.session_state.appraisal
-            del st.session_state.reset_appraisal
-
-        if st.button("Generate Self-Appraisal", key="generate_button"):
-            user_email = st.session_state.user.email
-            with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-                st.session_state.appraisal = create_self_appraisal(
-                    st.session_state.llm_choice, user_email
-                )
-
-        if "appraisal" in st.session_state:
-            pretty_print_appraisal(st.session_state.appraisal)
-            st.button(
-                "Reset",
-                on_click=reset_performance_management,
-                key="reset_performance",
-            )
+        perform_self_appraisal()
+    elif st.session_state.performance_page == "Endorsements":
+        st.subheader("Endorsements")
+        st.info(
+            "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
+        )
     else:
         st.subheader("Other Performance Tools")
         st.write("This section is under development. Stay tuned for more performance management tools!")
@@ -230,19 +239,14 @@ def skills_learning_development_tab():
     # Selectbox for choosing the sub-page
     st.selectbox(
         "",  # Empty label to hide the heading
-        options=["My Skills", "Endorsements", "Learning Recommendations"],
-        index=["My Skills", "Endorsements", "Learning Recommendations"].index(st.session_state.skills_learning_dev_page),
+        options=["My Skills", "Learning Recommendations"],
+        index=["My Skills", "Learning Recommendations"].index(st.session_state.skills_learning_dev_page),
         key="skills_learning_dev_selector",
         on_change=update_skills_learning_dev_page
     )
 
     if st.session_state.skills_learning_dev_page == "My Skills":
         skills_section()
-    elif st.session_state.skills_learning_dev_page == "Endorsements":
-        st.subheader("Endorsements")
-        st.info(
-            "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
-        )
     else:  # Learning Recommendations
         learning_dashboard()
 
