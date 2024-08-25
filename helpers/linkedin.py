@@ -15,6 +15,7 @@ def get_linkedin_profile_json(profile):
         "linkedin_profile_url": profile,
         "extra": "include",
         "skills": "include",
+        "recommendations": "include",
     }
     response = requests.get(api_endpoint, params=params, headers=headers)
     data = response.json()

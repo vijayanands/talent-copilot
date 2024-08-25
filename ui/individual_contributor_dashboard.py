@@ -2,9 +2,9 @@ import json
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
+from models.models import LinkedInProfileInfo
 from ui.learning_dashboard import learning_dashboard
 import streamlit as st
-
 from ui.skills_section import skills_section
 
 
@@ -95,6 +95,16 @@ def perform_self_appraisal():
             key="reset_performance",
         )
 
+def display_endorsements(user_id):
+    endorsements = LinkedInProfileInfo.display_endorsements(user_id)
+    if endorsements:
+        st.subheader("LinkedIn Endorsements")
+        for endorsement in endorsements:
+            with st.expander(f"Endorsement from {endorsement['endorser']}"):
+                st.write(endorsement['text'])
+    else:
+        st.info("No endorsements found in your LinkedIn profile. Make sure your LinkedIn profile is up to date and linked to your account.")
+
 
 def performance_management_tab():
     # Initialize the performance management page in session state if it doesn't exist
@@ -113,18 +123,13 @@ def performance_management_tab():
     if st.session_state.performance_page == "Self-Appraisal":
         perform_self_appraisal()
     elif st.session_state.performance_page == "Endorsements":
-        st.subheader("Endorsements")
-        st.info(
-            "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
-        )
+        display_endorsements(st.session_state.user.id)
     elif st.session_state.performance_page == "Career":
-        st.subheader("Career")
         st.write(
             "This section is under development. Here you will be able to explore career opportunities and plan your career path."
         )
         st.info("Coming soon: Career path visualization, and mentorship opportunities.")
     else:
-        st.subheader("Other Performance Tools")
         st.write("This section is under development. Stay tuned for more performance management tools!")
 
 def update_skills_learning_dev_page():

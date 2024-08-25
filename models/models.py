@@ -178,6 +178,15 @@ def update_user_profile(user_id, **kwargs):
                 if key == "profile_image":
                     user.set_profile_image(value)
                     changed = True
+                elif key == "skills":
+                    # Convert the skills string to a dictionary if it's not already
+                    current_skills = json.loads(user.skills) if user.skills else {}
+                    # Update the skills dictionary
+                    for skill in value:
+                        current_skills[skill] = current_skills.get(skill, 3)
+                    # Convert the updated skills dictionary back to a JSON string
+                    user.skills = json.dumps(current_skills)
+                    changed = True
                 elif getattr(user, key) != value:
                     setattr(user, key, value)
                     changed = True
@@ -204,7 +213,11 @@ def update_user_profile(user_id, **kwargs):
 
                     # Update user's skills
                     skills = scraped_info.get("skills", [])
-                    user.skills = {skill: user.skills.get(skill, 3) for skill in skills}
+                    current_skills = json.loads(user.skills) if user.skills else {}
+                    for skill in skills:
+                        current_skills[skill] = current_skills.get(skill, 3)
+                    user.skills = json.dumps(current_skills)
+                    changed = True
 
         if changed:
             session.commit()
@@ -258,6 +271,43 @@ class LinkedInProfileInfo(Base):
 
     user = relationship("User", back_populates="linkedin_info")
 
+    def extract_endorsements(self):
+        if not self.scraped_info:
+            return []
+
+        try:
+            scraped_info = json.loads(self.scraped_info)
+        except json.JSONDecodeError:
+            return []
+
+        endorsements = []
+        recommendations = scraped_info.get("recommendations", [])
+
+        for recommendation in recommendations:
+            endorser = recommendation.get("name", "Unknown")
+            text = recommendation.get("text", "")
+            if endorser and text:
+                endorsements.append({"endorser": endorser, "text": text})
+
+        return endorsements
+
+    @classmethod
+    def get_user_linkedin_info(cls, user_id):
+        session = Session()
+        try:
+            linkedin_info = session.query(cls).filter_by(user_id=user_id).first()
+            if linkedin_info:
+                return linkedin_info
+            return None
+        finally:
+            session.close()
+
+    @classmethod
+    def display_endorsements(cls, user_id):
+        linkedin_info = cls.get_user_linkedin_info(user_id)
+        if linkedin_info:
+            return linkedin_info.extract_endorsements()
+        return []
 
 User.linkedin_info = relationship(
     "LinkedInProfileInfo", uselist=False, back_populates="user"
@@ -421,6 +471,5 @@ def update_eligibility_criteria(position_level, criteria):
         return True
     session.close()
     return False
-
 
 Session = sessionmaker(bind=engine)
