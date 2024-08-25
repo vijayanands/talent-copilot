@@ -1,24 +1,17 @@
 import json
-
-import streamlit as st
-
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
-from models.models import get_user_skills
 from ui.learning_dashboard import learning_dashboard
-
+import streamlit as st
+from models.models import get_user_skills
+import math
 
 def ask(llm, query, index):
     query_engine = index.as_query_engine(llm=llm)
     response = query_engine.query(query)
     return response, response.response  # Return both full response and text
 
-
-import streamlit as st
-from models.models import get_user_skills
-
-# ... (other imports and functions remain unchanged)
 
 def skills_section():
     st.subheader("My Skills")
@@ -79,10 +72,20 @@ def skills_section():
         st.button("Edit", on_click=toggle_edit_mode)
 
     if not st.session_state.skills_edit_mode:
-        # View mode
+        # View mode with multi-column layout
         if st.session_state.user_skills:
-            for skill, proficiency in st.session_state.user_skills.items():
-                st.write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
+            num_skills = len(st.session_state.user_skills)
+            num_columns = 3  # You can adjust this number to change the number of columns
+            num_rows = math.ceil(num_skills / num_columns)
+
+            for row in range(num_rows):
+                cols = st.columns(num_columns)
+                for col in range(num_columns):
+                    index = row * num_columns + col
+                    if index < num_skills:
+                        skill = list(st.session_state.user_skills.keys())[index]
+                        proficiency = st.session_state.user_skills[skill]
+                        cols[col].write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
         else:
             st.info("No skills found. Click 'Edit' to add your skills.")
     else:
