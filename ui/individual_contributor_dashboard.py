@@ -208,11 +208,11 @@ def performance_management_tab():
     if "performance_page" not in st.session_state:
         st.session_state.performance_page = "Self-Appraisal"
 
-    # Selectbox for choosing the sub-page
     st.selectbox(
         "",  # Empty label to hide the heading
-        options=["Self-Appraisal", "Endorsements", "Other Performance Tools"],
-        index=["Self-Appraisal", "Endorsements", "Other Performance Tools"].index(st.session_state.performance_page),
+        options=["Self-Appraisal", "Endorsements", "Career", "Other Performance Tools"],
+        index=["Self-Appraisal", "Endorsements", "Career", "Other Performance Tools"].index(
+            st.session_state.performance_page),
         key="performance_selector",
         on_change=update_performance_page
     )
@@ -224,6 +224,12 @@ def performance_management_tab():
         st.info(
             "This feature is coming soon. Here you'll be able to view and manage skill endorsements."
         )
+    elif st.session_state.performance_page == "Career":
+        st.subheader("Career")
+        st.write(
+            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
+        )
+        st.info("Coming soon: Career path visualization, and mentorship opportunities.")
     else:
         st.subheader("Other Performance Tools")
         st.write("This section is under development. Stay tuned for more performance management tools!")
@@ -279,11 +285,10 @@ def q_and_a_tab():
                 st.write(full_response)
 
 def individual_contributor_dashboard():
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3 = st.tabs(
         [
             "Performance Management",
             "Skills, Learning and Development",
-            "Career",
             "Q&A Chatbot",
         ]
     )
@@ -295,10 +300,4 @@ def individual_contributor_dashboard():
         skills_learning_development_tab()
 
     with tab3:
-        st.write(
-            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
-        )
-        st.info("Coming soon: Career path visualization, and mentorship opportunities.")
-
-    with tab4:
         q_and_a_tab()
