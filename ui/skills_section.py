@@ -1,5 +1,9 @@
+import math
+
 import streamlit as st
+
 from models.models import get_user_skills
+
 
 def skills_section():
     st.subheader("My Skills")
@@ -11,6 +15,8 @@ def skills_section():
         st.session_state.user_skills = get_user_skills(st.session_state.user.id)
     if "show_add_skill_form" not in st.session_state:
         st.session_state.show_add_skill_form = False
+    if "skills_before_edit" not in st.session_state:
+        st.session_state.skills_before_edit = {}
 
     proficiency_scale = {
         1: "Novice",
@@ -21,7 +27,16 @@ def skills_section():
     }
 
     def toggle_edit_mode():
+        if not st.session_state.skills_edit_mode:
+            # Entering edit mode, save the current state
+            st.session_state.skills_before_edit = st.session_state.user_skills.copy()
         st.session_state.skills_edit_mode = not st.session_state.skills_edit_mode
+        st.session_state.show_add_skill_form = False
+
+    def cancel_edit():
+        # Restore the skills to the state before editing
+        st.session_state.user_skills = st.session_state.skills_before_edit.copy()
+        st.session_state.skills_edit_mode = False
         st.session_state.show_add_skill_form = False
 
     def delete_skill(skill):
@@ -44,15 +59,25 @@ def skills_section():
         else:
             st.error("Please enter a unique skill name.")
 
-    # Edit button above the skills view
+    # Edit button above the skills view (only in view mode)
     if not st.session_state.skills_edit_mode:
         st.button("Edit", on_click=toggle_edit_mode)
 
     if not st.session_state.skills_edit_mode:
-        # View mode
+        # View mode with multi-column layout
         if st.session_state.user_skills:
-            for skill, proficiency in st.session_state.user_skills.items():
-                st.write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
+            num_skills = len(st.session_state.user_skills)
+            num_columns = 3  # You can adjust this number to change the number of columns
+            num_rows = math.ceil(num_skills / num_columns)
+
+            for row in range(num_rows):
+                cols = st.columns(num_columns)
+                for col in range(num_columns):
+                    index = row * num_columns + col
+                    if index < num_skills:
+                        skill = list(st.session_state.user_skills.keys())[index]
+                        proficiency = st.session_state.user_skills[skill]
+                        cols[col].write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
         else:
             st.info("No skills found. Click 'Edit' to add your skills.")
     else:
@@ -101,7 +126,10 @@ def skills_section():
                     args=(skill,),
                 )
 
-        # Save button
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col3:
+        # Cancel and Save buttons at the end of the edit page
+        st.write("")  # Add some space
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("Cancel", on_click=cancel_edit)
+        with col2:
             st.button("Save", on_click=save_skills)
