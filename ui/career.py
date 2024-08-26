@@ -1,5 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
+
+from functions.gap_analysis import perform_gap_analysis
 from models.models import (
     get_positions_for_ladder,
     get_eligibility_criteria,
@@ -35,11 +37,27 @@ def career_section():
         st.plotly_chart(fig)
 
         # Show eligibility criteria for next level
-        show_next_level_criteria(user.position, positions)
+        next_position = next((p for p in positions if p["level"] > user.position.level), None)
+        if next_position:
+            st.subheader(f"What's Needed for Promotion to {next_position['name']}")
+            criteria = get_eligibility_criteria(next_position["id"])
+            if criteria:
+                st.write(criteria)
+            else:
+                st.info("No specific criteria defined for the next level.")
 
-    # Add "What are my gaps?" button
-    if st.button("What are my gaps?"):
-        st.info("This feature is coming soon!")
+            # Add "What are my gaps?" button
+            if st.button("What are my gaps?"):
+                skills = user.get_skills()
+                skills_list = [{"name": k, "level": v} for k, v in skills.items()]
+
+                with st.spinner("Analyzing your skills gap..."):
+                    gap_analysis = perform_gap_analysis(skills_list, criteria)
+
+                st.subheader("Your Skills Gap Analysis")
+                st.write(gap_analysis)
+        else:
+            st.info("You're at the highest level in your current ladder!")
 
 
 def create_career_ladder_visualization(positions, current_position):
