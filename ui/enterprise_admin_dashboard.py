@@ -230,6 +230,6 @@ def level_eligibility():
 
     # Ensure we stay on the Level Eligibility tab
     st.session_state.active_tab = "Level Eligibility"
-    
+
 if __name__ == "__main__":
     enterprise_admin_dashboard()

@@ -5,6 +5,8 @@ from helpers.ingestion import ingest_data
 from models.models import LinkedInProfileInfo
 from ui.learning_dashboard import learning_dashboard
 import streamlit as st
+
+from ui.productivity import productivity_tab
 from ui.skills_section import skills_section
 
 
@@ -183,10 +185,11 @@ def q_and_a_tab():
                 st.write(full_response)
 
 def individual_contributor_dashboard():
-    tab1, tab2, tab3 = st.tabs(
+    tab1, tab2, tab3, tab4 = st.tabs(
         [
             "Performance Management",
             "Skills, Learning and Development",
+            "Productivity",
             "Q&A Chatbot",
         ]
     )
@@ -198,4 +201,7 @@ def individual_contributor_dashboard():
         skills_learning_development_tab()
 
     with tab3:
+        productivity_tab()  # Use the imported productivity_tab function
+
+    with tab4:
         q_and_a_tab()
