@@ -164,7 +164,6 @@ def load_qa_data():
             return None
         return index
 
-
 def q_and_a_tab():
     if 'qa_index' not in st.session_state:
         st.session_state.qa_index = load_qa_data()
@@ -172,7 +171,13 @@ def q_and_a_tab():
     if st.session_state.qa_index is None:
         return
 
-    query = st.text_input("Enter your question:")
+    # Initialize session state for storing the last question and answer
+    if 'last_question' not in st.session_state:
+        st.session_state.last_question = ""
+    if 'last_answer' not in st.session_state:
+        st.session_state.last_answer = ""
+
+    query = st.text_input("Enter your question:", key="query_input")
     show_full_response = os.getenv("SHOW_CHATBOT_DEBUG_LOG", "false").lower() == "true"
 
     if st.button("Ask", key="ask_button"):
@@ -183,12 +188,21 @@ def q_and_a_tab():
             with st.spinner("Generating Answer..."):
                 full_response, response_text = ask(llm, query, st.session_state.qa_index)
 
-            st.write("Response:")
-            st.write(response_text)
+            # Store the question and answer in session state
+            st.session_state.last_question = query
+            st.session_state.last_answer = response_text
 
-            if show_full_response:
-                st.write("Full Response (Debug):")
-                st.write(full_response)
+    # Display the last question and answer if they exist
+    if st.session_state.last_question:
+        st.subheader("Question:")
+        st.write(st.session_state.last_question)
+        st.subheader("Answer:")
+        st.write(st.session_state.last_answer)
+
+        if show_full_response:
+            st.write("Full Response (Debug):")
+            st.write(full_response)
+
 
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4 = st.tabs(
