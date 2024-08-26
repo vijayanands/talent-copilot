@@ -145,58 +145,91 @@ def delete_position(index):
     # Sort positions by level
     st.session_state.positions = sorted(positions, key=lambda x: x["level"])
 
-
 def level_eligibility():
     st.header("Level Eligibility")
 
+    # Custom CSS for bordered text areas
+    st.markdown("""
+    <style>
+    .stTextArea textarea {
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        padding: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     ladders = get_all_ladders()
-    selected_ladder = st.selectbox(
+    ladder_names = [ladder.name for ladder in ladders]
+
+    if "edit_mode" not in st.session_state:
+        st.session_state.edit_mode = False
+    if "temp_criteria" not in st.session_state:
+        st.session_state.temp_criteria = {}
+    if "selected_ladder_name" not in st.session_state:
+        st.session_state.selected_ladder_name = ladder_names[0] if ladder_names else None
+
+    # Dropdown to select a ladder
+    selected_ladder_name = st.selectbox(
         "Select Ladder",
-        options=[ladder.name for ladder in ladders],
-        key="level_elig_ladder",
+        options=ladder_names,
+        key="level_elig_ladder_select",
+        index=ladder_names.index(st.session_state.selected_ladder_name) if st.session_state.selected_ladder_name in ladder_names else 0
     )
 
-    selected_ladder_obj = next(
-        (ladder for ladder in ladders if ladder.name == selected_ladder), None
-    )
+    st.session_state.selected_ladder_name = selected_ladder_name
+    selected_ladder_obj = next((ladder for ladder in ladders if ladder.name == selected_ladder_name), None)
 
     if selected_ladder_obj:
         positions = get_positions_for_ladder(selected_ladder_obj.id)
-        selected_position = st.selectbox(
-            "Select Position",
-            options=[
-                f"{selected_ladder_obj.prefix}{position['level']}: {position['name']}"
-                for position in positions
-            ],
-            key="level_elig_position",
-        )
 
-        selected_position_obj = next(
-            (
-                position
-                for position in positions
-                if f"{selected_ladder_obj.prefix}{position['level']}: {position['name']}"
-                == selected_position
-            ),
-            None,
-        )
+        if not st.session_state.edit_mode:
+            if st.button(f"Edit {selected_ladder_obj.name} Eligibility", key=f"edit_button_{selected_ladder_obj.name}"):
+                st.session_state.edit_mode = True
+                st.session_state.temp_criteria = {}
+                for position in positions:
+                    position_key = f"{selected_ladder_obj.name}_{position['name']}_{position['level']}"
+                    criteria = get_eligibility_criteria(position['level'])
+                    st.session_state.temp_criteria[position_key] = criteria or ""
+                st.rerun()
+        else:
+            st.write(f"Editing {selected_ladder_obj.name} Ladder Eligibility")
 
-        if selected_position_obj:
-            current_criteria = get_eligibility_criteria(selected_position_obj["level"]) or ""
+        for index, position in enumerate(positions):
+            level = position['level']
+            name = position['name']
+            position_key = f"{selected_ladder_obj.name}_{name}_{level}"
 
-            st.write("Edit eligibility criteria:")
-            new_criteria = st.text_area(
-                "Eligibility Criteria",
-                value=current_criteria,
-                height=200,
-                key="eligibility_criteria"
-            )
+            if st.session_state.edit_mode:
+                st.text_area(
+                    f"Level {level} ({name}) Eligibility",
+                    value=st.session_state.temp_criteria.get(position_key, ""),
+                    key=f"criteria_{position_key}_{index}",
+                    on_change=lambda pk=position_key, idx=index: st.session_state.temp_criteria.update({pk: st.session_state[f"criteria_{pk}_{idx}"]})
+                )
+            else:
+                criteria = get_eligibility_criteria(level)
+                st.write(f"**Level {level} ({name}):**")
+                st.write(criteria or "No eligibility criteria set.")
 
-            if st.button("Update Eligibility Criteria", key="update_eligibility"):
-                if update_eligibility_criteria(selected_position_obj["level"], new_criteria):
+        if st.session_state.edit_mode:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Update", key=f"update_button_{selected_ladder_obj.name}"):
+                    for position_key, criteria in st.session_state.temp_criteria.items():
+                        _, _, level = position_key.rsplit('_', 2)
+                        update_eligibility_criteria(int(level), criteria)
+                    st.session_state.edit_mode = False
                     st.success("Eligibility criteria updated successfully!")
-                else:
-                    st.error("Failed to update eligibility criteria.")
+                    st.rerun()
+            with col2:
+                if st.button("Cancel", key=f"cancel_button_{selected_ladder_obj.name}"):
+                    st.session_state.edit_mode = False
+                    st.session_state.temp_criteria = {}
+                    st.rerun()
+
+    # Ensure we stay on the Level Eligibility tab
+    st.session_state.active_tab = "Level Eligibility"
 
 if __name__ == "__main__":
     enterprise_admin_dashboard()
