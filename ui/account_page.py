@@ -1,7 +1,11 @@
 import streamlit as st
 
-from models.models import (change_user_password, check_password_match,
-                           is_password_valid, verify_current_password)
+from models.models import (
+    change_user_password,
+    check_password_match,
+    is_password_valid,
+    verify_current_password,
+)
 from ui.personal_profile import personal_profile_section
 from ui.work_profile import work_profile_section
 

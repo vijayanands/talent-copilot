@@ -26,6 +26,7 @@ atlassian_username = "vijayanands@gmail.com"
 # Initialize Pinecone
 index_name = "pathforge-data"
 
+
 # Function to convert nested dictionary to string
 def _dict_to_string(d: Dict, indent: int = 0) -> str:
     result = []

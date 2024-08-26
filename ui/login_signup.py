@@ -1,7 +1,11 @@
 import streamlit as st
 
-from models.models import (check_password_match, is_password_valid,
-                           register_user, verify_login)
+from models.models import (
+    check_password_match,
+    is_password_valid,
+    register_user,
+    verify_login,
+)
 
 
 def login_page():

@@ -4,8 +4,13 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from models.models import (EligibilityCriteria, Ladder, LinkedInProfileInfo,
-                           Position, User)
+from models.models import (
+    EligibilityCriteria,
+    Ladder,
+    LinkedInProfileInfo,
+    Position,
+    User,
+)
 
 
 def get_db_path():
@@ -356,9 +361,11 @@ def migrate_eligibility_criteria(engine):
         result = session.execute(text("PRAGMA table_info(eligibility_criteria)"))
         columns = [row[1] for row in result.fetchall()]
 
-        if 'criteria_text' not in columns:
+        if "criteria_text" not in columns:
             # Add the new column
-            session.execute(text("ALTER TABLE eligibility_criteria ADD COLUMN criteria_text TEXT"))
+            session.execute(
+                text("ALTER TABLE eligibility_criteria ADD COLUMN criteria_text TEXT")
+            )
 
             # Migrate existing data
             criteria_records = session.query(EligibilityCriteria).all()
@@ -369,20 +376,32 @@ def migrate_eligibility_criteria(engine):
                     record.criteria_text = criteria_text
 
             # Remove the old column (SQLite doesn't support dropping columns, so we need to recreate the table)
-            session.execute(text("""
+            session.execute(
+                text(
+                    """
                 CREATE TABLE eligibility_criteria_new (
                     id INTEGER PRIMARY KEY,
                     position_id INTEGER NOT NULL,
                     criteria_text TEXT NOT NULL,
                     FOREIGN KEY (position_id) REFERENCES positions (id)
                 )
-            """))
-            session.execute(text("""
+            """
+                )
+            )
+            session.execute(
+                text(
+                    """
                 INSERT INTO eligibility_criteria_new (id, position_id, criteria_text)
                 SELECT id, position_id, criteria_text FROM eligibility_criteria
-            """))
+            """
+                )
+            )
             session.execute(text("DROP TABLE eligibility_criteria"))
-            session.execute(text("ALTER TABLE eligibility_criteria_new RENAME TO eligibility_criteria"))
+            session.execute(
+                text(
+                    "ALTER TABLE eligibility_criteria_new RENAME TO eligibility_criteria"
+                )
+            )
 
         session.commit()
         print("Eligibility criteria migrated successfully.")
@@ -391,6 +410,7 @@ def migrate_eligibility_criteria(engine):
         print(f"An error occurred while migrating eligibility criteria: {str(e)}")
     finally:
         session.close()
+
 
 if __name__ == "__main__":
     db_path = get_db_path()

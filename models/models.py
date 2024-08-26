@@ -6,8 +6,18 @@ from io import BytesIO
 import bcrypt
 import streamlit as st
 from PIL import Image
-from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, Integer,
-                        LargeBinary, String, create_engine, inspect)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    create_engine,
+    inspect,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -89,6 +99,7 @@ class EligibilityCriteria(Base):
     position_id = Column(Integer, ForeignKey("positions.id"), nullable=False)
     position = relationship("Position", back_populates="eligibility_criteria")
     criteria_text = Column(String, nullable=False)
+
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
@@ -308,6 +319,7 @@ class LinkedInProfileInfo(Base):
             return linkedin_info.extract_endorsements()
         return []
 
+
 User.linkedin_info = relationship(
     "LinkedInProfileInfo", uselist=False, back_populates="user"
 )
@@ -408,6 +420,7 @@ def get_positions_for_ladder(ladder_id):
     session.close()
     return position_dicts
 
+
 def update_ladder_positions(ladder_id, positions):
     session = Session()
     try:
@@ -432,20 +445,30 @@ def update_ladder_positions(ladder_id, positions):
     finally:
         session.close()
 
+
 def get_eligibility_criteria(position_id):
     session = Session()
-    criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+    criteria = (
+        session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+    )
     session.close()
     return criteria.criteria_text if criteria else None
+
 
 def update_eligibility_criteria(position_id, criteria_text):
     session = Session()
     try:
-        criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+        criteria = (
+            session.query(EligibilityCriteria)
+            .filter_by(position_id=position_id)
+            .first()
+        )
         if criteria:
             criteria.criteria_text = criteria_text
         else:
-            new_criteria = EligibilityCriteria(position_id=position_id, criteria_text=criteria_text)
+            new_criteria = EligibilityCriteria(
+                position_id=position_id, criteria_text=criteria_text
+            )
             session.add(new_criteria)
         session.commit()
         return True
@@ -455,5 +478,6 @@ def update_eligibility_criteria(position_id, criteria_text):
         return False
     finally:
         session.close()
+
 
 Session = sessionmaker(bind=engine)

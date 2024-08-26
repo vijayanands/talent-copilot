@@ -67,7 +67,9 @@ def skills_section():
         # View mode with multi-column layout
         if st.session_state.user_skills:
             num_skills = len(st.session_state.user_skills)
-            num_columns = 3  # You can adjust this number to change the number of columns
+            num_columns = (
+                3  # You can adjust this number to change the number of columns
+            )
             num_rows = math.ceil(num_skills / num_columns)
 
             for row in range(num_rows):
@@ -77,7 +79,9 @@ def skills_section():
                     if index < num_skills:
                         skill = list(st.session_state.user_skills.keys())[index]
                         proficiency = st.session_state.user_skills[skill]
-                        cols[col].write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
+                        cols[col].write(
+                            f"**{skill}:** {proficiency_scale[int(proficiency)]}"
+                        )
         else:
             st.info("No skills found. Click 'Edit' to add your skills.")
     else:

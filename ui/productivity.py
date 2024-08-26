@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+
 def get_employee_jira_data():
     # Generate dummy Jira data
     date_range = pd.date_range(end=datetime.now(), periods=30)
@@ -14,6 +15,7 @@ def get_employee_jira_data():
         "issues_resolved": [random.randint(0, 4) for _ in range(30)],
     }
     return pd.DataFrame(data)
+
 
 def get_employee_confluence_data():
     # Generate dummy Confluence data
@@ -25,6 +27,7 @@ def get_employee_confluence_data():
     }
     return pd.DataFrame(data)
 
+
 def get_employee_github_data():
     # Generate dummy GitHub data
     date_range = pd.date_range(end=datetime.now(), periods=30)
@@ -34,6 +37,7 @@ def get_employee_github_data():
         "pull_requests": [random.randint(0, 2) for _ in range(30)],
     }
     return pd.DataFrame(data)
+
 
 def predict_productivity(jira_data, confluence_data, github_data):
     # This is a very simplistic prediction model
@@ -48,6 +52,7 @@ def predict_productivity(jira_data, confluence_data, github_data):
     )
 
     return min(productivity_score / 100, 1.0)  # Normalize to 0-1 range
+
 
 def display_productivity_stats():
     st.subheader("Your Productivity Statistics")
@@ -87,7 +92,10 @@ def display_productivity_stats():
 
     # GitHub Chart
     fig_github = px.line(
-        github_data, x="date", y=["commits", "pull_requests"], title="Your GitHub Activity"
+        github_data,
+        x="date",
+        y=["commits", "pull_requests"],
+        title="Your GitHub Activity",
     )
     st.plotly_chart(fig_github)
 
@@ -115,6 +123,7 @@ def display_productivity_stats():
         )
     )
     st.plotly_chart(fig_productivity)
+
 
 def productivity_tab():
     st.header("Your Productivity Dashboard")

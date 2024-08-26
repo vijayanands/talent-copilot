@@ -8,8 +8,7 @@ from models.models import create_tables_if_not_exist, engine
 from style import set_page_container_style, set_page_style
 from ui.account_page import account_page
 from ui.enterprise_admin_dashboard import enterprise_admin_dashboard
-from ui.individual_contributor_dashboard import \
-    individual_contributor_dashboard
+from ui.individual_contributor_dashboard import individual_contributor_dashboard
 from ui.login_signup import login_page, signup_page
 from ui.manager_dashboard import manager_dashboard
 

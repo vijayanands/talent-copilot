@@ -2,19 +2,29 @@ import base64
 
 import streamlit as st
 
-from models.models import (delete_resume, get_all_ladders,
-                           get_positions_for_ladder, get_user_by_id,
-                           update_work_profile, Session, User, Position)
+from models.models import (
+    delete_resume,
+    get_all_ladders,
+    get_positions_for_ladder,
+    get_user_by_id,
+    update_work_profile,
+    Session,
+    User,
+    Position,
+)
 from sqlalchemy.orm import joinedload
+
 
 def work_profile_section():
     st.subheader("Work Profile")
 
     # Fetch the user data within a session
     with Session() as session:
-        user = session.query(User).options(
-            joinedload(User.position).joinedload(Position.ladder)
-        ).get(st.session_state.user.id)
+        user = (
+            session.query(User)
+            .options(joinedload(User.position).joinedload(Position.ladder))
+            .get(st.session_state.user.id)
+        )
 
         if user is None:
             st.error("User not found. Please log in again.")
@@ -38,7 +48,11 @@ def work_profile_section():
             selected_ladder = st.selectbox(
                 "Career Ladder",
                 options=ladder_names,
-                index=ladder_names.index(user.position.ladder.name) if user.position else 0,
+                index=(
+                    ladder_names.index(user.position.ladder.name)
+                    if user.position
+                    else 0
+                ),
             )
 
             selected_ladder_obj = next(
@@ -85,7 +99,9 @@ def work_profile_section():
 
                     updates = {
                         "position_id": (
-                            selected_position_obj['id'] if selected_position_obj else None
+                            selected_position_obj["id"]
+                            if selected_position_obj
+                            else None
                         ),
                         "responsibilities": responsibilities,
                     }
@@ -144,7 +160,9 @@ def work_profile_section():
                     if st.button("Delete Resume"):
                         if delete_resume(user.id):
                             st.success("Resume deleted successfully!")
-                            st.session_state.user = get_user_by_id(user.id)  # Refresh user data
+                            st.session_state.user = get_user_by_id(
+                                user.id
+                            )  # Refresh user data
                             st.rerun()
                         else:
                             st.error("Failed to delete resume. Please try again.")
