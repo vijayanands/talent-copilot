@@ -25,8 +25,6 @@ atlassian_username = "vijayanands@gmail.com"
 
 # Initialize Pinecone
 index_name = "pathforge-data"
-pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
-
 
 # Function to convert nested dictionary to string
 def _dict_to_string(d: Dict, indent: int = 0) -> str:
@@ -85,7 +83,7 @@ def _get_documents_to_ingest() -> List[Document]:
     return documents
 
 
-def create_pinecone_index():
+def create_pinecone_index(pc):
     try:
         print(f"Creating new Pinecone index: {index_name}")
         pc.create_index(
@@ -211,11 +209,14 @@ def calculate_similarity(text1: str, text2: str) -> float:
     return overlap / min(len(words1), len(words2))
 
 
-def ingest_data(recreate_index: bool = False):
+def ingest_data():
     local_persist_path = "/tmp/talent-copilot/data/pinecone_store"
 
     # Set up Pinecone vector store
     embed_model = OpenAIEmbedding()
+    recreate_index = os.getenv("RECREATE_INDEX", "False").lower() == "true"
+
+    pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
 
     if recreate_index or not os.path.exists(local_persist_path):
         # Delete local store if it exists
@@ -227,7 +228,7 @@ def ingest_data(recreate_index: bool = False):
             print(f"Deleting existing Pinecone index: {index_name}")
             pc.delete_index(index_name)
 
-        if not create_pinecone_index():
+        if not create_pinecone_index(pc):
             print("Failed to create Pinecone index. Exiting.")
             return None
 
@@ -280,8 +281,7 @@ if __name__ == "__main__":
     ]
 
     # Set up query engine
-    recreate_index = True
-    index = ingest_data(recreate_index=recreate_index)
+    index = ingest_data()
     if index is None:
         exit(1)
 

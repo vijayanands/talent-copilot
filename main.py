@@ -147,10 +147,6 @@ def setup_sidebar():
 
         # Set values from environment variables with defaults
         st.session_state.llm_choice = os.getenv("LLM_CHOICE", "OpenAI")
-        st.session_state.recreate_index = (
-            os.getenv("RECREATE_INDEX", "False").lower() == "true"
-        )
-
         if st.button("Logout", key="logout_button"):
             del st.session_state.user
             st.rerun()

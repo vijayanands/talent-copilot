@@ -1,3 +1,4 @@
+import os
 import json
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
@@ -9,6 +10,9 @@ import streamlit as st
 
 from ui.productivity import productivity_tab
 from ui.skills_section import skills_section
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def ask(llm, query, index):
@@ -155,7 +159,7 @@ def skills_learning_development_tab():
 def q_and_a_tab():
     query = st.text_input("Enter your question:")
 
-    show_full_response = st.checkbox("Show full response (debug)", value=False)
+    show_full_response = os.getenv("SHOW_CHATBOT_DEBUG_LOG", "false").lower() == "true"
 
     if st.button("Ask", key="ask_button"):
         if not query.strip():
@@ -169,7 +173,7 @@ def q_and_a_tab():
                 return
 
             llm = get_llm(st.session_state.llm_choice)
-            with st.spinner("Generating response..."):
+            with st.spinner("Generating Answer..."):
                 full_response, response_text = ask(llm, query, index)
 
             st.write("Response:")
