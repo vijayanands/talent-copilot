@@ -404,10 +404,9 @@ def get_positions_for_ladder(ladder_id):
         .order_by(Position.level)
         .all()
     )
-    position_dicts = [{"name": p.name, "level": p.level} for p in positions]
+    position_dicts = [{"id": p.id, "name": p.name, "level": p.level} for p in positions]
     session.close()
     return position_dicts
-
 
 def update_ladder_positions(ladder_id, positions):
     session = Session()
@@ -433,30 +432,28 @@ def update_ladder_positions(ladder_id, positions):
     finally:
         session.close()
 
-def get_eligibility_criteria(position_level):
+def get_eligibility_criteria(position_id):
     session = Session()
-    position = session.query(Position).filter_by(level=position_level).first()
-    if position:
-        criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
-        session.close()
-        return criteria.criteria_text if criteria else None
+    criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
     session.close()
-    return None
+    return criteria.criteria_text if criteria else None
 
-def update_eligibility_criteria(position_level, criteria_text):
+def update_eligibility_criteria(position_id, criteria_text):
     session = Session()
-    position = session.query(Position).filter_by(level=position_level).first()
-    if position:
-        existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
-        if existing_criteria:
-            existing_criteria.criteria_text = criteria_text
+    try:
+        criteria = session.query(EligibilityCriteria).filter_by(position_id=position_id).first()
+        if criteria:
+            criteria.criteria_text = criteria_text
         else:
-            new_criteria = EligibilityCriteria(position_id=position.id, criteria_text=criteria_text)
+            new_criteria = EligibilityCriteria(position_id=position_id, criteria_text=criteria_text)
             session.add(new_criteria)
         session.commit()
-        session.close()
         return True
-    session.close()
-    return False
+    except Exception as e:
+        session.rollback()
+        print(f"Error updating eligibility criteria: {str(e)}")
+        return False
+    finally:
+        session.close()
 
 Session = sessionmaker(bind=engine)

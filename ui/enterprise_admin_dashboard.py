@@ -116,7 +116,6 @@ def edit_positions(ladder):
 
     st.session_state.positions = positions
 
-
 def add_new_position(positions, name, level):
     # Shift existing positions if necessary
     for position in positions:
@@ -188,8 +187,8 @@ def level_eligibility():
                 st.session_state.edit_mode = True
                 st.session_state.temp_criteria = {}
                 for position in positions:
-                    position_key = f"{selected_ladder_obj.name}_{position['name']}_{position['level']}"
-                    criteria = get_eligibility_criteria(position['level'])
+                    position_key = f"{selected_ladder_obj.name}_{position['name']}_{position['id']}"
+                    criteria = get_eligibility_criteria(position['id'])
                     st.session_state.temp_criteria[position_key] = criteria or ""
                 st.rerun()
         else:
@@ -198,7 +197,8 @@ def level_eligibility():
         for index, position in enumerate(positions):
             level = position['level']
             name = position['name']
-            position_key = f"{selected_ladder_obj.name}_{name}_{level}"
+            position_id = position['id']
+            position_key = f"{selected_ladder_obj.name}_{name}_{position_id}"
 
             if st.session_state.edit_mode:
                 st.text_area(
@@ -208,7 +208,7 @@ def level_eligibility():
                     on_change=lambda pk=position_key, idx=index: st.session_state.temp_criteria.update({pk: st.session_state[f"criteria_{pk}_{idx}"]})
                 )
             else:
-                criteria = get_eligibility_criteria(level)
+                criteria = get_eligibility_criteria(position_id)
                 st.write(f"**Level {level} ({name}):**")
                 st.write(criteria or "No eligibility criteria set.")
 
@@ -217,8 +217,8 @@ def level_eligibility():
             with col1:
                 if st.button("Update", key=f"update_button_{selected_ladder_obj.name}"):
                     for position_key, criteria in st.session_state.temp_criteria.items():
-                        _, _, level = position_key.rsplit('_', 2)
-                        update_eligibility_criteria(int(level), criteria)
+                        _, _, position_id = position_key.rsplit('_', 2)
+                        update_eligibility_criteria(int(position_id), criteria)
                     st.session_state.edit_mode = False
                     st.success("Eligibility criteria updated successfully!")
                     st.rerun()
@@ -230,6 +230,6 @@ def level_eligibility():
 
     # Ensure we stay on the Level Eligibility tab
     st.session_state.active_tab = "Level Eligibility"
-
+    
 if __name__ == "__main__":
     enterprise_admin_dashboard()
