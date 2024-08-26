@@ -71,9 +71,6 @@ def pretty_print_appraisal(appraisal_data):
         for opportunity in appraisal_data["Learning Opportunities"]:
             st.markdown(f"• {opportunity}")
 
-def update_performance_page():
-    st.session_state.performance_page = st.session_state.performance_selector
-
 def perform_self_appraisal():
     if (
             "reset_appraisal" in st.session_state
@@ -108,6 +105,8 @@ def display_endorsements(user_id):
     else:
         st.info("No endorsements found in your LinkedIn profile. Make sure your LinkedIn profile is up to date and linked to your account.")
 
+def update_performance_page():
+    st.session_state.performance_page = st.session_state.performance_selector
 
 def performance_management_tab():
     # Initialize the performance management page in session state if it doesn't exist
@@ -116,8 +115,8 @@ def performance_management_tab():
 
     st.selectbox(
         "",  # Empty label to hide the heading
-        options=["Self-Appraisal", "Endorsements", "Career", "Other Performance Tools"],
-        index=["Self-Appraisal", "Endorsements", "Career", "Other Performance Tools"].index(
+        options=["Self-Appraisal", "Endorsements", "Career"],
+        index=["Self-Appraisal", "Endorsements", "Career"].index(
             st.session_state.performance_page),
         key="performance_selector",
         on_change=update_performance_page
@@ -128,9 +127,7 @@ def performance_management_tab():
     elif st.session_state.performance_page == "Endorsements":
         display_endorsements(st.session_state.user.id)
     elif st.session_state.performance_page == "Career":
-        career_section()  # Call the new career section
-    else:
-        st.write("This section is under development. Stay tuned for more performance management tools!")
+        career_section()  # Call the career section
 
 def update_skills_learning_dev_page():
     st.session_state.skills_learning_dev_page = st.session_state.skills_learning_dev_selector
