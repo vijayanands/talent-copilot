@@ -3,6 +3,7 @@ from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
 from models.models import LinkedInProfileInfo
+from ui.career import career_section
 from ui.learning_dashboard import learning_dashboard
 import streamlit as st
 
@@ -127,10 +128,7 @@ def performance_management_tab():
     elif st.session_state.performance_page == "Endorsements":
         display_endorsements(st.session_state.user.id)
     elif st.session_state.performance_page == "Career":
-        st.write(
-            "This section is under development. Here you will be able to explore career opportunities and plan your career path."
-        )
-        st.info("Coming soon: Career path visualization, and mentorship opportunities.")
+        career_section()  # Call the new career section
     else:
         st.write("This section is under development. Stay tuned for more performance management tools!")
 
