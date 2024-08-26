@@ -347,6 +347,51 @@ def migrate_profile_image(engine):
             print(f"An error occurred while migrating profile image: {str(e)}")
 
 
+def migrate_eligibility_criteria(engine):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        # Check if the criteria_text column exists
+        result = session.execute(text("PRAGMA table_info(eligibility_criteria)"))
+        columns = [row[1] for row in result.fetchall()]
+
+        if 'criteria_text' not in columns:
+            # Add the new column
+            session.execute(text("ALTER TABLE eligibility_criteria ADD COLUMN criteria_text TEXT"))
+
+            # Migrate existing data
+            criteria_records = session.query(EligibilityCriteria).all()
+            for record in criteria_records:
+                if isinstance(record.criteria, dict):
+                    # Convert the existing JSON criteria to text
+                    criteria_text = json.dumps(record.criteria)
+                    record.criteria_text = criteria_text
+
+            # Remove the old column (SQLite doesn't support dropping columns, so we need to recreate the table)
+            session.execute(text("""
+                CREATE TABLE eligibility_criteria_new (
+                    id INTEGER PRIMARY KEY,
+                    position_id INTEGER NOT NULL,
+                    criteria_text TEXT NOT NULL,
+                    FOREIGN KEY (position_id) REFERENCES positions (id)
+                )
+            """))
+            session.execute(text("""
+                INSERT INTO eligibility_criteria_new (id, position_id, criteria_text)
+                SELECT id, position_id, criteria_text FROM eligibility_criteria
+            """))
+            session.execute(text("DROP TABLE eligibility_criteria"))
+            session.execute(text("ALTER TABLE eligibility_criteria_new RENAME TO eligibility_criteria"))
+
+        session.commit()
+        print("Eligibility criteria migrated successfully.")
+    except Exception as e:
+        session.rollback()
+        print(f"An error occurred while migrating eligibility criteria: {str(e)}")
+    finally:
+        session.close()
+
 if __name__ == "__main__":
     db_path = get_db_path()
     engine = create_engine_with_path(db_path)
@@ -362,9 +407,10 @@ if __name__ == "__main__":
         print("7. Migrate enterprise admin data")
         print("8. Populate default ladders and positions")
         print("9. Migrate profile image")
-        print("10. Exit")
+        print("10. Migrate eligibility criteria")
+        print("11. Exit")
 
-        choice = input("Enter your choice (1-10): ")
+        choice = input("Enter your choice (1-11): ")
 
         if choice == "1":
             update_schema(engine)
@@ -391,6 +437,8 @@ if __name__ == "__main__":
         elif choice == "9":
             migrate_profile_image(engine)
         elif choice == "10":
+            migrate_eligibility_criteria(engine)
+        elif choice == "11":
             break
         else:
             print("Invalid choice. Please try again.")

@@ -88,8 +88,7 @@ class EligibilityCriteria(Base):
     id = Column(Integer, primary_key=True)
     position_id = Column(Integer, ForeignKey("positions.id"), nullable=False)
     position = relationship("Position", back_populates="eligibility_criteria")
-    criteria = Column(JSON, nullable=False)
-
+    criteria_text = Column(String, nullable=False)
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
@@ -434,37 +433,25 @@ def update_ladder_positions(ladder_id, positions):
     finally:
         session.close()
 
-
 def get_eligibility_criteria(position_level):
     session = Session()
     position = session.query(Position).filter_by(level=position_level).first()
     if position:
-        criteria = (
-            session.query(EligibilityCriteria)
-            .filter_by(position_id=position.id)
-            .first()
-        )
+        criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
         session.close()
-        return criteria.criteria if criteria else None
+        return criteria.criteria_text if criteria else None
     session.close()
     return None
 
-
-def update_eligibility_criteria(position_level, criteria):
+def update_eligibility_criteria(position_level, criteria_text):
     session = Session()
     position = session.query(Position).filter_by(level=position_level).first()
     if position:
-        existing_criteria = (
-            session.query(EligibilityCriteria)
-            .filter_by(position_id=position.id)
-            .first()
-        )
+        existing_criteria = session.query(EligibilityCriteria).filter_by(position_id=position.id).first()
         if existing_criteria:
-            existing_criteria.criteria = criteria
+            existing_criteria.criteria_text = criteria_text
         else:
-            new_criteria = EligibilityCriteria(
-                position_id=position.id, criteria=criteria
-            )
+            new_criteria = EligibilityCriteria(position_id=position.id, criteria_text=criteria_text)
             session.add(new_criteria)
         session.commit()
         session.close()

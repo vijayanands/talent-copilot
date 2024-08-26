@@ -182,39 +182,21 @@ def level_eligibility():
         )
 
         if selected_position_obj:
-            # Use level as a unique identifier instead of id
-            current_criteria = (
-                get_eligibility_criteria(selected_position_obj["level"]) or {}
-            )
+            current_criteria = get_eligibility_criteria(selected_position_obj["level"]) or ""
 
             st.write("Edit eligibility criteria:")
-            new_criteria = {}
-
-            new_criteria["years_of_experience"] = st.number_input(
-                "Minimum years of experience",
-                value=current_criteria.get("years_of_experience", 0),
-                key="years_of_experience",
-            )
-            new_criteria["projects_completed"] = st.number_input(
-                "Minimum projects completed",
-                value=current_criteria.get("projects_completed", 0),
-                key="projects_completed",
-            )
-            new_criteria["leadership_experience"] = st.checkbox(
-                "Leadership experience required",
-                value=current_criteria.get("leadership_experience", False),
-                key="leadership_experience",
+            new_criteria = st.text_area(
+                "Eligibility Criteria",
+                value=current_criteria,
+                height=200,
+                key="eligibility_criteria"
             )
 
             if st.button("Update Eligibility Criteria", key="update_eligibility"):
-                # Use level as a unique identifier instead of id
-                if update_eligibility_criteria(
-                    selected_position_obj["level"], new_criteria
-                ):
+                if update_eligibility_criteria(selected_position_obj["level"], new_criteria):
                     st.success("Eligibility criteria updated successfully!")
                 else:
                     st.error("Failed to update eligibility criteria.")
-
 
 if __name__ == "__main__":
     enterprise_admin_dashboard()
