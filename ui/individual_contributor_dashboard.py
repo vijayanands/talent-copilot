@@ -156,25 +156,32 @@ def skills_learning_development_tab():
         learning_dashboard()
 
 
-def q_and_a_tab():
-    query = st.text_input("Enter your question:")
+def load_qa_data():
+    with st.spinner("Ingesting data... This may take a moment."):
+        index = ingest_data()
+        if index is None:
+            st.error("Failed to initialize the index. Please check the logs and try again.")
+            return None
+        return index
 
+
+def q_and_a_tab():
+    if 'qa_index' not in st.session_state:
+        st.session_state.qa_index = load_qa_data()
+
+    if st.session_state.qa_index is None:
+        return
+
+    query = st.text_input("Enter your question:")
     show_full_response = os.getenv("SHOW_CHATBOT_DEBUG_LOG", "false").lower() == "true"
 
     if st.button("Ask", key="ask_button"):
         if not query.strip():
             st.error("Please enter a question before clicking 'Ask'.")
         else:
-            index = ingest_data(st.session_state.recreate_index)
-            if index is None:
-                st.error(
-                    "Failed to initialize the index. Please check the logs and try again."
-                )
-                return
-
             llm = get_llm(st.session_state.llm_choice)
             with st.spinner("Generating Answer..."):
-                full_response, response_text = ask(llm, query, index)
+                full_response, response_text = ask(llm, query, st.session_state.qa_index)
 
             st.write("Response:")
             st.write(response_text)
