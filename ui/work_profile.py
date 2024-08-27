@@ -1,18 +1,11 @@
 import base64
 
 import streamlit as st
-
-from models.models import (
-    delete_resume,
-    get_all_ladders,
-    get_positions_for_ladder,
-    get_user_by_id,
-    update_work_profile,
-    Session,
-    User,
-    Position,
-)
 from sqlalchemy.orm import joinedload
+
+from models.models import (Position, Session, User, delete_resume,
+                           get_all_ladders, get_positions_for_ladder,
+                           get_user_by_id, update_work_profile)
 
 
 def work_profile_section():

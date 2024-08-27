@@ -1,11 +1,7 @@
 import streamlit as st
 
-from models.models import (
-    check_password_match,
-    is_password_valid,
-    register_user,
-    verify_login,
-)
+from models.models import (check_password_match, is_password_valid,
+                           register_user, verify_login)
 
 
 def login_page():
@@ -63,7 +59,8 @@ def signup_page():
             st.error(st.session_state.signup_password_match_error)
 
         role = st.radio(
-            "Select Role", ["Individual Contributor", "People Manager", "Enterprise Administrator"]
+            "Select Role",
+            ["Individual Contributor", "People Manager", "Enterprise Administrator"],
         )
         is_manager = role == "People Manager"
         is_enterprise_admin = role == "Enterprise Admin"

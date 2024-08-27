@@ -4,13 +4,8 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from models.models import (
-    EligibilityCriteria,
-    Ladder,
-    LinkedInProfileInfo,
-    Position,
-    User,
-)
+from models.models import (EligibilityCriteria, Ladder, LinkedInProfileInfo,
+                           Position, User)
 
 
 def get_db_path():

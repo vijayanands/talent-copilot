@@ -1,15 +1,10 @@
-import streamlit as st
 import plotly.graph_objects as go
+import streamlit as st
+from sqlalchemy.orm import joinedload
 
 from functions.gap_analysis import perform_gap_analysis
-from models.models import (
-    get_positions_for_ladder,
-    get_eligibility_criteria,
-    Session,
-    User,
-    Position,
-)
-from sqlalchemy.orm import joinedload
+from models.models import (Position, Session, User, get_eligibility_criteria,
+                           get_positions_for_ladder)
 
 
 def career_section():
@@ -37,7 +32,9 @@ def career_section():
         st.plotly_chart(fig)
 
         # Show eligibility criteria for next level
-        next_position = next((p for p in positions if p["level"] > user.position.level), None)
+        next_position = next(
+            (p for p in positions if p["level"] > user.position.level), None
+        )
         if next_position:
             st.subheader(f"What's Needed for Promotion to {next_position['name']}")
             criteria = get_eligibility_criteria(next_position["id"])

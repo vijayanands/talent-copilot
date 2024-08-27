@@ -1,11 +1,13 @@
 import os
-from typing import List, Dict
+from typing import Dict, List
+
 from dotenv import load_dotenv
 from llama_index.core import PromptTemplate
 from llama_index.llms.openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
+
 
 def perform_gap_analysis(
     skills: List[Dict[str, int]],
@@ -23,15 +25,20 @@ def perform_gap_analysis(
     )
 
     # Format the skills list for the prompt
-    formatted_skills = ", ".join([f"{skill['name']} (Level: {skill['level']})" for skill in skills])
+    formatted_skills = ", ".join(
+        [f"{skill['name']} (Level: {skill['level']})" for skill in skills]
+    )
 
     # Format the prompt with the given skills and eligibility criteria
-    prompt = prompt_template.format(skills=formatted_skills, eligibility_criteria=eligibility_criteria)
+    prompt = prompt_template.format(
+        skills=formatted_skills, eligibility_criteria=eligibility_criteria
+    )
 
     # Use the LLM to generate a response
     response = llm.complete(prompt)
 
     return response.text
+
 
 # Example usage:
 if __name__ == "__main__":

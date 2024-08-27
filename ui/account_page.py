@@ -1,11 +1,7 @@
 import streamlit as st
 
-from models.models import (
-    change_user_password,
-    check_password_match,
-    is_password_valid,
-    verify_current_password,
-)
+from models.models import (change_user_password, check_password_match,
+                           is_password_valid, verify_current_password)
 from ui.personal_profile import personal_profile_section
 from ui.work_profile import work_profile_section
 
@@ -15,12 +11,11 @@ def account_page():
 
     user = st.session_state.user
 
-    # Initialize the active tab in session state if it doesn't exist
-    if "active_tab" not in st.session_state:
-        st.session_state.active_tab = "Personal Profile"
-
     # Create tabs for Personal Profile, Work Profile, and Change Password
     tabs = ["Personal Profile", "Work Profile", "Change Password"]
+    # Initialize the active tab in session state if it doesn't exist
+    if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
+        st.session_state.active_tab = "Personal Profile"
     active_tab = st.radio(
         "Select a section:",
         tabs,

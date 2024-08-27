@@ -1,16 +1,17 @@
-import os
 import json
+import os
+
+import streamlit as st
+from dotenv import load_dotenv
+
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data
 from models.models import LinkedInProfileInfo
 from ui.career import career_section
 from ui.learning_dashboard import learning_dashboard
-import streamlit as st
-
 from ui.productivity import productivity_tab
 from ui.skills_section import skills_section
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -47,7 +48,9 @@ def pretty_print_appraisal(appraisal_data):
 
     with col2:
         st.button(
-            "Reset", on_click=reset_performance_management, key="reset_performance"
+            "Reset",
+            on_click=reset_performance_management,
+            key="reset_performance_header",
         )
 
     # Summary
@@ -94,7 +97,7 @@ def perform_self_appraisal():
         st.button(
             "Reset",
             on_click=reset_performance_management,
-            key="reset_performance",
+            key="reset_performance_bottom",
         )
 
 
