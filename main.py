@@ -66,19 +66,19 @@ def set_title_bar():
             }}
         </style>
         <div class="title-bar">
-            <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
+            <img src="data:image/png;base64,{logo_base64}" alt="Empower Logo">
             <h1>
-                <span class="highlight-blue">PathForge</span> - Empowering Employee 
-                <span class="highlight-pink">Performance</span>, 
-                <span class="highlight-blue">Career</span>, 
-                <span class="highlight-pink">Skills</span> and 
-                <span class="highlight-blue">Learning</span> through AI
+                <span class="highlight-blue">Empower</span> - Empowering Employee 
+                <span class="highlight-pink">Productivity</span>, 
+                <span class="highlight-blue">Performance</span>, 
+                <span class="highlight-pink">Career</span>, 
+                <span class="highlight-blue">Skills</span> and 
+                <span class="highlight-pink">Learning</span>
             </h1>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
 
 def main_app():
     is_manager = st.session_state.user.is_manager
