@@ -36,10 +36,12 @@ def set_title_bar():
     st.markdown(
         f"""
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+
             .title-bar {{
                 display: flex;
                 align-items: center;
-                background: linear-gradient(135deg, #2c3e50, #4ca1af);  /* Dark blue to teal gradient */
+                background: linear-gradient(135deg, #2c3e50, #4ca1af);
                 padding: 15px;
                 border-radius: 8px;
                 margin-bottom: 20px;
@@ -52,23 +54,35 @@ def set_title_bar():
             }}
             .title-bar h1 {{
                 font-size: 24px;
-                color: #ffffff;  /* White for main text */
+                color: #ffffff;
                 margin: 0;
                 text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
             }}
-            .title-bar .highlight-blue {{
-                color: #66ccff;  /* Light blue highlight */
+            .empower-text {{
+                font-family: 'Poppins', sans-serif;
+                font-size: 32px;
+                font-weight: 700;
+                background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                letter-spacing: 2px;
+                margin-right: 20px;
+            }}
+            .highlight-blue {{
+                color: #66ccff;
                 font-weight: bold;
             }}
-            .title-bar .highlight-pink {{
-                color: #ff99cc;  /* Light pink highlight */
+            .highlight-pink {{
+                color: #ff99cc;
                 font-weight: bold;
             }}
         </style>
         <div class="title-bar">
-            <img src="data:image/png;base64,{logo_base64}" alt="Empower Logo">
+            <img src="data:image/png;base64,{logo_base64}" alt="PathForge Logo">
+            <div class="empower-text">EMPOWER</div>
             <h1>
-                <span class="highlight-blue">Empower</span> - Empowering Employee 
+                Empowering Employee 
                 <span class="highlight-pink">Productivity</span>, 
                 <span class="highlight-blue">Performance</span>, 
                 <span class="highlight-pink">Career</span>, 
@@ -79,7 +93,7 @@ def set_title_bar():
         """,
         unsafe_allow_html=True,
     )
-
+    
 def main_app():
     is_manager = st.session_state.user.is_manager
     is_enterprise_admin = st.session_state.user.is_enterprise_admin
