@@ -63,7 +63,7 @@ def signup_page():
             st.error(st.session_state.signup_password_match_error)
 
         role = st.radio(
-            "Select Role", ["Regular User", "People Manager", "Enterprise Admin"]
+            "Select Role", ["Individual Contributor", "People Manager", "Enterprise Administrator"]
         )
         is_manager = role == "People Manager"
         is_enterprise_admin = role == "Enterprise Admin"

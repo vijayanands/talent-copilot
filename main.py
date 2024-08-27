@@ -93,7 +93,7 @@ def set_title_bar():
         """,
         unsafe_allow_html=True,
     )
-    
+
 def main_app():
     is_manager = st.session_state.user.is_manager
     is_enterprise_admin = st.session_state.user.is_enterprise_admin
