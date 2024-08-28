@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
-from helpers.ingestion import ingest_data
+from helpers.ingestion import ingest_data, answer_question
 from models.models import LinkedInProfileInfo
 from ui.career import career_section
 from ui.learning_dashboard import learning_dashboard
@@ -17,8 +17,9 @@ load_dotenv()
 
 
 def ask(llm, query, index):
+    enhanced_query = f"Based on the jira, github and the confluence data in the embedded json data, please answer my {query}"
     query_engine = index.as_query_engine(llm=llm)
-    response = query_engine.query(query)
+    response = query_engine.query(enhanced_query)
     return response, response.response  # Return both full response and text
 
 
@@ -193,6 +194,9 @@ def q_and_a_tab():
     if "last_answer" not in st.session_state:
         st.session_state.last_answer = ""
 
+    # Get the logged-in user's email
+    user_email = st.session_state.user.email
+
     query = st.text_input("Enter your question:", key="query_input")
     show_full_response = os.getenv("SHOW_CHATBOT_DEBUG_LOG", "false").lower() == "true"
 
@@ -202,13 +206,15 @@ def q_and_a_tab():
         else:
             llm = get_llm(st.session_state.llm_choice)
             with st.spinner("Generating Answer..."):
-                full_response, response_text = ask(
-                    llm, query, st.session_state.qa_index
-                )
+                try:
+                    response = answer_question(st.session_state.qa_index, user_email, query)
 
-            # Store the question and answer in session state
-            st.session_state.last_question = query
-            st.session_state.last_answer = response_text
+                    # Store the question and answer in session state
+                    st.session_state.last_question = query
+                    st.session_state.last_answer = response
+
+                except Exception as e:
+                    st.error(f"An error occurred while processing your question: {str(e)}")
 
     # Display the last question and answer if they exist
     if st.session_state.last_question:
@@ -219,8 +225,10 @@ def q_and_a_tab():
 
         if show_full_response:
             st.write("Full Response (Debug):")
-            st.write(full_response)
+            st.write(response)  # This will show the full response object if available
 
+    # Add a note about the context of the answers
+    st.info(f"Answers are based on the data available for {user_email}.")
 
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4 = st.tabs(

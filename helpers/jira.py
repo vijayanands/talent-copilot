@@ -105,7 +105,7 @@ def _extract_jira_response(base_url, response):
         jira_list.append(jira_data)
     # Get the total number of issues
     jira_response = defaultdict()
-    jira_response["total_resolved"] = len(jira_list)
+    jira_response["total_resolved_issues"] = len(jira_list)
     jira_response["jiras_resolved"] = jira_list
     return jira_response
 

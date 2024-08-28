@@ -3,7 +3,7 @@ import os
 import random
 import shutil
 import time
-from typing import Dict, List
+from typing import List, Dict
 from uuid import NAMESPACE_DNS, uuid5
 
 from dotenv import load_dotenv
@@ -11,78 +11,58 @@ from llama_index.core import Document, StorageContext, VectorStoreIndex
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.pinecone import PineconeVectorStore
-from pinecone import Pinecone, PineconeException, ServerlessSpec
+from pinecone import Pinecone, ServerlessSpec
+from pydantic import ValidationError
 
-from constants import unique_user_emails
-from helpers.confluence import get_confluence_contributions_per_user
-from helpers.github import get_github_contributions_by_repo
+# Import the Pydantic models
+from models.pydantic_models import AllUserData, UserData, JiraData, GitHubData, ConfluenceData
+
+# Import the functions to get data
 from helpers.jira import get_jira_contributions_per_user
+from helpers.github import get_github_contributions_by_repo
+from helpers.confluence import get_confluence_contributions_per_user
 
 load_dotenv()
 
-atlassian_base_url = "https://vijayanands.atlassian.net"
-atlassian_username = "vijayanands@gmail.com"
-
 # Initialize Pinecone
 index_name = "pathforge-data"
+local_persist_path = "/tmp/talent-copilot/data/pinecone_store"
 
-
-# Function to convert nested dictionary to string
-def _dict_to_string(d: Dict, indent: int = 0) -> str:
-    result = []
-    for key, value in d.items():
-        if isinstance(value, dict):
-            result.append(f"{'  ' * indent}{key}:")
-            result.append(_dict_to_string(value, indent + 1))
-        elif isinstance(value, list):
-            result.append(f"{'  ' * indent}{key}:")
-            for item in value:
-                if isinstance(item, dict):
-                    result.append(_dict_to_string(item, indent + 2))
-                else:
-                    result.append(f"{'  ' * (indent + 2)}- {item}")
-        else:
-            result.append(f"{'  ' * indent}{key}: {value}")
-    return "\n".join(result)
-
-
-# Function to generate a consistent ID for a user
 def _generate_key(user: str) -> str:
     return str(uuid5(NAMESPACE_DNS, user))
 
-
 def _get_documents_to_ingest() -> List[Document]:
-    # Fetch data
     jira_documents = get_jira_contributions_per_user()
     github_documents = get_github_contributions_by_repo("octocat", "Hello-World")
     confluence_documents = get_confluence_contributions_per_user()
 
-    all_documents_per_user = {}
-    for user in unique_user_emails:
-        all_documents_per_user[user] = {
-            "jira": jira_documents[user],
-            "github": github_documents[user],
-            "confluence": confluence_documents[user],
-        }
+    all_user_data = {}
+    for email in set(jira_documents.keys()) | set(github_documents.keys()) | set(confluence_documents.keys()):
+        try:
+            user_data = UserData(
+                jira=JiraData(**jira_documents.get(email, {"author": email, "total_resolved_issues": 0, "jiras_data": [], "jira_list": []})),
+                github=GitHubData(**github_documents.get(email, {"commits": [], "pull_requests": []})),
+                confluence=ConfluenceData(pages=confluence_documents.get(email, {}))
+            )
+            all_user_data[email] = user_data
+        except ValidationError as e:
+            print(f"Error parsing data for user {email}: {e}")
+            continue
 
-    print(json.dumps(all_documents_per_user, indent=2))
-
-    # Process documents
     documents = []
-    for user, user_data in all_documents_per_user.items():
-        content = _dict_to_string(user_data)
+    for email, user_data in all_user_data.items():
+        content = user_data.json()
         metadata = {
-            "email": user,
-            "has_jira": bool(user_data["jira"]),
-            "has_github": bool(user_data["github"]),
-            "has_confluence": bool(user_data["confluence"]),
+            "email": email,
+            "has_jira": bool(user_data.jira.jiras_data),
+            "has_github": bool(user_data.github.commits or user_data.github.pull_requests),
+            "has_confluence": bool(user_data.confluence.pages),
         }
-        user_id = _generate_key(user)
+        user_id = _generate_key(email)
         doc = Document(text=content, metadata=metadata, id_=user_id)
         documents.append(doc)
 
     return documents
-
 
 def create_pinecone_index(pc):
     try:
@@ -94,7 +74,6 @@ def create_pinecone_index(pc):
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
 
-        # Wait for the index to be created
         while True:
             try:
                 index_description = pc.describe_index(index_name)
@@ -111,7 +90,6 @@ def create_pinecone_index(pc):
         print(f"Failed to create Pinecone index: {e}")
         return False
 
-
 def verify_index_creation_with_retries(
     index: VectorStoreIndex,
     documents: List[Document],
@@ -126,13 +104,12 @@ def verify_index_creation_with_retries(
             print("Index verification successful!")
             return True
         else:
-            if attempt < max_retries - 1:  # Don't sleep after the last attempt
+            if attempt < max_retries - 1:
                 print(f"Verification failed. Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
                 print("All verification attempts failed.")
     return False
-
 
 def verify_index_creation(
     index: VectorStoreIndex,
@@ -140,11 +117,13 @@ def verify_index_creation(
     sample_size: int = 5,
     similarity_threshold: float = 0.5,
 ) -> bool:
-    # Step 1: Verify vector count
     if not verify_vector_count(index):
         return False
-
-    # Step 2: Sample and verify content retrieval
+class JiraData(BaseModel):
+    author: str
+    total_resolved_issues: int
+    jiras_data: List[JiraIssue]
+    jira_list: List[str]
     sampled_docs = random.sample(documents, min(sample_size, len(documents)))
     query_engine = index.as_query_engine()
 
@@ -153,7 +132,6 @@ def verify_index_creation(
             return False
 
     return True
-
 
 def verify_vector_count(index: VectorStoreIndex) -> bool:
     pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
@@ -165,18 +143,13 @@ def verify_vector_count(index: VectorStoreIndex) -> bool:
     print(f"Pinecone index stats - Total vectors: {vector_count}")
     return vector_count > 0
 
-
 def verify_document_retrieval(
     query_engine: BaseQueryEngine, document: Document, similarity_threshold: float
 ) -> bool:
-    # Extract multiple snippets from the document
     snippets = extract_snippets(document.text, num_snippets=3, snippet_length=100)
 
     for snippet in snippets:
-        # Query the index for this content
         response = query_engine.query(snippet)
-
-        # Check if the response contains part of the original document's content
         similarity = calculate_similarity(response.response, document.text)
 
         if similarity >= similarity_threshold:
@@ -185,7 +158,6 @@ def verify_document_retrieval(
 
     print(f"Failed to retrieve content for document: {document.id_}")
     return False
-
 
 def extract_snippets(
     text: str, num_snippets: int = 3, snippet_length: int = 100
@@ -200,27 +172,19 @@ def extract_snippets(
 
     return snippets
 
-
 def calculate_similarity(text1: str, text2: str) -> float:
-    # Implement a similarity measure (e.g., cosine similarity, Jaccard similarity)
-    # For simplicity, let's use a basic overlap coefficient
     words1 = set(text1.lower().split())
     words2 = set(text2.lower().split())
     overlap = len(words1.intersection(words2))
     return overlap / min(len(words1), len(words2))
 
-
 def ingest_data():
-    local_persist_path = "/tmp/talent-copilot/data/pinecone_store"
-
-    # Set up Pinecone vector store
-    embed_model = OpenAIEmbedding()
     recreate_index = os.getenv("RECREATE_INDEX", "False").lower() == "true"
 
+    embed_model = OpenAIEmbedding()
     pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
 
     if recreate_index or not os.path.exists(local_persist_path):
-        # Delete local store if it exists
         if os.path.exists(local_persist_path):
             print(f"Deleting existing local store at {local_persist_path}")
             shutil.rmtree(local_persist_path)
@@ -245,17 +209,12 @@ def ingest_data():
             documents, storage_context=storage_context, embed_model=embed_model
         )
 
-        # Comprehensive verification with retries
         if verify_index_creation_with_retries(index, documents):
-            print(
-                "Index created and verified successfully. Persisting Pinecone store locally..."
-            )
+            print("Index created and verified successfully. Persisting Pinecone store locally...")
             os.makedirs(os.path.dirname(local_persist_path), exist_ok=True)
             storage_context.persist(persist_dir=local_persist_path)
         else:
-            print(
-                "Failed to verify index creation after multiple attempts. Please check the logs and try again."
-            )
+            print("Failed to verify index creation after multiple attempts. Please check the logs and try again.")
             return None
     else:
         print("Loading existing Pinecone store from local persistence...")
@@ -270,10 +229,60 @@ def ingest_data():
     return index
 
 
+def answer_question(index: VectorStoreIndex, email: str, question: str) -> str:
+    query_engine = index.as_query_engine()
+
+    # Construct a query that includes the email and the question
+    query = f"For the user with email {email}, {question}"
+    response = query_engine.query(query)
+
+    # The response is already in natural language, so we can return it directly
+    return response.response
+
+
+def answer_jira_question(jira_data: JiraData, question: str) -> str:
+    if "how many" in question.lower() and "resolved" in question.lower():
+        return f"The user has resolved {jira_data.total_resolved_issues} Jira issues."
+    elif "links" in question.lower() and "jira" in question.lower():
+        return f"Here are the links to the user's Jira issues:\n" + "\n".join(jira_data.jira_list)
+    else:
+        return "I'm not sure how to answer this specific Jira question. Please try rephrasing your question."
+
+def answer_github_question(github_data: GitHubData, question: str) -> str:
+    if "how many" in question.lower() and "pull requests" in question.lower():
+        return f"The user has {len(github_data.pull_requests)} pull requests."
+    elif "commits" in question.lower():
+        return f"The user has made {len(github_data.commits)} commits."
+    else:
+        return "I'm not sure how to answer this specific GitHub question. Please try rephrasing your question."
+class JiraData(BaseModel):
+    author: str
+    total_resolved_issues: int
+    jiras_data: List[JiraIssue]
+    jira_list: List[str]
+def answer_confluence_question(confluence_data: ConfluenceData, question: str) -> str:
+    if "how many" in question.lower() and "pages" in question.lower():
+        return f"The user has created {len(confluence_data.pages)} Confluence pages."
+    elif "content" in question.lower() and "page" in question.lower():
+        page_id = question.split("page")[1].strip()
+        if page_id in confluence_data.pages:
+            return f"The content of the page '{confluence_data.pages[page_id].title}' is:\n{confluence_data.pages[page_id].content}"
+        else:
+            return "I couldn't find the specified page. Please provide a valid page ID."
+    else:
+        return "I'm not sure how to answer this specific Confluence question. Please try rephrasing your question."
+
+def check_pinecone_directly(email):
+    pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+    index = pc.Index(index_name)
+    results = index.query(vector=[0]*1536, filter={"email": email}, top_k=1, include_metadata=True)
+    print(f"Direct Pinecone query for {email}: {results}")
+
 # Example usage
 if __name__ == "__main__":
     questions = [
         "What are the Jira issues for vijayanands@gmail.com?",
+        "How many Jira issues were resolved by vijayanands@gmail.com, can you give the links for those jiras",
         "What are the Jira issues resolved by vijayanands@gmail.com?",
         "How many pull requests are there for vijayanands@yahoo.com?",
         "What is the content of the 'Getting started in Confluence' page for vjy1970@gmail.com?",
@@ -281,13 +290,19 @@ if __name__ == "__main__":
         "List all email addresses that have Confluence data.",
     ]
 
-    # Set up query engine
     index = ingest_data()
     if index is None:
+        print("Failed to create or load index. Exiting.")
         exit(1)
 
-    query_engine = index.as_query_engine()
+    check_pinecone_directly("vijayanands@gmail.com")
+
     for question in questions:
-        print(f"Question: {question}")
-        print(f"Answer: {query_engine.query(question)}")
-        print()
+        email = "vijayanands@gmail.com"  # You can modify this for different questions if needed
+        try:
+            answer = answer_question(index, email, question)
+            print(f"Question: {question}")
+            print(f"Answer: {answer}")
+        except Exception as e:
+            print(f"An error occurred while answering the question: {str(e)}")
+        print()  # Add a blank line for better readability between questions
