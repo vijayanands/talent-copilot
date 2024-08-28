@@ -119,11 +119,7 @@ def verify_index_creation(
 ) -> bool:
     if not verify_vector_count(index):
         return False
-class JiraData(BaseModel):
-    author: str
-    total_resolved_issues: int
-    jiras_data: List[JiraIssue]
-    jira_list: List[str]
+
     sampled_docs = random.sample(documents, min(sample_size, len(documents)))
     query_engine = index.as_query_engine()
 
@@ -255,11 +251,7 @@ def answer_github_question(github_data: GitHubData, question: str) -> str:
         return f"The user has made {len(github_data.commits)} commits."
     else:
         return "I'm not sure how to answer this specific GitHub question. Please try rephrasing your question."
-class JiraData(BaseModel):
-    author: str
-    total_resolved_issues: int
-    jiras_data: List[JiraIssue]
-    jira_list: List[str]
+
 def answer_confluence_question(confluence_data: ConfluenceData, question: str) -> str:
     if "how many" in question.lower() and "pages" in question.lower():
         return f"The user has created {len(confluence_data.pages)} Confluence pages."
