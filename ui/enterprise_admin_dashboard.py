@@ -1,7 +1,8 @@
 import streamlit as st
 
-from models.models import (Ladder, Position, get_all_ladders,
-                           get_eligibility_criteria, get_positions_for_ladder,
+from models.models import (EligibilityCriteria, Ladder, Position, Session,
+                           get_all_ladders, get_eligibility_criteria,
+                           get_positions_for_ladder,
                            update_eligibility_criteria,
                            update_ladder_positions)
 
@@ -9,13 +10,139 @@ from models.models import (Ladder, Position, get_all_ladders,
 def enterprise_admin_dashboard():
     st.title("Enterprise Admin Dashboard")
 
-    tab1, tab2 = st.tabs(["Level Definitions", "Level Eligibility"])
+    tab1, tab2, tab3 = st.tabs(
+        ["Ladder Definitions", "Level Definitions", "Level Eligibility"]
+    )
 
     with tab1:
-        level_definitions()
+        ladder_definitions()
 
     with tab2:
+        level_definitions()
+
+    with tab3:
         level_eligibility()
+
+
+def ladder_definitions():
+    st.header("Ladder Definitions")
+
+    if "edit_ladder_mode" not in st.session_state:
+        st.session_state.edit_ladder_mode = False
+
+    ladders = get_all_ladders()
+
+    if not st.session_state.edit_ladder_mode:
+        display_current_ladders(ladders)
+    else:
+        edit_ladders(ladders)
+
+
+def display_current_ladders(ladders):
+    st.write("Current Ladders:")
+    for ladder in ladders:
+        st.write(f"{ladder.name} (Prefix: {ladder.prefix})")
+
+    if st.button("Edit Ladders", key="edit_ladders_button"):
+        st.session_state.edit_ladder_mode = True
+        st.rerun()
+
+
+def edit_ladders(ladders):
+    st.write("Editing Ladders:")
+
+    updated_ladders = []
+    for i, ladder in enumerate(ladders):
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        with col1:
+            name = st.text_input(
+                f"Ladder Name", value=ladder.name, key=f"ladder_name_{i}"
+            )
+        with col2:
+            prefix = st.text_input(
+                f"Prefix", value=ladder.prefix, key=f"ladder_prefix_{i}"
+            )
+        with col3:
+            if st.button("Delete", key=f"delete_ladder_{i}"):
+                delete_ladder(ladder.id)
+                st.rerun()
+        updated_ladders.append({"id": ladder.id, "name": name, "prefix": prefix})
+
+    st.write("Add a new ladder:")
+    new_name = st.text_input("New Ladder Name", key="new_ladder_name")
+    new_prefix = st.text_input("New Ladder Prefix", key="new_ladder_prefix")
+    if st.button("Add Ladder", key="add_ladder_button"):
+        add_new_ladder(new_name, new_prefix)
+        st.rerun()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Update Ladders", key="update_ladders_button"):
+            if update_ladders(updated_ladders):
+                st.success("Ladders updated successfully!")
+                st.session_state.edit_ladder_mode = False
+                st.rerun()
+            else:
+                st.error("Failed to update ladders.")
+    with col2:
+        if st.button("Cancel", key="cancel_edit_ladders_button"):
+            st.session_state.edit_ladder_mode = False
+            st.rerun()
+
+
+def add_new_ladder(name, prefix):
+    session = Session()
+    try:
+        new_ladder = Ladder(name=name, prefix=prefix)
+        session.add(new_ladder)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        st.error(f"Failed to add new ladder: {str(e)}")
+    finally:
+        session.close()
+
+
+def update_ladders(updated_ladders):
+    session = Session()
+    try:
+        for ladder_data in updated_ladders:
+            ladder = session.query(Ladder).filter_by(id=ladder_data["id"]).first()
+            if ladder:
+                ladder.name = ladder_data["name"]
+                ladder.prefix = ladder_data["prefix"]
+        session.commit()
+        return True
+    except Exception as e:
+        session.rollback()
+        st.error(f"Failed to update ladders: {str(e)}")
+        return False
+    finally:
+        session.close()
+
+
+def delete_ladder(ladder_id):
+    session = Session()
+    try:
+        ladder = session.query(Ladder).filter_by(id=ladder_id).first()
+        if ladder:
+            # Delete associated positions and eligibility criteria
+            positions = session.query(Position).filter_by(ladder_id=ladder_id).all()
+            for position in positions:
+                session.query(EligibilityCriteria).filter_by(
+                    position_id=position.id
+                ).delete()
+                session.delete(position)
+            session.delete(ladder)
+            session.commit()
+            st.success(
+                f"Ladder '{ladder.name}' and all associated data deleted successfully."
+            )
+    except Exception as e:
+        session.rollback()
+        st.error(f"Failed to delete ladder: {str(e)}")
+    finally:
+        session.close()
 
 
 def level_definitions():
