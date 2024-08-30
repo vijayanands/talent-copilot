@@ -6,8 +6,18 @@ from io import BytesIO
 import bcrypt
 import streamlit as st
 from PIL import Image
-from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, Integer,
-                        LargeBinary, String, create_engine, inspect)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    create_engine,
+    inspect,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 

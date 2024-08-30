@@ -207,14 +207,18 @@ def q_and_a_tab():
             llm = get_llm(st.session_state.llm_choice)
             with st.spinner("Generating Answer..."):
                 try:
-                    response = answer_question(st.session_state.qa_index, user_email, query)
+                    response = answer_question(
+                        st.session_state.qa_index, user_email, query
+                    )
 
                     # Store the question and answer in session state
                     st.session_state.last_question = query
                     st.session_state.last_answer = response
 
                 except Exception as e:
-                    st.error(f"An error occurred while processing your question: {str(e)}")
+                    st.error(
+                        f"An error occurred while processing your question: {str(e)}"
+                    )
 
     # Display the last question and answer if they exist
     if st.session_state.last_question:
@@ -229,6 +233,7 @@ def q_and_a_tab():
 
     # Add a note about the context of the answers
     st.info(f"Answers are based on the data available for {user_email}.")
+
 
 def individual_contributor_dashboard():
     tab1, tab2, tab3, tab4 = st.tabs(

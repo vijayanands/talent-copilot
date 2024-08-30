@@ -2,6 +2,7 @@ import streamlit as st
 from models.models import get_user_skills
 from functions.learning_resource_finder import find_learning_resources
 
+
 def skills_section():
     st.subheader("My Skills")
 
@@ -69,7 +70,12 @@ def skills_section():
                 with col1:
                     st.write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
                 with col2:
-                    st.button("Improve", key=f"improve_{skill}", on_click=improve_skill, args=(skill,))
+                    st.button(
+                        "Improve",
+                        key=f"improve_{skill}",
+                        on_click=improve_skill,
+                        args=(skill,),
+                    )
         else:
             st.info("No skills found. Click 'Edit' to add your skills.")
     else:
@@ -128,8 +134,12 @@ def skills_section():
 
     # Display learning resources for the selected skill
     if st.session_state.selected_skill_for_improvement:
-        st.subheader(f"Learning Resources for {st.session_state.selected_skill_for_improvement}")
+        st.subheader(
+            f"Learning Resources for {st.session_state.selected_skill_for_improvement}"
+        )
         with st.spinner("Finding learning resources..."):
-            resources = find_learning_resources([st.session_state.selected_skill_for_improvement])
+            resources = find_learning_resources(
+                [st.session_state.selected_skill_for_improvement]
+            )
             st.markdown(resources)
         st.session_state.selected_skill_for_improvement = None

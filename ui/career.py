@@ -3,8 +3,13 @@ import streamlit as st
 from sqlalchemy.orm import joinedload
 
 from functions.gap_analysis import perform_gap_analysis
-from models.models import (Position, Session, User, get_eligibility_criteria,
-                           get_positions_for_ladder)
+from models.models import (
+    Position,
+    Session,
+    User,
+    get_eligibility_criteria,
+    get_positions_for_ladder,
+)
 
 
 def career_section():

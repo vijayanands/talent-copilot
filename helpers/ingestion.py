@@ -15,7 +15,13 @@ from pinecone import Pinecone, ServerlessSpec
 from pydantic import ValidationError
 
 # Import the Pydantic models
-from models.pydantic_models import AllUserData, UserData, JiraData, GitHubData, ConfluenceData
+from models.pydantic_models import (
+    AllUserData,
+    UserData,
+    JiraData,
+    GitHubData,
+    ConfluenceData,
+)
 
 # Import the functions to get data
 from helpers.jira import get_jira_contributions_per_user
@@ -28,8 +34,10 @@ load_dotenv()
 index_name = "pathforge-data"
 local_persist_path = "/tmp/talent-copilot/data/pinecone_store"
 
+
 def _generate_key(user: str) -> str:
     return str(uuid5(NAMESPACE_DNS, user))
+
 
 def _get_documents_to_ingest() -> List[Document]:
     jira_documents = get_jira_contributions_per_user()
@@ -37,12 +45,28 @@ def _get_documents_to_ingest() -> List[Document]:
     confluence_documents = get_confluence_contributions_per_user()
 
     all_user_data = {}
-    for email in set(jira_documents.keys()) | set(github_documents.keys()) | set(confluence_documents.keys()):
+    for email in (
+        set(jira_documents.keys())
+        | set(github_documents.keys())
+        | set(confluence_documents.keys())
+    ):
         try:
             user_data = UserData(
-                jira=JiraData(**jira_documents.get(email, {"author": email, "total_resolved_issues": 0, "jiras_data": [], "jira_list": []})),
-                github=GitHubData(**github_documents.get(email, {"commits": [], "pull_requests": []})),
-                confluence=ConfluenceData(pages=confluence_documents.get(email, {}))
+                jira=JiraData(
+                    **jira_documents.get(
+                        email,
+                        {
+                            "author": email,
+                            "total_resolved_issues": 0,
+                            "jiras_data": [],
+                            "jira_list": [],
+                        },
+                    )
+                ),
+                github=GitHubData(
+                    **github_documents.get(email, {"commits": [], "pull_requests": []})
+                ),
+                confluence=ConfluenceData(pages=confluence_documents.get(email, {})),
             )
             all_user_data[email] = user_data
         except ValidationError as e:
@@ -55,7 +79,9 @@ def _get_documents_to_ingest() -> List[Document]:
         metadata = {
             "email": email,
             "has_jira": bool(user_data.jira.jiras_data),
-            "has_github": bool(user_data.github.commits or user_data.github.pull_requests),
+            "has_github": bool(
+                user_data.github.commits or user_data.github.pull_requests
+            ),
             "has_confluence": bool(user_data.confluence.pages),
         }
         user_id = _generate_key(email)
@@ -63,6 +89,7 @@ def _get_documents_to_ingest() -> List[Document]:
         documents.append(doc)
 
     return documents
+
 
 def create_pinecone_index(pc):
     try:
@@ -90,6 +117,7 @@ def create_pinecone_index(pc):
         print(f"Failed to create Pinecone index: {e}")
         return False
 
+
 def verify_index_creation_with_retries(
     index: VectorStoreIndex,
     documents: List[Document],
@@ -111,6 +139,7 @@ def verify_index_creation_with_retries(
                 print("All verification attempts failed.")
     return False
 
+
 def verify_index_creation(
     index: VectorStoreIndex,
     documents: List[Document],
@@ -129,6 +158,7 @@ def verify_index_creation(
 
     return True
 
+
 def verify_vector_count(index: VectorStoreIndex) -> bool:
     pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
     pinecone_index = pc.Index(index_name)
@@ -138,6 +168,7 @@ def verify_vector_count(index: VectorStoreIndex) -> bool:
 
     print(f"Pinecone index stats - Total vectors: {vector_count}")
     return vector_count > 0
+
 
 def verify_document_retrieval(
     query_engine: BaseQueryEngine, document: Document, similarity_threshold: float
@@ -155,6 +186,7 @@ def verify_document_retrieval(
     print(f"Failed to retrieve content for document: {document.id_}")
     return False
 
+
 def extract_snippets(
     text: str, num_snippets: int = 3, snippet_length: int = 100
 ) -> List[str]:
@@ -168,11 +200,13 @@ def extract_snippets(
 
     return snippets
 
+
 def calculate_similarity(text1: str, text2: str) -> float:
     words1 = set(text1.lower().split())
     words2 = set(text2.lower().split())
     overlap = len(words1.intersection(words2))
     return overlap / min(len(words1), len(words2))
+
 
 def ingest_data():
     recreate_index = os.getenv("RECREATE_INDEX", "False").lower() == "true"
@@ -206,11 +240,15 @@ def ingest_data():
         )
 
         if verify_index_creation_with_retries(index, documents):
-            print("Index created and verified successfully. Persisting Pinecone store locally...")
+            print(
+                "Index created and verified successfully. Persisting Pinecone store locally..."
+            )
             os.makedirs(os.path.dirname(local_persist_path), exist_ok=True)
             storage_context.persist(persist_dir=local_persist_path)
         else:
-            print("Failed to verify index creation after multiple attempts. Please check the logs and try again.")
+            print(
+                "Failed to verify index creation after multiple attempts. Please check the logs and try again."
+            )
             return None
     else:
         print("Loading existing Pinecone store from local persistence...")
@@ -240,9 +278,12 @@ def answer_jira_question(jira_data: JiraData, question: str) -> str:
     if "how many" in question.lower() and "resolved" in question.lower():
         return f"The user has resolved {jira_data.total_resolved_issues} Jira issues."
     elif "links" in question.lower() and "jira" in question.lower():
-        return f"Here are the links to the user's Jira issues:\n" + "\n".join(jira_data.jira_list)
+        return f"Here are the links to the user's Jira issues:\n" + "\n".join(
+            jira_data.jira_list
+        )
     else:
         return "I'm not sure how to answer this specific Jira question. Please try rephrasing your question."
+
 
 def answer_github_question(github_data: GitHubData, question: str) -> str:
     if "how many" in question.lower() and "pull requests" in question.lower():
@@ -251,6 +292,7 @@ def answer_github_question(github_data: GitHubData, question: str) -> str:
         return f"The user has made {len(github_data.commits)} commits."
     else:
         return "I'm not sure how to answer this specific GitHub question. Please try rephrasing your question."
+
 
 def answer_confluence_question(confluence_data: ConfluenceData, question: str) -> str:
     if "how many" in question.lower() and "pages" in question.lower():
@@ -264,11 +306,15 @@ def answer_confluence_question(confluence_data: ConfluenceData, question: str) -
     else:
         return "I'm not sure how to answer this specific Confluence question. Please try rephrasing your question."
 
+
 def check_pinecone_directly(email):
     pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
     index = pc.Index(index_name)
-    results = index.query(vector=[0]*1536, filter={"email": email}, top_k=1, include_metadata=True)
+    results = index.query(
+        vector=[0] * 1536, filter={"email": email}, top_k=1, include_metadata=True
+    )
     print(f"Direct Pinecone query for {email}: {results}")
+
 
 # Example usage
 if __name__ == "__main__":

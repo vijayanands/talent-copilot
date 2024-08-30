@@ -207,14 +207,18 @@ def q_and_a_tab():
             llm = get_llm(st.session_state.llm_choice)
             with st.spinner("Generating Answer..."):
                 try:
-                    response = answer_question(st.session_state.qa_index, user_email, query)
+                    response = answer_question(
+                        st.session_state.qa_index, user_email, query
+                    )
 
                     # Store the question and answer in session state
                     st.session_state.last_question = query
                     st.session_state.last_answer = response
 
                 except Exception as e:
-                    st.error(f"An error occurred while processing your question: {str(e)}")
+                    st.error(
+                        f"An error occurred while processing your question: {str(e)}"
+                    )
 
     # Display the last question and answer if they exist
     if st.session_state.last_question:
@@ -246,7 +250,7 @@ def conversational_ai_dashboard():
             );
         </script>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
     st.components.v1.html(
         """
@@ -256,25 +260,27 @@ def conversational_ai_dashboard():
 
 
 def handle_prompt(prompt, user_email):
-    if prompt == 'self_appraisal':
+    if prompt == "self_appraisal":
         return create_self_appraisal(st.session_state.llm_choice, user_email)
-    elif prompt == 'endorsements':
+    elif prompt == "endorsements":
         return LinkedInProfileInfo.display_endorsements(st.session_state.user.id)
-    elif prompt == 'career':
+    elif prompt == "career":
         return career_section()
-    elif prompt == 'skills':
+    elif prompt == "skills":
         return skills_section()
-    elif prompt == 'learning':
+    elif prompt == "learning":
         return learning_dashboard()
-    elif prompt == 'productivity':
+    elif prompt == "productivity":
         return productivity_tab()
     else:
         # Handle custom questions using the Q&A bot
-        if 'qa_index' not in st.session_state:
+        if "qa_index" not in st.session_state:
             st.session_state.qa_index = ingest_data()
 
         if st.session_state.qa_index is None:
-            return "Failed to initialize the index. Please check the logs and try again."
+            return (
+                "Failed to initialize the index. Please check the logs and try again."
+            )
 
         llm = get_llm(st.session_state.llm_choice)
         try:
@@ -285,7 +291,9 @@ def handle_prompt(prompt, user_email):
 
 
 def individual_contributor_dashboard_conversational():
-    st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
+    st.title(
+        f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}"
+    )
 
     prompt_options = [
         "Generate a self appraisal for me",
@@ -294,7 +302,7 @@ def individual_contributor_dashboard_conversational():
         "I would like to manage my skills",
         "I would like to manage my learning opportunities",
         "I would like to get a picture of my productivity",
-        "I just want to ask a custom question"
+        "I just want to ask a custom question",
     ]
 
     selected_prompt = st.selectbox("What would you like to do?", prompt_options)
@@ -311,7 +319,9 @@ def individual_contributor_dashboard_conversational():
             "Show me my current career trajectory information": "career",
             "I would like to manage my skills": "skills",
             "I would like to manage my learning opportunities": "learning",
-            "I would like to get a picture of my productivity": "productivity"
+            "I would like to get a picture of my productivity": "productivity",
         }
-        response = handle_prompt(prompt_map[selected_prompt], st.session_state.user.email)
+        response = handle_prompt(
+            prompt_map[selected_prompt], st.session_state.user.email
+        )
         st.write("Response:", response)
