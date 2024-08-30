@@ -10,6 +10,7 @@ from ui.account_page import account_page
 from ui.enterprise_admin_dashboard import enterprise_admin_dashboard
 from ui.individual_contributor_dashboard import \
     individual_contributor_dashboard
+from ui.individual_contributor_dashboard_conversationsal import individual_contributor_dashboard_conversational
 from ui.login_signup import login_page, signup_page
 from ui.manager_dashboard import manager_dashboard
 
@@ -95,6 +96,12 @@ def set_title_bar():
         unsafe_allow_html=True,
     )
 
+def ic_dashboard():
+    use_conversational_ai = os.getenv("USE_CONVERSATIONAL_AI", False)
+    if use_conversational_ai.lower() == "false":
+        individual_contributor_dashboard()
+    else:
+        individual_contributor_dashboard_conversational()
 
 def main_app():
     is_manager = st.session_state.user.is_manager
@@ -109,9 +116,9 @@ def main_app():
             manager_dashboard()
 
         with tab2:
-            individual_contributor_dashboard()
+            ic_dashboard()
     else:
-        individual_contributor_dashboard()
+        ic_dashboard()
 
 
 def show_initial_dashboard():
