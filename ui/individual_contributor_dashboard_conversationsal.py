@@ -242,15 +242,15 @@ def conversational_ai_dashboard():
 
 def handle_prompt(prompt, user_email):
     if prompt == "self_appraisal":
-        return "Generating self-appraisal..."
+        return "self_appraisal"  # Return the view name instead of a message
     elif prompt == "endorsements":
         return LinkedInProfileInfo.display_endorsements(st.session_state.user.id)
     elif prompt == "career":
         return career_section()
     elif prompt == "skills":
-        return "Switching to Skills Management"
+        return "skills"
     elif prompt == "learning":
-        return "Switching to Learning Opportunities Dashboard"
+        return "learning"
     elif prompt == "productivity":
         return productivity_tab()
     elif prompt == "custom_question":
@@ -463,8 +463,6 @@ def display_employee_stats(employee):
 
 
 def individual_contributor_dashboard_conversational(is_manager):
-    st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
-
     initialize_skills()
 
     if "current_view" not in st.session_state:
@@ -479,13 +477,12 @@ def individual_contributor_dashboard_conversational(is_manager):
             "I would like to manage my skills",
             "I would like to manage my learning opportunities",
             "I would like to get a picture of my productivity",
-            "I just want to ask a custom question",
         ]
 
         if is_manager:
             prompt_options.append("Show me productivity stats for my employees")
 
-        selected_prompt = st.selectbox("What would you like to do?", prompt_options, index=0, key="action_selector")
+        selected_prompt = st.selectbox("", prompt_options, index=0, key="action_selector")
 
         if selected_prompt != "Select an action":
             prompt_map = {
@@ -495,7 +492,6 @@ def individual_contributor_dashboard_conversational(is_manager):
                 "I would like to manage my skills": "skills",
                 "I would like to manage my learning opportunities": "learning",
                 "I would like to get a picture of my productivity": "productivity",
-                "I just want to ask a custom question": "custom_question",
             }
 
             if is_manager:
@@ -503,8 +499,7 @@ def individual_contributor_dashboard_conversational(is_manager):
 
             response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
 
-            if response in ["custom_question", "self_appraisal", "learning", "career", "skills",
-                            "employee_productivity"]:
+            if response in ["self_appraisal", "learning", "career", "skills", "employee_productivity"]:
                 st.session_state.current_view = response
                 st.rerun()
             else:
@@ -517,7 +512,7 @@ def individual_contributor_dashboard_conversational(is_manager):
         else:
             perform_self_appraisal()
 
-    elif st.session_state.current_view == "learning_dashboard":
+    elif st.session_state.current_view == "learning":
         if st.button("Back to Dashboard"):
             st.session_state.current_view = "main"
             reset_learning_dashboard()
@@ -538,13 +533,6 @@ def individual_contributor_dashboard_conversational(is_manager):
             st.rerun()
         else:
             display_skills()
-
-    elif st.session_state.current_view == "custom_question":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            q_and_a_tab()
 
     elif st.session_state.current_view == "improve_skill":
         if st.button("Back to Skills"):

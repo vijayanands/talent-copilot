@@ -4,6 +4,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
+from helpers.ingestion import ingest_data, answer_question
 from models.models import create_tables_if_not_exist, engine
 from style import set_page_container_style, set_page_style
 from ui.account_page import account_page
@@ -99,15 +100,56 @@ def set_title_bar():
     )
 
 
+def process_custom_question():
+    st.session_state.processing_question = True
+
+
 def ic_dashboard():
     is_manager = st.session_state.get('is_manager', False)
+
+    st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
+
+    st.text_input("Ask a custom question:", key="custom_question_input")
+    if st.button("Ask", key="custom_question_button", on_click=process_custom_question):
+        pass
+
+    st.markdown("### OR")
+
     if use_legacy_ui:
         individual_contributor_dashboard()
     else:
         individual_contributor_dashboard_conversational(is_manager)
 
-def manager_dashboard():
-    is_manager = st.session_state.get('is_manager', False)
+    # Display spinner and answer at the bottom of the page
+    st.markdown("---")
+    if 'processing_question' in st.session_state and st.session_state.processing_question:
+        with st.spinner("Processing your question..."):
+            question = st.session_state.custom_question_input
+            if question:
+                index = ingest_data()
+                answer = answer_question(index, st.session_state.user.email, question)
+                st.session_state.question_answer = answer
+            st.session_state.processing_question = False
+            st.rerun()
+
+    if 'question_answer' in st.session_state and st.session_state.question_answer:
+        st.subheader("Answer to your question:")
+        st.write(st.session_state.question_answer)
+        # Clear the answer after displaying
+        st.session_state.question_answer = None
+
+
+def manager_dashboard_view():
+    is_manager = st.session_state.get('is_manager', True)
+
+    st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
+
+    st.text_input("Ask a custom question:", key="custom_question_input")
+    if st.button("Ask", key="custom_question_button", on_click=process_custom_question):
+        pass
+
+    st.markdown("### OR")
+
     if use_legacy_ui:
         tab1, tab2 = st.tabs(["Manager Dashboard", "My Assistant"])
 
@@ -115,9 +157,28 @@ def manager_dashboard():
             manager_dashboard()
 
         with tab2:
-            ic_dashboard()
+            individual_contributor_dashboard()
     else:
         individual_contributor_dashboard_conversational(is_manager)
+
+    # Display spinner and answer at the bottom of the page
+    st.markdown("---")
+    if 'processing_question' in st.session_state and st.session_state.processing_question:
+        with st.spinner("Processing your question..."):
+            question = st.session_state.custom_question_input
+            if question:
+                index = ingest_data()
+                answer = answer_question(index, st.session_state.user.email, question)
+                st.session_state.question_answer = answer
+            st.session_state.processing_question = False
+            st.rerun()
+
+    if 'question_answer' in st.session_state and st.session_state.question_answer:
+        st.subheader("Answer to your question:")
+        st.write(st.session_state.question_answer)
+        # Clear the answer after displaying
+        st.session_state.question_answer = None
+
 
 def main_app():
     is_manager = st.session_state.user.is_manager
@@ -126,10 +187,9 @@ def main_app():
     if is_enterprise_admin:
         enterprise_admin_dashboard()
     elif is_manager:
-        manager_dashboard()
+        manager_dashboard_view()
     else:
         ic_dashboard()
-
 
 def show_initial_dashboard():
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
