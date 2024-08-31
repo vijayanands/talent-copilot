@@ -13,6 +13,10 @@ from models.models import (
 
 
 def career_section():
+    if st.button("Back to Dashboard", key="back_career"):
+        st.session_state.current_view = "main"
+        st.rerun()
+
     st.subheader("Career Progression")
 
     # Fetch the user data within a session

@@ -111,9 +111,9 @@ def perform_self_appraisal():
 
 
 def display_endorsements(user_id):
+    st.subheader("LinkedIn Endorsements")
     endorsements = LinkedInProfileInfo.display_endorsements(user_id)
     if endorsements:
-        st.subheader("LinkedIn Endorsements")
         for endorsement in endorsements:
             with st.expander(f"Endorsement from {endorsement['endorser']}"):
                 st.write(endorsement["text"])
@@ -244,7 +244,7 @@ def handle_prompt(prompt, user_email):
     if prompt == "self_appraisal":
         return "self_appraisal"  # Return the view name instead of a message
     elif prompt == "endorsements":
-        return LinkedInProfileInfo.display_endorsements(st.session_state.user.id)
+        return "endorsements"
     elif prompt == "career":
         return career_section()
     elif prompt == "skills":
@@ -253,8 +253,6 @@ def handle_prompt(prompt, user_email):
         return "learning"
     elif prompt == "productivity":
         return productivity_tab()
-    elif prompt == "custom_question":
-        return "custom_question"
     elif prompt == "employee_productivity":
         return "employee_productivity"
     elif prompt.startswith("improve_skill:"):
@@ -262,8 +260,7 @@ def handle_prompt(prompt, user_email):
         resources = find_learning_resources([skill])
         return resources
     else:
-        return "custom_question"
-
+        return f"Error: Unknown prompt '{prompt}'."
 
 def display_skills():
     st.subheader("My Skills")
@@ -499,7 +496,7 @@ def individual_contributor_dashboard_conversational(is_manager):
 
             response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
 
-            if response in ["self_appraisal", "learning", "career", "skills", "employee_productivity"]:
+            if response in ["self_appraisal", "endorsements", "learning", "career", "skills", "employee_productivity"]:
                 st.session_state.current_view = response
                 st.rerun()
             else:
@@ -511,6 +508,13 @@ def individual_contributor_dashboard_conversational(is_manager):
             st.rerun()
         else:
             perform_self_appraisal()
+
+    elif st.session_state.current_view == "endorsements":
+        if st.button("Back to Dashboard"):
+            st.session_state.current_view = "main"
+            st.rerun()
+        else:
+            display_endorsements(st.session_state.user.id)
 
     elif st.session_state.current_view == "learning":
         if st.button("Back to Dashboard"):
