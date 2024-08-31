@@ -4,10 +4,11 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
+from functions.learning_resource_finder import find_learning_resources
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data, answer_question
-from models.models import LinkedInProfileInfo
+from models.models import LinkedInProfileInfo, get_user_skills
 from ui.career import career_section
 from ui.learning_dashboard import learning_dashboard, reset_learning_dashboard
 from ui.productivity import productivity_tab
@@ -267,20 +268,22 @@ def handle_prompt(prompt, user_email):
     elif prompt == "career":
         return career_section()
     elif prompt == "skills":
-        return skills_section()
+        return "Switching to Skills Management"
     elif prompt == "learning":
         return "Switching to Learning Opportunities Dashboard"
     elif prompt == "productivity":
         return productivity_tab()
+    elif prompt.startswith("improve_skill:"):
+        skill = prompt.split(":")[1]
+        resources = find_learning_resources([skill])
+        return resources
     else:
         # Handle custom questions using the Q&A bot
         if "qa_index" not in st.session_state:
             st.session_state.qa_index = ingest_data()
 
         if st.session_state.qa_index is None:
-            return (
-                "Failed to initialize the index. Please check the logs and try again."
-            )
+            return "Failed to initialize the index. Please check the logs and try again."
 
         llm = get_llm(st.session_state.llm_choice)
         try:
@@ -288,6 +291,92 @@ def handle_prompt(prompt, user_email):
             return response
         except Exception as e:
             return f"An error occurred while processing your question: {str(e)}"
+
+
+def display_skills():
+    st.subheader("My Skills")
+    if "user_skills" not in st.session_state:
+        st.session_state.user_skills = get_user_skills(st.session_state.user.id)
+    if "skills_edit_mode" not in st.session_state:
+        st.session_state.skills_edit_mode = False
+
+    proficiency_scale = {
+        1: "Novice",
+        2: "Beginner",
+        3: "Intermediate",
+        4: "Advanced",
+        5: "Expert",
+    }
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if not st.session_state.skills_edit_mode:
+            if st.button("Edit Skills"):
+                st.session_state.skills_edit_mode = True
+                st.rerun()
+        else:
+            if st.button("Exit Edit Mode"):
+                st.session_state.skills_edit_mode = False
+                st.rerun()
+    with col2:
+        if st.button("Add New Skill"):
+            st.session_state.current_view = "add_skill"
+            st.rerun()
+
+    if st.session_state.skills_edit_mode:
+        for skill, proficiency in st.session_state.user_skills.items():
+            col1, col2, col3 = st.columns([3, 3, 1])
+            with col1:
+                st.write(skill)
+            with col2:
+                new_proficiency = st.selectbox(
+                    f"Proficiency for {skill}",
+                    options=list(range(1, 6)),
+                    format_func=lambda x: proficiency_scale[x],
+                    key=f"proficiency_{skill}",
+                    index=proficiency - 1
+                )
+                st.session_state.user_skills[skill] = new_proficiency
+            with col3:
+                if st.button("Delete", key=f"delete_{skill}"):
+                    del st.session_state.user_skills[skill]
+                    st.rerun()
+
+        if st.button("Save Changes"):
+            # Here you would typically save the changes to your database
+            st.success("Skills updated successfully!")
+            st.session_state.skills_edit_mode = False
+            st.rerun()
+    else:
+        if st.session_state.user_skills:
+            for skill, proficiency in st.session_state.user_skills.items():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
+                with col2:
+                    if st.button("Improve", key=f"improve_{skill}"):
+                        st.session_state.current_view = "improve_skill"
+                        st.session_state.skill_to_improve = skill
+                        st.rerun()
+        else:
+            st.info("No skills found. Click 'Add New Skill' to add your skills.")
+
+def add_skill():
+    st.subheader("Add New Skill")
+    new_skill = st.text_input("Skill Name")
+    proficiency = st.select_slider(
+        "Proficiency",
+        options=[1, 2, 3, 4, 5],
+        format_func=lambda x: ["Novice", "Beginner", "Intermediate", "Advanced", "Expert"][x - 1]
+    )
+    if st.button("Add Skill"):
+        if new_skill and new_skill not in st.session_state.user_skills:
+            st.session_state.user_skills[new_skill] = proficiency
+            st.success(f"Skill '{new_skill}' added successfully!")
+            st.session_state.current_view = "skills"
+            st.rerun()
+        else:
+            st.error("Please enter a unique skill name.")
 
 
 def individual_contributor_dashboard_conversational():
@@ -312,17 +401,18 @@ def individual_contributor_dashboard_conversational():
         if st.button("Submit"):
             if selected_prompt == "I would like to manage my learning opportunities":
                 st.session_state.current_view = "learning_dashboard"
-                reset_learning_dashboard()  # Reset the learning dashboard state
+                reset_learning_dashboard()
                 st.rerun()
             elif selected_prompt == "Show me my current career trajectory information":
                 st.session_state.current_view = "career"
                 st.rerun()
+            elif selected_prompt == "I would like to manage my skills":
+                st.session_state.current_view = "skills"
+                st.rerun()
             else:
-                # Handle other prompts as before
                 prompt_map = {
                     "Generate a self appraisal for me": "self_appraisal",
                     "Show me the endorsements I have": "endorsements",
-                    "I would like to manage my skills": "skills",
                     "I would like to get a picture of my productivity": "productivity",
                 }
                 response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
@@ -331,7 +421,7 @@ def individual_contributor_dashboard_conversational():
     elif st.session_state.current_view == "learning_dashboard":
         if st.button("Back to Dashboard"):
             st.session_state.current_view = "main"
-            reset_learning_dashboard()  # Reset the learning dashboard state when going back
+            reset_learning_dashboard()
             st.rerun()
         else:
             learning_dashboard()
@@ -342,3 +432,27 @@ def individual_contributor_dashboard_conversational():
             st.rerun()
         else:
             career_section()
+
+    elif st.session_state.current_view == "skills":
+        if st.button("Back to Dashboard"):
+            st.session_state.current_view = "main"
+            st.rerun()
+        else:
+            display_skills()
+
+    elif st.session_state.current_view == "improve_skill":
+        if st.button("Back to Skills"):
+            st.session_state.current_view = "skills"
+            st.rerun()
+        else:
+            st.subheader(f"Learning Resources for {st.session_state.skill_to_improve}")
+            with st.spinner("Finding learning resources..."):
+                resources = find_learning_resources([st.session_state.skill_to_improve])
+                st.markdown(resources)
+
+    elif st.session_state.current_view == "add_skill":
+        if st.button("Back to Skills"):
+            st.session_state.current_view = "skills"
+            st.rerun()
+        else:
+            add_skill()
