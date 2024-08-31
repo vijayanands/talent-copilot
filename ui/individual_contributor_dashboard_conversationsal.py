@@ -9,7 +9,7 @@ from helpers.get_llm import get_llm
 from helpers.ingestion import ingest_data, answer_question
 from models.models import LinkedInProfileInfo
 from ui.career import career_section
-from ui.learning_dashboard import learning_dashboard
+from ui.learning_dashboard import learning_dashboard, reset_learning_dashboard
 from ui.productivity import productivity_tab
 from ui.skills_section import skills_section
 
@@ -269,7 +269,7 @@ def handle_prompt(prompt, user_email):
     elif prompt == "skills":
         return skills_section()
     elif prompt == "learning":
-        return learning_dashboard()
+        return "Switching to Learning Opportunities Dashboard"
     elif prompt == "productivity":
         return productivity_tab()
     else:
@@ -291,37 +291,45 @@ def handle_prompt(prompt, user_email):
 
 
 def individual_contributor_dashboard_conversational():
-    st.title(
-        f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}"
-    )
+    st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
 
-    prompt_options = [
-        "Generate a self appraisal for me",
-        "Show me the endorsements I have",
-        "Show me my current career trajectory information",
-        "I would like to manage my skills",
-        "I would like to manage my learning opportunities",
-        "I would like to get a picture of my productivity",
-        "I just want to ask a custom question",
-    ]
+    if "current_view" not in st.session_state:
+        st.session_state.current_view = "main"
 
-    selected_prompt = st.selectbox("What would you like to do?", prompt_options)
+    if st.session_state.current_view == "main":
+        prompt_options = [
+            "Generate a self appraisal for me",
+            "Show me the endorsements I have",
+            "Show me my current career trajectory information",
+            "I would like to manage my skills",
+            "I would like to manage my learning opportunities",
+            "I would like to get a picture of my productivity",
+            "I just want to ask a custom question",
+        ]
 
-    if selected_prompt == "I just want to ask a custom question":
-        custom_question = st.text_input("Enter your custom question:")
+        selected_prompt = st.selectbox("What would you like to do?", prompt_options)
+
         if st.button("Submit"):
-            response = handle_prompt(custom_question, st.session_state.user.email)
-            st.write("Response:", response)
-    elif st.button("Submit"):
-        prompt_map = {
-            "Generate a self appraisal for me": "self_appraisal",
-            "Show me the endorsements I have": "endorsements",
-            "Show me my current career trajectory information": "career",
-            "I would like to manage my skills": "skills",
-            "I would like to manage my learning opportunities": "learning",
-            "I would like to get a picture of my productivity": "productivity",
-        }
-        response = handle_prompt(
-            prompt_map[selected_prompt], st.session_state.user.email
-        )
-        st.write("Response:", response)
+            if selected_prompt == "I would like to manage my learning opportunities":
+                st.session_state.current_view = "learning_dashboard"
+                reset_learning_dashboard()  # Reset the learning dashboard state
+                st.rerun()  # Changed from st.experimental_rerun()
+            else:
+                # Handle other prompts as before
+                prompt_map = {
+                    "Generate a self appraisal for me": "self_appraisal",
+                    "Show me the endorsements I have": "endorsements",
+                    "Show me my current career trajectory information": "career",
+                    "I would like to manage my skills": "skills",
+                    "I would like to get a picture of my productivity": "productivity",
+                }
+                response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
+                st.write("Response:", response)
+
+    elif st.session_state.current_view == "learning_dashboard":
+        if st.button("Back to Dashboard"):
+            st.session_state.current_view = "main"
+            reset_learning_dashboard()  # Reset the learning dashboard state when going back
+            st.rerun()  # Changed from st.experimental_rerun()
+        else:
+            learning_dashboard()
