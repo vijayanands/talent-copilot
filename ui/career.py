@@ -49,7 +49,13 @@ def career_section():
                 st.info("No specific criteria defined for the next level.")
 
             # Add "What are my gaps?" button
+            if "show_gap_analysis" not in st.session_state:
+                st.session_state.show_gap_analysis = False
+
             if st.button("What are my gaps?"):
+                st.session_state.show_gap_analysis = True
+
+            if st.session_state.show_gap_analysis:
                 skills = user.get_skills()
                 skills_list = [{"name": k, "level": v} for k, v in skills.items()]
 

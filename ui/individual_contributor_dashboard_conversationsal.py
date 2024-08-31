@@ -313,13 +313,15 @@ def individual_contributor_dashboard_conversational():
             if selected_prompt == "I would like to manage my learning opportunities":
                 st.session_state.current_view = "learning_dashboard"
                 reset_learning_dashboard()  # Reset the learning dashboard state
-                st.rerun()  # Changed from st.experimental_rerun()
+                st.rerun()
+            elif selected_prompt == "Show me my current career trajectory information":
+                st.session_state.current_view = "career"
+                st.rerun()
             else:
                 # Handle other prompts as before
                 prompt_map = {
                     "Generate a self appraisal for me": "self_appraisal",
                     "Show me the endorsements I have": "endorsements",
-                    "Show me my current career trajectory information": "career",
                     "I would like to manage my skills": "skills",
                     "I would like to get a picture of my productivity": "productivity",
                 }
@@ -330,6 +332,13 @@ def individual_contributor_dashboard_conversational():
         if st.button("Back to Dashboard"):
             st.session_state.current_view = "main"
             reset_learning_dashboard()  # Reset the learning dashboard state when going back
-            st.rerun()  # Changed from st.experimental_rerun()
+            st.rerun()
         else:
             learning_dashboard()
+
+    elif st.session_state.current_view == "career":
+        if st.button("Back to Dashboard"):
+            st.session_state.current_view = "main"
+            st.rerun()
+        else:
+            career_section()
