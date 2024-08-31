@@ -12,7 +12,7 @@ from ui.individual_contributor_dashboard import individual_contributor_dashboard
 from ui.individual_contributor_dashboard_conversationsal import (
     individual_contributor_dashboard_conversational,
 )
-from ui.login_signup import login_page, signup_page
+from ui.login_signup import login_page, signup_page, logout
 from ui.manager_dashboard import manager_dashboard
 
 load_dotenv()
@@ -20,7 +20,8 @@ load_dotenv()
 # Check if table exists, create only if it doesn't
 
 create_tables_if_not_exist(engine)
-
+use_conversational_ai = os.getenv("USE_CONVERSATIONAL_AI", False)
+use_legacy_ui = True if use_conversational_ai.lower() == "false" else False
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, "rb") as f:
@@ -99,12 +100,24 @@ def set_title_bar():
 
 
 def ic_dashboard():
-    use_conversational_ai = os.getenv("USE_CONVERSATIONAL_AI", False)
-    if use_conversational_ai.lower() == "false":
+    is_manager = st.session_state.get('is_manager', False)
+    if use_legacy_ui:
         individual_contributor_dashboard()
     else:
-        individual_contributor_dashboard_conversational()
+        individual_contributor_dashboard_conversational(is_manager)
 
+def manager_dashboard():
+    is_manager = st.session_state.get('is_manager', False)
+    if use_legacy_ui:
+        tab1, tab2 = st.tabs(["Manager Dashboard", "My Assistant"])
+
+        with tab1:
+            manager_dashboard()
+
+        with tab2:
+            ic_dashboard()
+    else:
+        individual_contributor_dashboard_conversational(is_manager)
 
 def main_app():
     is_manager = st.session_state.user.is_manager
@@ -113,13 +126,7 @@ def main_app():
     if is_enterprise_admin:
         enterprise_admin_dashboard()
     elif is_manager:
-        tab1, tab2 = st.tabs(["Manager Dashboard", "My Assistant"])
-
-        with tab1:
-            manager_dashboard()
-
-        with tab2:
-            ic_dashboard()
+        manager_dashboard()
     else:
         ic_dashboard()
 
@@ -206,8 +213,7 @@ def setup_streamlit_ui():
         "logout_after_password_change" in st.session_state
         and st.session_state.logout_after_password_change
     ):
-        del st.session_state.user
-        del st.session_state.logout_after_password_change
+        logout()
         st.info(
             "You have been logged out due to a password change. Please log in with your new password."
         )

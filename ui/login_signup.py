@@ -16,11 +16,22 @@ def login_page():
         user = verify_login(email, password)
         if user:
             st.session_state.user = user
+            st.session_state.is_manager = user.is_manager
+            st.session_state.is_enterprise_admin = user.is_enterprise_admin
             st.success("Logged in successfully!")
             st.rerun()
         else:
             st.error("Invalid email or password")
 
+def logout():
+    if "user" in st.session_state:
+        del st.session_state.user
+    if "is_manager" in st.session_state:
+        del st.session_state.is_manager
+    if "is_enterprise_admin" in st.session_state:
+        del st.session_state.is_enterprise_admin
+    st.success("Logged out successfully!")
+    st.rerun()
 
 def signup_page():
     st.header("Sign Up")
