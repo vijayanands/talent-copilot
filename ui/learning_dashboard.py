@@ -2,6 +2,8 @@ import streamlit as st
 from typing import List
 from functions.learning_resource_finder import find_learning_resources
 from models.models import get_user_skills
+from ui.skills_manager import get_skills
+
 
 def reset_learning_dashboard():
     if 'learning_state' in st.session_state:
@@ -20,19 +22,19 @@ def learning_dashboard():
             "additional_keywords": [],
             "show_recommendations": False,
             "recommendations": "",
-            "skill_selection_key": 0  # Add this line
+            "skill_selection_key": 0
         }
 
     st.subheader("Learning Opportunities Dashboard")
 
     if not st.session_state.learning_state["show_recommendations"]:
-        # Get user skills
-        user_skills = get_user_skills(st.session_state.user.id)
+        # Get user skills from session state
+        user_skills = get_skills()
 
         # Select skills
         selected_skills = st.multiselect(
             "Select skills",
-            options=user_skills,
+            options=list(user_skills.keys()),
             default=st.session_state.learning_state["selected_skills"],
             key=f"skill_select_{st.session_state.learning_state['skill_selection_key']}"
         )

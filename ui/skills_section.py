@@ -1,6 +1,7 @@
 import streamlit as st
-from models.models import get_user_skills
+from models.models import get_user_skills, update_user_skills
 from functions.learning_resource_finder import find_learning_resources
+from ui.skills_manager import get_skills
 
 
 def skills_section():
@@ -17,6 +18,8 @@ def skills_section():
         st.session_state.skills_before_edit = {}
     if "selected_skill_for_improvement" not in st.session_state:
         st.session_state.selected_skill_for_improvement = None
+
+    user_skills = get_skills()
 
     proficiency_scale = {
         1: "Novice",
@@ -42,6 +45,7 @@ def skills_section():
 
     def save_skills():
         print("Saving skills:", st.session_state.user_skills)
+        update_user_skills(st.session_state.user.id, st.session_state.user_skills)
         st.session_state.skills_edit_mode = False
         st.session_state.show_add_skill_form = False
 

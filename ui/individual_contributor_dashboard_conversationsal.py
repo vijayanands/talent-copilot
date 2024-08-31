@@ -12,6 +12,7 @@ from models.models import LinkedInProfileInfo, get_user_skills
 from ui.career import career_section
 from ui.learning_dashboard import learning_dashboard, reset_learning_dashboard
 from ui.productivity import productivity_tab
+from ui.skills_manager import initialize_skills
 from ui.skills_section import skills_section
 
 load_dotenv()
@@ -381,6 +382,10 @@ def add_skill():
 
 def individual_contributor_dashboard_conversational():
     st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
+
+
+    # Initialize skills
+    initialize_skills()
 
     if "current_view" not in st.session_state:
         st.session_state.current_view = "main"

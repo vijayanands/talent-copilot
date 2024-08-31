@@ -325,18 +325,18 @@ User.linkedin_info = relationship(
 )
 
 
+
 def get_user_skills(user_id):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
     session.close()
-    return user.get_skills() if user else {}
-
+    return json.loads(user.skills) if user and user.skills else {}
 
 def update_user_skills(user_id, skills):
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()
     if user:
-        user.set_skills(skills)
+        user.skills = json.dumps(skills)
         session.commit()
         session.close()
         return True
