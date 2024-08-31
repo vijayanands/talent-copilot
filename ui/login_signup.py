@@ -1,11 +1,7 @@
 import streamlit as st
 
-from models.models import (
-    check_password_match,
-    is_password_valid,
-    register_user,
-    verify_login,
-)
+from models.models import (check_password_match, is_password_valid,
+                           register_user, verify_login)
 
 
 def login_page():
@@ -23,6 +19,7 @@ def login_page():
         else:
             st.error("Invalid email or password")
 
+
 def logout():
     if "user" in st.session_state:
         del st.session_state.user
@@ -32,6 +29,7 @@ def logout():
         del st.session_state.is_enterprise_admin
     st.success("Logged out successfully!")
     st.rerun()
+
 
 def signup_page():
     st.header("Sign Up")

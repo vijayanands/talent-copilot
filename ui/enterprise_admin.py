@@ -1,16 +1,10 @@
 import streamlit as st
 
-from models.models import (
-    EligibilityCriteria,
-    Ladder,
-    Position,
-    Session,
-    get_all_ladders,
-    get_eligibility_criteria,
-    get_positions_for_ladder,
-    update_eligibility_criteria,
-    update_ladder_positions,
-)
+from models.models import (EligibilityCriteria, Ladder, Position, Session,
+                           get_all_ladders, get_eligibility_criteria,
+                           get_positions_for_ladder,
+                           update_eligibility_criteria,
+                           update_ladder_positions)
 
 
 def enterprise_admin_dashboard():

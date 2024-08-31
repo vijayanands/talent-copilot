@@ -1,28 +1,30 @@
-import streamlit as st
 from typing import List
+
+import streamlit as st
+
 from functions.learning_resource_finder import find_learning_resources
-from models.models import get_user_skills
-from ui.skills_manager import get_skills
+from ui.ic_functions.skills_manager import get_skills
 
 
 def reset_learning_dashboard():
-    if 'learning_state' in st.session_state:
+    if "learning_state" in st.session_state:
         st.session_state.learning_state = {
             "selected_skills": [],
             "additional_keywords": [],
             "show_recommendations": False,
             "recommendations": "",
-            "skill_selection_key": 0  # Add this line
+            "skill_selection_key": 0,  # Add this line
         }
 
+
 def learning_dashboard():
-    if 'learning_state' not in st.session_state:
+    if "learning_state" not in st.session_state:
         st.session_state.learning_state = {
             "selected_skills": [],
             "additional_keywords": [],
             "show_recommendations": False,
             "recommendations": "",
-            "skill_selection_key": 0
+            "skill_selection_key": 0,
         }
 
     st.subheader("Learning Opportunities Dashboard")
@@ -36,7 +38,7 @@ def learning_dashboard():
             "Select skills",
             options=list(user_skills.keys()),
             default=st.session_state.learning_state["selected_skills"],
-            key=f"skill_select_{st.session_state.learning_state['skill_selection_key']}"
+            key=f"skill_select_{st.session_state.learning_state['skill_selection_key']}",
         )
 
         # Check if a new skill was added
@@ -53,15 +55,21 @@ def learning_dashboard():
 
         # Add Keyword button
         if st.button("Add Keyword"):
-            if new_keyword and new_keyword not in st.session_state.learning_state["additional_keywords"]:
-                st.session_state.learning_state["additional_keywords"].append(new_keyword)
+            if (
+                new_keyword
+                and new_keyword
+                not in st.session_state.learning_state["additional_keywords"]
+            ):
+                st.session_state.learning_state["additional_keywords"].append(
+                    new_keyword
+                )
                 st.rerun()
 
         # Display current combined list
         st.subheader("Current Selection")
         combined_list = (
-                st.session_state.learning_state["selected_skills"] +
-                st.session_state.learning_state["additional_keywords"]
+            st.session_state.learning_state["selected_skills"]
+            + st.session_state.learning_state["additional_keywords"]
         )
         if combined_list:
             st.write("Skills and keywords for recommendation:")
@@ -76,10 +84,11 @@ def learning_dashboard():
     else:
         show_recommendation_view()
 
+
 def generate_recommendations():
     combined_list: List[str] = (
-            st.session_state.learning_state["selected_skills"] +
-            st.session_state.learning_state["additional_keywords"]
+        st.session_state.learning_state["selected_skills"]
+        + st.session_state.learning_state["additional_keywords"]
     )
 
     if not combined_list:
@@ -89,10 +98,13 @@ def generate_recommendations():
         return
 
     with st.spinner("Generating recommendations..."):
-        st.session_state.learning_state["recommendations"] = find_learning_resources(combined_list)
+        st.session_state.learning_state["recommendations"] = find_learning_resources(
+            combined_list
+        )
 
     st.session_state.learning_state["show_recommendations"] = True
     st.rerun()
+
 
 def show_recommendation_view():
     st.subheader("Learning Recommendations")

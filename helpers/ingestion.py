@@ -3,7 +3,7 @@ import os
 import random
 import shutil
 import time
-from typing import List, Dict
+from typing import Dict, List
 from uuid import NAMESPACE_DNS, uuid5
 
 from dotenv import load_dotenv
@@ -14,19 +14,13 @@ from llama_index.vector_stores.pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from pydantic import ValidationError
 
-# Import the Pydantic models
-from models.pydantic_models import (
-    AllUserData,
-    UserData,
-    JiraData,
-    GitHubData,
-    ConfluenceData,
-)
-
+from helpers.confluence import get_confluence_contributions_per_user
+from helpers.github import get_github_contributions_by_repo
 # Import the functions to get data
 from helpers.jira import get_jira_contributions_per_user
-from helpers.github import get_github_contributions_by_repo
-from helpers.confluence import get_confluence_contributions_per_user
+# Import the Pydantic models
+from models.pydantic_models import (AllUserData, ConfluenceData, GitHubData,
+                                    JiraData, UserData)
 
 load_dotenv()
 

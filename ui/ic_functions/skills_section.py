@@ -1,7 +1,8 @@
 import streamlit as st
-from models.models import get_user_skills, update_user_skills
+
 from functions.learning_resource_finder import find_learning_resources
-from ui.skills_manager import get_skills
+from models.models import get_user_skills, update_user_skills
+from ui.ic_functions.skills_manager import get_skills
 
 
 def skills_section():

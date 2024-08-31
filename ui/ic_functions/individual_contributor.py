@@ -6,20 +6,20 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
 import streamlit as st
 from dotenv import load_dotenv
 
 from functions.learning_resource_finder import find_learning_resources
 from functions.self_appraisal import create_self_appraisal
 from helpers.get_llm import get_llm
-from helpers.ingestion import ingest_data, answer_question
+from helpers.ingestion import answer_question, ingest_data
 from models.models import LinkedInProfileInfo, get_user_skills
-from ui.career import career_section
-from ui.learning_dashboard import learning_dashboard, reset_learning_dashboard
-from ui.productivity import productivity_tab
-from ui.skills_manager import initialize_skills
-from ui.skills_section import skills_section
+from ui.ic_functions.career import career_section
+from ui.ic_functions.learning import (learning_dashboard,
+                                      reset_learning_dashboard)
+from ui.ic_functions.productivity import productivity_tab
+from ui.ic_functions.skills_manager import initialize_skills
+from ui.ic_functions.skills_section import skills_section
 
 load_dotenv()
 
@@ -262,6 +262,7 @@ def handle_prompt(prompt, user_email):
     else:
         return f"Error: Unknown prompt '{prompt}'."
 
+
 def display_skills():
     st.subheader("My Skills")
     if "user_skills" not in st.session_state:
@@ -303,7 +304,7 @@ def display_skills():
                     options=list(range(1, 6)),
                     format_func=lambda x: proficiency_scale[x],
                     key=f"proficiency_{skill}",
-                    index=proficiency - 1
+                    index=proficiency - 1,
                 )
                 st.session_state.user_skills[skill] = new_proficiency
             with col3:
@@ -330,13 +331,20 @@ def display_skills():
         else:
             st.info("No skills found. Click 'Add New Skill' to add your skills.")
 
+
 def add_skill():
     st.subheader("Add New Skill")
     new_skill = st.text_input("Skill Name")
     proficiency = st.select_slider(
         "Proficiency",
         options=[1, 2, 3, 4, 5],
-        format_func=lambda x: ["Novice", "Beginner", "Intermediate", "Advanced", "Expert"][x - 1]
+        format_func=lambda x: [
+            "Novice",
+            "Beginner",
+            "Intermediate",
+            "Advanced",
+            "Expert",
+        ][x - 1],
     )
     if st.button("Add Skill"):
         if new_skill and new_skill not in st.session_state.user_skills:
@@ -357,6 +365,7 @@ def get_dummy_employees():
         {"id": 4, "name": "Diana Ross", "email": "diana@example.com"},
     ]
 
+
 def get_employee_jira_data(employee_id):
     date_range = pd.date_range(end=datetime.now(), periods=30)
     data = {
@@ -365,6 +374,7 @@ def get_employee_jira_data(employee_id):
         "issues_resolved": [random.randint(0, 4) for _ in range(30)],
     }
     return pd.DataFrame(data)
+
 
 def get_employee_confluence_data(employee_id):
     date_range = pd.date_range(end=datetime.now(), periods=30)
@@ -375,6 +385,7 @@ def get_employee_confluence_data(employee_id):
     }
     return pd.DataFrame(data)
 
+
 def get_employee_github_data(employee_id):
     date_range = pd.date_range(end=datetime.now(), periods=30)
     data = {
@@ -383,6 +394,7 @@ def get_employee_github_data(employee_id):
         "pull_requests": [random.randint(0, 2) for _ in range(30)],
     }
     return pd.DataFrame(data)
+
 
 def predict_productivity(jira_data, confluence_data, github_data):
     total_jira_issues = jira_data["issues_resolved"].sum()
@@ -397,6 +409,7 @@ def predict_productivity(jira_data, confluence_data, github_data):
 
     return min(productivity_score / 100, 1.0)
 
+
 def display_employee_stats(employee):
     st.subheader(f"Statistics for {employee['name']}")
 
@@ -409,7 +422,9 @@ def display_employee_stats(employee):
     with col1:
         st.metric("Total Jira Issues Resolved", jira_data["issues_resolved"].sum())
     with col2:
-        st.metric("Total Confluence Pages Edited", confluence_data["pages_edited"].sum())
+        st.metric(
+            "Total Confluence Pages Edited", confluence_data["pages_edited"].sum()
+        )
     with col3:
         st.metric("Total GitHub Commits", github_data["commits"].sum())
 
@@ -479,7 +494,9 @@ def individual_contributor_dashboard_conversational(is_manager):
         if is_manager:
             prompt_options.append("Show me productivity stats for my employees")
 
-        selected_prompt = st.selectbox("", prompt_options, index=0, key="action_selector")
+        selected_prompt = st.selectbox(
+            "", prompt_options, index=0, key="action_selector"
+        )
 
         if selected_prompt != "Select an action":
             prompt_map = {
@@ -492,11 +509,23 @@ def individual_contributor_dashboard_conversational(is_manager):
             }
 
             if is_manager:
-                prompt_map["Show me productivity stats for my employees"] = "employee_productivity"
+                prompt_map["Show me productivity stats for my employees"] = (
+                    "employee_productivity"
+                )
 
-            response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
+            response = handle_prompt(
+                prompt_map.get(selected_prompt, selected_prompt),
+                st.session_state.user.email,
+            )
 
-            if response in ["self_appraisal", "endorsements", "learning", "career", "skills", "employee_productivity"]:
+            if response in [
+                "self_appraisal",
+                "endorsements",
+                "learning",
+                "career",
+                "skills",
+                "employee_productivity",
+            ]:
                 st.session_state.current_view = response
                 st.rerun()
             else:
@@ -563,7 +592,9 @@ def individual_contributor_dashboard_conversational(is_manager):
             if is_manager:
                 employees = get_dummy_employees()
                 selected_employee = st.selectbox(
-                    "Select an employee", options=employees, format_func=lambda x: x["name"]
+                    "Select an employee",
+                    options=employees,
+                    format_func=lambda x: x["name"],
                 )
                 if selected_employee:
                     display_employee_stats(selected_employee)
