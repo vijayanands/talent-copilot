@@ -3,16 +3,15 @@ from typing import List
 from functions.learning_resource_finder import find_learning_resources
 from models.models import get_user_skills
 
-
 def reset_learning_dashboard():
     if 'learning_state' in st.session_state:
         st.session_state.learning_state = {
             "selected_skills": [],
             "additional_keywords": [],
             "show_recommendations": False,
-            "recommendations": ""
+            "recommendations": "",
+            "skill_selection_key": 0  # Add this line
         }
-
 
 def learning_dashboard():
     if 'learning_state' not in st.session_state:
@@ -20,7 +19,8 @@ def learning_dashboard():
             "selected_skills": [],
             "additional_keywords": [],
             "show_recommendations": False,
-            "recommendations": ""
+            "recommendations": "",
+            "skill_selection_key": 0  # Add this line
         }
 
     st.subheader("Learning Opportunities Dashboard")
@@ -30,11 +30,18 @@ def learning_dashboard():
         user_skills = get_user_skills(st.session_state.user.id)
 
         # Select skills
-        st.session_state.learning_state["selected_skills"] = st.multiselect(
+        selected_skills = st.multiselect(
             "Select skills",
             options=user_skills,
-            default=st.session_state.learning_state["selected_skills"]
+            default=st.session_state.learning_state["selected_skills"],
+            key=f"skill_select_{st.session_state.learning_state['skill_selection_key']}"
         )
+
+        # Check if a new skill was added
+        if selected_skills != st.session_state.learning_state["selected_skills"]:
+            st.session_state.learning_state["selected_skills"] = selected_skills
+            st.session_state.learning_state["skill_selection_key"] += 1
+            st.rerun()
 
         # Additional keywords
         st.subheader("Additional Keywords")
@@ -67,7 +74,6 @@ def learning_dashboard():
     else:
         show_recommendation_view()
 
-
 def generate_recommendations():
     combined_list: List[str] = (
             st.session_state.learning_state["selected_skills"] +
@@ -85,7 +91,6 @@ def generate_recommendations():
 
     st.session_state.learning_state["show_recommendations"] = True
     st.rerun()
-
 
 def show_recommendation_view():
     st.subheader("Learning Recommendations")
