@@ -117,33 +117,6 @@ def display_endorsements(user_id):
         )
 
 
-def update_performance_page():
-    st.session_state.performance_page = st.session_state.performance_selector
-
-
-def performance_management_tab():
-    # Initialize the performance management page in session state if it doesn't exist
-    if "performance_page" not in st.session_state:
-        st.session_state.performance_page = "Self-Appraisal"
-
-    st.selectbox(
-        "",  # Empty label to hide the heading
-        options=["Self-Appraisal", "Endorsements", "Career"],
-        index=["Self-Appraisal", "Endorsements", "Career"].index(
-            st.session_state.performance_page
-        ),
-        key="performance_selector",
-        on_change=update_performance_page,
-    )
-
-    if st.session_state.performance_page == "Self-Appraisal":
-        perform_self_appraisal()
-    elif st.session_state.performance_page == "Endorsements":
-        display_endorsements(st.session_state.user.id)
-    elif st.session_state.performance_page == "Career":
-        career_section()  # Call the career section
-
-
 def update_skills_learning_dev_page():
     st.session_state.skills_learning_dev_page = (
         st.session_state.skills_learning_dev_selector
@@ -263,7 +236,8 @@ def conversational_ai_dashboard():
 
 def handle_prompt(prompt, user_email):
     if prompt == "self_appraisal":
-        return create_self_appraisal(st.session_state.llm_choice, user_email)
+        st.session_state.current_view = "self_appraisal"
+        return "Generating self-appraisal..."
     elif prompt == "endorsements":
         return LinkedInProfileInfo.display_endorsements(st.session_state.user.id)
     elif prompt == "career":
@@ -292,7 +266,6 @@ def handle_prompt(prompt, user_email):
             return response
         except Exception as e:
             return f"An error occurred while processing your question: {str(e)}"
-
 
 def display_skills():
     st.subheader("My Skills")
@@ -383,7 +356,6 @@ def add_skill():
 def individual_contributor_dashboard_conversational():
     st.title(f"Good morning, {st.session_state.user.first_name or st.session_state.user.email.split('@')[0]}")
 
-
     # Initialize skills
     initialize_skills()
 
@@ -392,6 +364,7 @@ def individual_contributor_dashboard_conversational():
 
     if st.session_state.current_view == "main":
         prompt_options = [
+            "Select an action",  # New default option
             "Generate a self appraisal for me",
             "Show me the endorsements I have",
             "Show me my current career trajectory information",
@@ -401,10 +374,15 @@ def individual_contributor_dashboard_conversational():
             "I just want to ask a custom question",
         ]
 
-        selected_prompt = st.selectbox("What would you like to do?", prompt_options)
+        selected_prompt = st.selectbox("What would you like to do?", prompt_options, index=0)
 
         if st.button("Submit"):
-            if selected_prompt == "I would like to manage my learning opportunities":
+            if selected_prompt == "Select an action":
+                st.warning("Please select an action from the dropdown menu.")
+            elif selected_prompt == "Generate a self appraisal for me":
+                st.session_state.current_view = "self_appraisal"
+                st.rerun()
+            elif selected_prompt == "I would like to manage my learning opportunities":
                 st.session_state.current_view = "learning_dashboard"
                 reset_learning_dashboard()
                 st.rerun()
@@ -416,12 +394,18 @@ def individual_contributor_dashboard_conversational():
                 st.rerun()
             else:
                 prompt_map = {
-                    "Generate a self appraisal for me": "self_appraisal",
                     "Show me the endorsements I have": "endorsements",
                     "I would like to get a picture of my productivity": "productivity",
                 }
                 response = handle_prompt(prompt_map.get(selected_prompt, selected_prompt), st.session_state.user.email)
                 st.write("Response:", response)
+
+    elif st.session_state.current_view == "self_appraisal":
+        if st.button("Back to Dashboard"):
+            st.session_state.current_view = "main"
+            st.rerun()
+        else:
+            perform_self_appraisal()
 
     elif st.session_state.current_view == "learning_dashboard":
         if st.button("Back to Dashboard"):
