@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from dotenv import load_dotenv
 
-from constants import unique_user_emails
+from helpers.constants import unique_user_emails
 from functions.llamaindex_summarization import summarize_data
 from tools.auth import get_headers
 

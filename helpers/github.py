@@ -1,9 +1,9 @@
 import json
 import logging
 from collections import defaultdict
-from typing import Any, Dict
+from typing import Any
 
-from constants import map_user, unique_user_emails, user_to_external_users
+from helpers.constants import map_user, unique_user_emails, user_to_external_users
 from helpers.github_client import GitHubAPIClient
 
 github_repo = "Hello-World"

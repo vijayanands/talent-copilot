@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import requests
 from dotenv import load_dotenv
 
-from constants import unique_user_emails
+from helpers.constants import unique_user_emails
 from tools.auth import get_headers
 
 load_dotenv()

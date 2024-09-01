@@ -2,7 +2,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from models.models import create_tables_if_not_exist, engine
-from style import set_page_container_style, set_page_style
+from ui.style import set_page_container_style, set_page_style
 from ui.account.account import account_page
 from ui.dashboard import dashboard
 from ui.enterprise_admin import enterprise_admin_dashboard

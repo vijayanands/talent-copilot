@@ -163,7 +163,6 @@ cython_debug/
 .idea/
 
 #generated json files
-*.json
 tools/credentials.txt
 functions/llamaindex/appraisal.html
 functions/llamaindex/appraisal.pdf
@@ -171,3 +170,4 @@ functions/llamaindex/data.json
 self_appraisal*.json
 appraisal.html
 appraisal.pdf
+helpers/linkedin_profile.json
