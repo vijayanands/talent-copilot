@@ -1,6 +1,6 @@
 ---
 title: "Pathforge Empower"
-emoji: 👁
+emoji: 🚀
 colorFrom: "green"
 colorTo: "blue"
 sdk: "streamlit"
