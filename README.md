@@ -1,7 +1,8 @@
 
 ---
-*THIS SECTION IS NEEDED ONLY FOR DEPLOYING THE APP IN HUGGINGFACE*
----
+# Hugging Face Specific Configuration
+# The following section is used by Hugging Face for app deployment
+# and is not part of the standard README format.
 title: "Pathforge Empower"
 emoji: 👁
 colorFrom: "green"
@@ -13,8 +14,7 @@ pinned: false
 ---
 
 ---
-*The following section is README required for installing the application in your local desktop - 
-not needed for running the app in huggingface*
+*The following section is README required for installing the application in your local desktop - not needed for running the app in huggingface*
 ---
 
 # Pathforge Empower
