@@ -1,7 +1,5 @@
-
+<!-- The following section is specifically for Hugging Face and may not be relevant for other platforms -->
 ---
-#### Hugging Face Specific Configuration
-##### The following section is used by Hugging Face for app deployment and is not part of the standard README format.
 title: "Pathforge Empower"
 emoji: 👁
 colorFrom: "green"
