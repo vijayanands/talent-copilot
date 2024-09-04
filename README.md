@@ -1,3 +1,6 @@
+
+---
+*THIS SECTION IS NEEDED ONLY FOR DEPLOYING THE APP IN HUGGINGFACE*
 ---
 title: "Pathforge Empower"
 emoji: 👁
@@ -9,7 +12,10 @@ app_file: app.py
 pinned: false
 ---
 
-* Readme required for github repo (not needed for running the app in huggingface) *
+---
+*The following section is README required for installing the application in your local desktop - 
+not needed for running the app in huggingface*
+---
 
 # Pathforge Empower
 *Empowering employee productivity, performance, career, learning and skills*
