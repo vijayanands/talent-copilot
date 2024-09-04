@@ -44,6 +44,23 @@ def dashboard():
             st.session_state.processing_question = True
             st.session_state.custom_question = custom_question
 
+        # Add example questions with light styling and smaller, bold, italicized heading
+        st.markdown("""
+        <div style="color: #808080;">
+        <p style="font-size: 1.1em; font-weight: bold; font-style: italic; margin-bottom: 5px;">Example Questions</p>
+        <div style="font-style: italic;">
+        You can ask questions about your work in JIRA, Confluence, and GitHub. Here are some examples:
+        <ul>
+        <li>What are the Jira issues for this user?</li>
+        <li>How many pull requests are there for this user?</li>
+        <li>What is the content of the 'Getting started in Confluence' page for this user?</li>
+        <li>Which users have GitHub data?</li>
+        <li>List all email addresses that have Confluence data.</li>
+        </ul>
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     # Display spinner and answer at the bottom of the page
     st.markdown("---")
     if st.session_state.get("processing_question", False):
