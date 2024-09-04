@@ -1,4 +1,6 @@
-<!-- The following section is specifically for Hugging Face and may not be relevant for other platforms -->
+# Hugging Face Specific Configuration
+> **Note:** The following section is specifically for Hugging Face and may not be relevant for other platforms.
+
 ---
 title: "Pathforge Empower"
 emoji: 👁
@@ -10,21 +12,19 @@ app_file: app.py
 pinned: false
 ---
 
----
-#### README for deploying app locally
-##### The following section is README required for installing the application in your local desktop
----
+# Instructions for Local Installation
+> **Note:** The following section is README required for installing the application in your local desktop
 
-# Pathforge Empower
+## Pathforge Empower
 *Empowering employee productivity, performance, career, learning and skills*
 
-## Clone the repository
+### Clone the repository
 - `git clone https://github.com/vijayanands/talent-copilot.git`
 (or)
 - `git clone git@github.com:vijayanands/talent-copilot.git`
 
-## Dependencies
-### Install Poetry
+### Dependencies
+#### Install Poetry
 https://python-poetry.org/docs/
 
 ## How to run the application
@@ -40,7 +40,7 @@ https://python-poetry.org/docs/
    ```
 3. Copy .env.template to .env with the valid values for the variables
 
-### Run the application
+#### Run the application
 1. `poetry shell`
 2. `poetry install`
 3. `streamlit run app.py`
