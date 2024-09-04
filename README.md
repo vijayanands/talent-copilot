@@ -1,6 +1,3 @@
-# Hugging Face Specific Configuration
-> **Note:** The following section is specifically for Hugging Face and may not be relevant for other platforms.
-
 ---
 title: "Pathforge Empower"
 emoji: 👁
