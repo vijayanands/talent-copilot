@@ -1,12 +1,11 @@
-import json
 import os
 import random
 import shutil
 import time
-from typing import Dict, List
+from typing import List
 from uuid import NAMESPACE_DNS, uuid5
+from helpers import import_env
 
-from dotenv import load_dotenv
 from llama_index.core import Document, StorageContext, VectorStoreIndex
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -19,10 +18,8 @@ from helpers.github import get_github_contributions_by_repo
 # Import the functions to get data
 from helpers.jira import get_jira_contributions_per_user
 # Import the Pydantic models
-from models.pydantic_models import (AllUserData, ConfluenceData, GitHubData,
+from models.pydantic_models import (ConfluenceData, GitHubData,
                                     JiraData, UserData)
-
-load_dotenv()
 
 # Initialize Pinecone
 index_name = "pathforge-data"

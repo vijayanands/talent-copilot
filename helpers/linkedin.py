@@ -2,9 +2,8 @@ import json
 import os
 
 import requests
-from dotenv import load_dotenv
+from helpers import import_env
 
-load_dotenv()
 api_key = os.getenv("PROXYCURL_API_KEY")
 headers = {"Authorization": "Bearer " + api_key}
 api_endpoint = "https://nubela.co/proxycurl/api/v2/linkedin"

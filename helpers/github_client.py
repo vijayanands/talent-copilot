@@ -4,9 +4,7 @@ import sys
 from typing import Any, Dict, List, Set
 
 import requests
-from dotenv import load_dotenv
-
-load_dotenv()
+from helpers import import_env
 
 headers = {
     "Authorization": f"token {os.getenv("GITHUB_TOKEN")}",

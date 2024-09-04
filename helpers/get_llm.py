@@ -1,8 +1,6 @@
 import os
 from llama_index.llms.openai import OpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
+from helpers import import_env
 
 def get_llm(**kwargs):
     """

@@ -1,6 +1,5 @@
 import streamlit as st
-from dotenv import load_dotenv
-
+from helpers import import_env
 from models.models import create_tables_if_not_exist, engine
 from ui.style import set_page_container_style, set_page_style
 from ui.account.account import account_page
@@ -9,8 +8,6 @@ from ui.enterprise_admin import enterprise_admin_dashboard
 from ui.login_signup import login_page, logout, signup_page
 from ui.side_bar import setup_sidebar
 from ui.title_bar import set_title_bar
-
-load_dotenv()
 
 create_tables_if_not_exist(engine)
 

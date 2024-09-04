@@ -1,8 +1,5 @@
 from typing import Dict, List
-
-from dotenv import load_dotenv
 from llama_index.core import PromptTemplate
-
 from helpers.get_llm import get_llm
 
 def perform_gap_analysis(skills: List[Dict[str, int]], eligibility_criteria: str):

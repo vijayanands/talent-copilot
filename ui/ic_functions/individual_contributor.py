@@ -7,11 +7,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from dotenv import load_dotenv
+from helpers import import_env
 
 from functions.learning_resource_finder import find_learning_resources
 from functions.self_appraisal import create_self_appraisal
-from helpers.get_llm import get_llm
 from helpers.ingestion import answer_question, ingest_data
 from models.models import LinkedInProfileInfo, get_user_skills
 from ui.ic_functions.career import career_section
@@ -20,8 +19,6 @@ from ui.ic_functions.learning import (learning_dashboard,
 from ui.ic_functions.productivity import productivity_tab
 from ui.ic_functions.skills_manager import initialize_skills
 from ui.ic_functions.skills_section import skills_section
-
-load_dotenv()
 
 
 def ask(llm, query, index):

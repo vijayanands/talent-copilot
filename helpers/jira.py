@@ -4,12 +4,10 @@ from collections import defaultdict
 from typing import Any, Dict, List
 
 import requests
-from dotenv import load_dotenv
+from helpers import import_env
 
 from helpers.constants import unique_user_emails
 from tools.auth import get_headers
-
-load_dotenv()
 
 atlassian_base_url = "https://vijayanands.atlassian.net"
 atlassian_username = "vijayanands@gmail.com"
