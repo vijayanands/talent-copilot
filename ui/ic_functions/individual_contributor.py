@@ -471,6 +471,32 @@ def individual_contributor_dashboard_conversational(is_manager):
             "", prompt_options, index=0, key="action_selector"
         )
 
+        return selected_prompt  # Return the selected action
+
+def individual_contributor_dashboard_conversational(is_manager):
+    initialize_skills()
+
+    if "current_view" not in st.session_state:
+        st.session_state.current_view = "main"
+
+    if st.session_state.current_view == "main":
+        prompt_options = [
+            "Select an action",
+            "Generate a self appraisal for me",
+            "Show me the endorsements I have",
+            "Show me my current career trajectory information",
+            "I would like to manage my skills",
+            "I would like to manage my learning opportunities",
+            "I would like to get a picture of my productivity",
+        ]
+
+        if is_manager:
+            prompt_options.append("Show me productivity stats for my employees")
+
+        selected_prompt = st.selectbox(
+            "", prompt_options, index=0, key="action_selector"
+        )
+
         if selected_prompt != "Select an action":
             prompt_map = {
                 "Generate a self appraisal for me": "self_appraisal",
@@ -503,6 +529,8 @@ def individual_contributor_dashboard_conversational(is_manager):
                 st.rerun()
             else:
                 st.write("Response:", response)
+
+        return selected_prompt  # Return the selected action
 
     elif st.session_state.current_view == "self_appraisal":
         if st.button("Back to Dashboard"):
@@ -583,3 +611,5 @@ def individual_contributor_dashboard_conversational(is_manager):
             st.rerun()
         else:
             productivity_tab()
+
+    return st.session_state.current_view  # Return the current view for all cases
