@@ -7,7 +7,7 @@ import requests
 from helpers import import_env
 
 headers = {
-    "Authorization": f"token {os.getenv("GITHUB_TOKEN")}",
+    "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
     "Accept": "application/vnd.github.v3+json",
 }
 
