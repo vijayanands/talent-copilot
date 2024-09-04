@@ -213,30 +213,6 @@ def q_and_a_tab():
     st.info(f"Answers are based on the data available for {user_email}.")
 
 
-def conversational_ai_dashboard():
-    st.markdown(
-        """
-        <script>
-            const { createRoot } = ReactDOM;
-            const rootElement = document.getElementById('conversational-ai-dashboard');
-            const root = createRoot(rootElement);
-            root.render(
-                React.createElement(ConversationalAIDashboard, {
-                    user: {user},
-                    llm_choice: '{llm_choice}'
-                })
-            );
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.components.v1.html(
-        """
-        <div id="conversational-ai-dashboard"></div>
-        """
-    )
-
-
 def handle_prompt(prompt, user_email):
     if prompt == "self_appraisal":
         return "self_appraisal"  # Return the view name instead of a message
