@@ -479,6 +479,11 @@ def individual_contributor_dashboard_conversational(is_manager):
     if "current_view" not in st.session_state:
         st.session_state.current_view = "main"
 
+    if st.session_state.current_view != "main":
+        if st.button("Back to Dashboard", key=f"back_{st.session_state.current_view}"):
+            st.session_state.current_view = "main"
+            st.rerun()
+
     if st.session_state.current_view == "main":
         prompt_options = [
             "Select an action",
@@ -512,104 +517,34 @@ def individual_contributor_dashboard_conversational(is_manager):
                     "employee_productivity"
                 )
 
-            response = handle_prompt(
-                prompt_map.get(selected_prompt, selected_prompt),
-                st.session_state.user.email,
-            )
-
-            if response in [
-                "self_appraisal",
-                "endorsements",
-                "learning",
-                "career",
-                "skills",
-                "employee_productivity",
-            ]:
-                st.session_state.current_view = response
-                st.rerun()
-            else:
-                st.write("Response:", response)
+            st.session_state.current_view = prompt_map.get(selected_prompt, selected_prompt)
+            st.rerun()
 
         return selected_prompt  # Return the selected action
 
     elif st.session_state.current_view == "self_appraisal":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            perform_self_appraisal()
-
+        perform_self_appraisal()
     elif st.session_state.current_view == "endorsements":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            display_endorsements(st.session_state.user.id)
-
+        display_endorsements(st.session_state.user.id)
     elif st.session_state.current_view == "learning":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            reset_learning_dashboard()
-            st.rerun()
-        else:
-            learning_dashboard()
-
+        learning_dashboard()
     elif st.session_state.current_view == "career":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            career_section()
-
+        career_section()
     elif st.session_state.current_view == "skills":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            display_skills()
-
-    elif st.session_state.current_view == "improve_skill":
-        if st.button("Back to Skills"):
-            st.session_state.current_view = "skills"
-            st.rerun()
-        else:
-            st.subheader(f"Learning Resources for {st.session_state.skill_to_improve}")
-            with st.spinner("Finding learning resources..."):
-                resources = find_learning_resources([st.session_state.skill_to_improve])
-                st.markdown(resources)
-
-    elif st.session_state.current_view == "add_skill":
-        if st.button("Back to Skills"):
-            st.session_state.current_view = "skills"
-            st.rerun()
-        else:
-            add_skill()
-
-    elif st.session_state.current_view == "employee_productivity":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
-        else:
-            if is_manager:
-                employees = get_dummy_employees()
-                selected_employee = st.selectbox(
-                    "Select an employee",
-                    options=employees,
-                    format_func=lambda x: x["name"],
-                )
-                if selected_employee:
-                    display_employee_stats(selected_employee)
-            else:
-                st.error("You do not have permission to view this page.")
-                if st.button("Return to Dashboard"):
-                    st.session_state.current_view = "main"
-                    st.rerun()
-
+        display_skills()
     elif st.session_state.current_view == "productivity":
-        if st.button("Back to Dashboard"):
-            st.session_state.current_view = "main"
-            st.rerun()
+        productivity_tab()
+    elif st.session_state.current_view == "employee_productivity":
+        if is_manager:
+            employees = get_dummy_employees()
+            selected_employee = st.selectbox(
+                "Select an employee",
+                options=employees,
+                format_func=lambda x: x["name"],
+            )
+            if selected_employee:
+                display_employee_stats(selected_employee)
         else:
-            productivity_tab()
+            st.error("You do not have permission to view this page.")
 
     return st.session_state.current_view  # Return the current view for all cases

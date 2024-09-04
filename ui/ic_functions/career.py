@@ -8,10 +8,6 @@ from models.models import (Position, Session, User, get_eligibility_criteria,
 
 
 def career_section():
-    if st.button("Back to Dashboard", key="back_career"):
-        st.session_state.current_view = "main"
-        st.rerun()
-
     st.subheader("Career Progression")
 
     # Fetch the user data within a session
@@ -65,7 +61,6 @@ def career_section():
                 st.write(gap_analysis)
         else:
             st.info("You're at the highest level in your current ladder!")
-
 
 def create_career_ladder_visualization(positions, current_position):
     levels = [f"{p['level']}" for p in positions]

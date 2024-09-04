@@ -127,9 +127,5 @@ def display_productivity_stats():
 
 
 def productivity_tab():
-    if st.button("Back to Dashboard", key="back_productivity"):
-        st.session_state.current_view = "main"
-        st.rerun()
-
     st.header("Your Productivity Dashboard")
     display_productivity_stats()
