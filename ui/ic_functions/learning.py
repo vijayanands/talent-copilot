@@ -98,9 +98,7 @@ def generate_recommendations():
         return
 
     with st.spinner("Generating recommendations..."):
-        st.session_state.learning_state["recommendations"] = find_learning_resources(
-            combined_list
-        )
+        st.session_state.learning_state["recommendations"] = find_learning_resources(combined_list)
 
     st.session_state.learning_state["show_recommendations"] = True
     st.rerun()

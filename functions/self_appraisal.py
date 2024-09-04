@@ -1,7 +1,5 @@
 import json
 
-from dotenv import load_dotenv
-
 from functions.llamaindex_appraisal import self_appraisal_tool
 from helpers.confluence import get_confluence_contributions_by_author
 from helpers.github import (get_github_contributions_by_author,
@@ -12,12 +10,11 @@ debug_jira = False
 debug_confluence = False
 debug_github = True
 
-load_dotenv()
 
 
-def create_self_appraisal(vendor, author):
+def create_self_appraisal(author):
     initialize_github_hack()
-    return self_appraisal_tool(author, vendor)
+    return self_appraisal_tool(author)
 
 
 if __name__ == "__main__":

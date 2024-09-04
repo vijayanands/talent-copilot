@@ -143,8 +143,6 @@ def skills_section():
             f"Learning Resources for {st.session_state.selected_skill_for_improvement}"
         )
         with st.spinner("Finding learning resources..."):
-            resources = find_learning_resources(
-                [st.session_state.selected_skill_for_improvement]
-            )
+            resources = find_learning_resources([st.session_state.selected_skill_for_improvement])
             st.markdown(resources)
         st.session_state.selected_skill_for_improvement = None

@@ -43,7 +43,6 @@ def setup_sidebar():
         st.markdown("---")
 
         # Set values from environment variables with defaults
-        st.session_state.llm_choice = os.getenv("LLM_CHOICE", "OpenAI")
         if st.button("Logout", key="logout_button"):
             del st.session_state.user
             st.rerun()

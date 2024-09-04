@@ -1,14 +1,9 @@
 import json
-import os
 import uuid
 
-from dotenv import load_dotenv
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.node_parser import SimpleNodeParser
-from llama_index.llms.openai import OpenAI
-
-load_dotenv()
-
+from helpers.get_llm import get_llm
 
 def summarize_data(data, id=None):
     # Check if data is a string (possibly a JSON string)
@@ -57,9 +52,7 @@ def summarize_data(data, id=None):
     # 5. Generate the summary
     summary_prompt = "Please provide a comprehensive summary of the document."
     # Customize the LLM
-    llm = OpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", temperature=0.1
-    )
+    llm = get_llm(model="gpt-3.5-turbo", temperature=0.1)
     query_engine_custom = index.as_query_engine(llm=llm)
     summary_custom = query_engine_custom.query(summary_prompt)
 

@@ -1,18 +1,10 @@
-import os
 from typing import List
 
-from dotenv import load_dotenv
 from llama_index.core import PromptTemplate
-from llama_index.llms.openai import OpenAI
+from helpers.get_llm import get_llm
 
-# Load environment variables from .env file
-load_dotenv()
-
-
-def find_learning_resources(
-    skills: List[str],
-    llm: OpenAI = OpenAI(model="gpt-4", api_key=os.getenv("OPENAI_API_KEY")),
-):
+def find_learning_resources(skills: List[str]):
+    llm = get_llm(model="gpt-4")
     # Define the prompt template
     prompt_template = PromptTemplate(
         "You are an assistant skilled at finding learning resources and events such as conferences and meetups. "
@@ -41,6 +33,5 @@ if __name__ == "__main__":
     print(result)
 
     # Optionally, use a different OpenAI model
-    custom_llm = OpenAI(model="gpt-3.5-turbo", api_key=os.getenv("OPENAI_API_KEY"))
-    custom_result = find_learning_resources(skills, llm=custom_llm)
+    custom_result = find_learning_resources(skills)
     print(custom_result)

@@ -13,7 +13,6 @@ pysqlite3 = "^0.5.3"
 python-dotenv = "^1.0.1"
 llama-index = {extras = ["pinecone"], version = "^0.10.65"}
 openai = "^1.37.1"
-anthropic = "^0.32.0"
 llama-cpp-python = "^0.2.85"
 pdfkit = "^1.0.0"
 pinecone-client = "^5.0.1"

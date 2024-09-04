@@ -223,7 +223,7 @@ def update_user_profile(user_id, **kwargs):
             session.commit()
             session.refresh(user)
             session.close()
-            return user
+            return useroctocat
     session.close()
     return None
 

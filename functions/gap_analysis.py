@@ -1,19 +1,12 @@
-import os
 from typing import Dict, List
 
 from dotenv import load_dotenv
 from llama_index.core import PromptTemplate
-from llama_index.llms.openai import OpenAI
 
-# Load environment variables from .env file
-load_dotenv()
+from helpers.get_llm import get_llm
 
-
-def perform_gap_analysis(
-    skills: List[Dict[str, int]],
-    eligibility_criteria: str,
-    llm: OpenAI = OpenAI(model="gpt-4", api_key=os.getenv("OPENAI_API_KEY")),
-):
+def perform_gap_analysis(skills: List[Dict[str, int]], eligibility_criteria: str):
+    llm = get_llm(model="gpt-4")
     # Define the prompt template
     prompt_template = PromptTemplate(
         "You are an assistant skilled at performing gap analysis for career progression. "

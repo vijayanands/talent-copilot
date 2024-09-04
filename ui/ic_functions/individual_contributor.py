@@ -97,9 +97,7 @@ def perform_self_appraisal():
     if st.button("Generate Self-Appraisal", key="generate_button"):
         user_email = st.session_state.user.email
         with st.spinner(f"Generating self-appraisal for {user_email} ..."):
-            st.session_state.appraisal = create_self_appraisal(
-                st.session_state.llm_choice, user_email
-            )
+            st.session_state.appraisal = create_self_appraisal(user_email)
 
     if "appraisal" in st.session_state:
         pretty_print_appraisal(st.session_state.appraisal)
@@ -185,7 +183,6 @@ def q_and_a_tab():
         if not query.strip():
             st.error("Please enter a question before clicking 'Ask'.")
         else:
-            llm = get_llm(st.session_state.llm_choice)
             with st.spinner("Generating Answer..."):
                 try:
                     response = answer_question(

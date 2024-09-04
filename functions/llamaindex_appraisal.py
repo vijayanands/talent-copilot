@@ -1,10 +1,7 @@
 import json
 import logging
-import os
 import re
 from typing import List
-
-from dotenv import load_dotenv
 from llama_index.core.agent import ReActAgent
 from llama_index.core.tools import BaseTool, FunctionTool
 
@@ -14,8 +11,6 @@ from helpers.get_llm import get_llm
 from helpers.github import get_github_contributions_by_author
 from helpers.jira import get_jira_contributions_by_author
 from tools.generate_appraisal_docs import generate_appraisal_docs
-
-load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -30,9 +25,9 @@ tools: List[BaseTool] = [
 ]
 
 
-def generate_self_appraisal(author: str, llm_vendor: str, **llm_kwargs) -> str:
+def generate_self_appraisal(author: str) -> str:
     # Create the LLM instance
-    llm = get_llm(llm_vendor, **llm_kwargs)
+    llm = get_llm(model="gpt-4o-mini")
 
     # Create the ReAct agent
     agent = ReActAgent.from_tools(tools, llm=llm, verbose=True)
@@ -95,29 +90,12 @@ def save_appraisal_to_json(appraisal: str, filename: str) -> None:
     logging.info(f"Appraisal saved to {filename}")
 
 
-def self_appraisal_tool(author: str, llm_vendor: str):
+def self_appraisal_tool(author: str):
     # Generate appraisal based on the chosen vendor
-    if llm_vendor.lower() == "openai":
-        appraisal = generate_self_appraisal(
-            author,
-            "openai",
-            model="gpt-4o-mini",
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
-    elif llm_vendor.lower() == "anthropic":  # anthropic
-        appraisal = generate_self_appraisal(
-            author,
-            "anthropic",
-            model="claude-3-opus-20240229",
-            api_key=os.getenv("ANTHROPIC_API_KEY"),
-        )
-    else:
-        print("Error: Unsupported LLM vendor")
-        return None
-
+    appraisal = generate_self_appraisal(author)
     # Save appraisal to JSON
     print(appraisal)
-    json_file_name = f"/tmp/self_appraisal_{author}_{llm_vendor}.json"
+    json_file_name = f"/tmp/self_appraisal_{author}.json"
     save_appraisal_to_json(appraisal, json_file_name)
     print(f"Appraisal saved as JSON: {json_file_name}")
 
