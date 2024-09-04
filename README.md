@@ -23,5 +23,5 @@ PROXYCURL_API_KEY=your_proxy_curl_api_key`
 #### Run the application
 - poetry shell
 - poetry install
-- streamlit run main.py
+- streamlit run app.py
 
