@@ -470,6 +470,49 @@ def individual_contributor_dashboard_conversational(is_manager):
 
         return selected_prompt  # Return the selected action
 
+def display_skills():
+    st.subheader("My Skills")
+    if "user_skills" not in st.session_state:
+        st.session_state.user_skills = get_user_skills(st.session_state.user.id)
+    if "skills_edit_mode" not in st.session_state:
+        st.session_state.skills_edit_mode = False
+    if "selected_skill_for_improvement" not in st.session_state:
+        st.session_state.selected_skill_for_improvement = None
+
+    proficiency_scale = {
+        1: "Novice",
+        2: "Beginner",
+        3: "Intermediate",
+        4: "Advanced",
+        5: "Expert"
+    }
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if not st.session_state.skills_edit_mode:
+            if st.button("Edit Skills"):
+                st.session_state.skills_edit_mode = True
+                st.rerun()
+
+    if st.session_state.skills_edit_mode:
+        st.write("Edit mode functionality will be implemented in the next step.")
+    else:
+        for skill, proficiency in st.session_state.user_skills.items():
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.write(f"**{skill}:** {proficiency_scale[proficiency]}")
+            with col3:
+                if st.button("Improve", key=f"improve_{skill}"):
+                    st.session_state.selected_skill_for_improvement = skill
+                    st.rerun()
+
+    if st.session_state.selected_skill_for_improvement:
+        st.subheader(f"Learning Opportunities for {st.session_state.selected_skill_for_improvement}")
+        with st.spinner(f"Finding learning resources for {st.session_state.selected_skill_for_improvement}..."):
+            learning_resources = find_learning_resources([st.session_state.selected_skill_for_improvement])
+        st.markdown(learning_resources)
+
+
 def individual_contributor_dashboard_conversational(is_manager):
     initialize_skills()
 
