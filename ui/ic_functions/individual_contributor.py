@@ -486,8 +486,8 @@ def individual_contributor_dashboard_conversational(is_manager):
             "Select an action",
             "Generate a self appraisal for me",
             "Show me the endorsements I have",
-            "Show me my current career trajectory information",
             "I would like to manage my skills",
+            "Show me my current career trajectory information",
             "I would like to manage my learning opportunities",
             "I would like to get a picture of my productivity",
         ]
@@ -503,8 +503,8 @@ def individual_contributor_dashboard_conversational(is_manager):
             prompt_map = {
                 "Generate a self appraisal for me": "self_appraisal",
                 "Show me the endorsements I have": "endorsements",
-                "Show me my current career trajectory information": "career",
                 "I would like to manage my skills": "skills",
+                "Show me my current career trajectory information": "career",
                 "I would like to manage my learning opportunities": "learning",
                 "I would like to get a picture of my productivity": "productivity",
             }
