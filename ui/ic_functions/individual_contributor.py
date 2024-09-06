@@ -14,11 +14,9 @@ from functions.self_appraisal import create_self_appraisal
 from helpers.ingestion import answer_question, ingest_data
 from models.models import LinkedInProfileInfo, get_user_skills, update_user_skills
 from ui.ic_functions.career import career_section
-from ui.ic_functions.learning import (learning_dashboard,
-                                      reset_learning_dashboard)
+from ui.ic_functions.learning import (learning_dashboard)
 from ui.ic_functions.productivity import productivity_tab
 from ui.ic_functions.skills_manager import initialize_skills
-from ui.ic_functions.skills_section import skills_section
 
 
 def ask(llm, query, index):
@@ -122,28 +120,6 @@ def update_skills_learning_dev_page():
     st.session_state.skills_learning_dev_page = (
         st.session_state.skills_learning_dev_selector
     )
-
-
-def skills_learning_development_tab():
-    # Initialize the skills_learning_dev page in session state if it doesn't exist
-    if "skills_learning_dev_page" not in st.session_state:
-        st.session_state.skills_learning_dev_page = "My Skills"
-
-    # Selectbox for choosing the sub-page
-    st.selectbox(
-        "",  # Empty label to hide the heading
-        options=["My Skills", "Learning Recommendations"],
-        index=["My Skills", "Learning Recommendations"].index(
-            st.session_state.skills_learning_dev_page
-        ),
-        key="skills_learning_dev_selector",
-        on_change=update_skills_learning_dev_page,
-    )
-
-    if st.session_state.skills_learning_dev_page == "My Skills":
-        skills_section()
-    else:  # Learning Recommendations
-        learning_dashboard()
 
 
 def load_qa_data():
