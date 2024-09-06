@@ -233,99 +233,6 @@ def handle_prompt(prompt, user_email):
         return f"Error: Unknown prompt '{prompt}'."
 
 
-def display_skills():
-    st.subheader("My Skills")
-    if "user_skills" not in st.session_state:
-        st.session_state.user_skills = get_user_skills(st.session_state.user.id)
-    if "skills_edit_mode" not in st.session_state:
-        st.session_state.skills_edit_mode = False
-
-    proficiency_scale = {
-        1: "Novice",
-        2: "Beginner",
-        3: "Intermediate",
-        4: "Advanced",
-        5: "Expert",
-    }
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if not st.session_state.skills_edit_mode:
-            if st.button("Edit Skills"):
-                st.session_state.skills_edit_mode = True
-                st.rerun()
-        else:
-            if st.button("Exit Edit Mode"):
-                st.session_state.skills_edit_mode = False
-                st.rerun()
-    with col2:
-        if st.button("Add New Skill"):
-            st.session_state.current_view = "add_skill"
-            st.rerun()
-
-    if st.session_state.skills_edit_mode:
-        for skill, proficiency in st.session_state.user_skills.items():
-            col1, col2, col3 = st.columns([3, 3, 1])
-            with col1:
-                st.write(skill)
-            with col2:
-                new_proficiency = st.selectbox(
-                    f"Proficiency for {skill}",
-                    options=list(range(1, 6)),
-                    format_func=lambda x: proficiency_scale[x],
-                    key=f"proficiency_{skill}",
-                    index=proficiency - 1,
-                )
-                st.session_state.user_skills[skill] = new_proficiency
-            with col3:
-                if st.button("Delete", key=f"delete_{skill}"):
-                    del st.session_state.user_skills[skill]
-                    st.rerun()
-
-        if st.button("Save Changes"):
-            # Here you would typically save the changes to your database
-            st.success("Skills updated successfully!")
-            st.session_state.skills_edit_mode = False
-            st.rerun()
-    else:
-        if st.session_state.user_skills:
-            for skill, proficiency in st.session_state.user_skills.items():
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{skill}:** {proficiency_scale[int(proficiency)]}")
-                with col2:
-                    if st.button("Improve", key=f"improve_{skill}"):
-                        st.session_state.current_view = "improve_skill"
-                        st.session_state.skill_to_improve = skill
-                        st.rerun()
-        else:
-            st.info("No skills found. Click 'Add New Skill' to add your skills.")
-
-
-def add_skill():
-    st.subheader("Add New Skill")
-    new_skill = st.text_input("Skill Name")
-    proficiency = st.select_slider(
-        "Proficiency",
-        options=[1, 2, 3, 4, 5],
-        format_func=lambda x: [
-            "Novice",
-            "Beginner",
-            "Intermediate",
-            "Advanced",
-            "Expert",
-        ][x - 1],
-    )
-    if st.button("Add Skill"):
-        if new_skill and new_skill not in st.session_state.user_skills:
-            st.session_state.user_skills[new_skill] = proficiency
-            st.success(f"Skill '{new_skill}' added successfully!")
-            st.session_state.current_view = "skills"
-            st.rerun()
-        else:
-            st.error("Please enter a unique skill name.")
-
-
 # New functions for manager dashboard functionality
 def get_dummy_employees():
     return [
@@ -444,6 +351,41 @@ def display_employee_stats(employee):
     st.plotly_chart(fig_productivity)
 
 
+def add_skill():
+    st.subheader("Add New Skill")
+    new_skill = st.text_input("Skill Name")
+    proficiency_scale = {
+        1: "Novice",
+        2: "Beginner",
+        3: "Intermediate",
+        4: "Advanced",
+        5: "Expert"
+    }
+    proficiency = st.select_slider(
+        "Proficiency",
+        options=list(proficiency_scale.keys()),
+        format_func=lambda x: proficiency_scale[x]
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Save Skill"):
+            if new_skill and new_skill not in st.session_state.user_skills:
+                st.session_state.user_skills[new_skill] = proficiency
+                if update_user_skills(st.session_state.user.id, st.session_state.user_skills):
+                    st.success(f"Skill '{new_skill}' added successfully!")
+                    st.session_state.add_skill_mode = False
+                    st.rerun()
+                else:
+                    st.error("Failed to update skills. Please try again.")
+            else:
+                st.error("Please enter a unique skill name.")
+    with col2:
+        if st.button("Cancel"):
+            st.session_state.add_skill_mode = False
+            st.rerun()
+
+
 def edit_skills():
     st.subheader("Edit Skills")
 
@@ -470,43 +412,20 @@ def edit_skills():
             )
         edited_skills[skill] = new_proficiency
 
-    if st.button("Save Changes"):
-        st.session_state.user_skills = edited_skills
-        if update_user_skills(st.session_state.user.id, st.session_state.user_skills):
-            st.success("Skills updated successfully!")
-            st.session_state.skills_edit_mode = False
-            st.rerun()
-        else:
-            st.error("Failed to update skills. Please try again.")
-
-
-def add_skill():
-    st.subheader("Add New Skill")
-    new_skill = st.text_input("Skill Name")
-    proficiency_scale = {
-        1: "Novice",
-        2: "Beginner",
-        3: "Intermediate",
-        4: "Advanced",
-        5: "Expert"
-    }
-    proficiency = st.select_slider(
-        "Proficiency",
-        options=list(proficiency_scale.keys()),
-        format_func=lambda x: proficiency_scale[x]
-    )
-    if st.button("Save Skill"):
-        if new_skill and new_skill not in st.session_state.user_skills:
-            st.session_state.user_skills[new_skill] = proficiency
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Save Changes"):
+            st.session_state.user_skills = edited_skills
             if update_user_skills(st.session_state.user.id, st.session_state.user_skills):
-                st.success(f"Skill '{new_skill}' added successfully!")
-                st.session_state.current_view = "skills"
-                st.session_state.add_skill_mode = False
+                st.success("Skills updated successfully!")
+                st.session_state.skills_edit_mode = False
                 st.rerun()
             else:
                 st.error("Failed to update skills. Please try again.")
-        else:
-            st.error("Please enter a unique skill name.")
+    with col2:
+        if st.button("Cancel"):
+            st.session_state.skills_edit_mode = False
+            st.rerun()
 
 
 def display_skills():
@@ -528,18 +447,21 @@ def display_skills():
         5: "Expert"
     }
 
-    col1, col2, col3 = st.columns([2, 2, 2])
-    with col1:
-        if st.button("Add Skill"):
-            st.session_state.add_skill_mode = True
-            st.session_state.skills_edit_mode = False
-            st.rerun()
-    with col2:
-        if not st.session_state.skills_edit_mode:
+    if not st.session_state.skills_edit_mode and not st.session_state.add_skill_mode:
+        # Add Skill and Edit Skills buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Add Skill"):
+                st.session_state.add_skill_mode = True
+                st.session_state.skills_edit_mode = False
+                st.rerun()
+        with col2:
             if st.button("Edit Skills"):
                 st.session_state.skills_edit_mode = True
                 st.session_state.add_skill_mode = False
                 st.rerun()
+
+        st.markdown("---")  # Add a horizontal line for visual separation
 
     if st.session_state.add_skill_mode:
         add_skill()
@@ -568,7 +490,6 @@ def display_skills():
         with st.spinner(f"Finding learning resources for {st.session_state.selected_skill_for_improvement}..."):
             learning_resources = find_learning_resources([st.session_state.selected_skill_for_improvement])
         st.markdown(learning_resources)
-
 
 def individual_contributor_dashboard_conversational(is_manager):
     initialize_skills()
