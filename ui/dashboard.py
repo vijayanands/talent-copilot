@@ -51,7 +51,7 @@ def dashboard():
         <div style="font-style: italic;">
         You can ask questions about your work in JIRA, Confluence, and GitHub. Here are some examples:
         <ul>
-        <li>What are the Jira issues for this user?</li>
+        <li>What are the Jira issues that I have resolved? Give me the links for those</li>
         <li>How many pull requests are there for this user?</li>
         <li>What is the content of the 'Getting started in Confluence' page for this user?</li>
         <li>Which users have GitHub data?</li>
