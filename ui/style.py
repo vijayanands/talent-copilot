@@ -6,10 +6,10 @@ def set_page_style():
         """
         <style>
         .stApp {
-            background-color: #f0f2f6;
+            background-color: #222831;
         }
         .content-container {
-            background-color: #ffffff;
+            background-color: #222831;
             border-radius: 5px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -58,7 +58,7 @@ def set_page_container_style(
                 }}
                 .reportview-container .main {{
                     color: {color};
-                    background-color: {background_color};
+                    background-color: #222831;
                 }}
             </style>
             """,
